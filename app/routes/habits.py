@@ -2,6 +2,7 @@
 Habit routes
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, status
+from typing import Optional
 from app.models import HabitCreate, HabitComplete
 from app.auth import get_current_user
 from app.database import get_database
