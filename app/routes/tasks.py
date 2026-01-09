@@ -242,6 +242,20 @@ async def update_task(
     updated_task["_id"] = str(updated_task["_id"])
     updated_task["user"] = str(updated_task["user"])
     
+    # Convert list ObjectId to string or object
+    if updated_task.get("list"):
+        if isinstance(updated_task["list"], ObjectId):
+            list_doc = await db.lists.find_one({"_id": updated_task["list"]})
+            if list_doc:
+                updated_task["list"] = {
+                    "_id": str(list_doc["_id"]),
+                    "name": list_doc.get("name"),
+                    "color": list_doc.get("color"),
+                    "icon": list_doc.get("icon")
+                }
+            else:
+                updated_task["list"] = str(updated_task["list"])
+    
     return {"task": updated_task}
 
 

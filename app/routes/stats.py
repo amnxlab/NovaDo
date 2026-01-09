@@ -17,7 +17,7 @@ async def get_stats(
     current_user: dict = Depends(get_current_user)
 ):
     """Get comprehensive productivity statistics"""
-    db = await get_database()
+    db = get_database()
     user_id = current_user["_id"]
     
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -145,7 +145,7 @@ async def get_habit_stats(
     current_user: dict = Depends(get_current_user)
 ):
     """Get habit completion statistics"""
-    db = await get_database()
+    db = get_database()
     user_id = current_user["_id"]
     
     habits = await db.habits.find({"user_id": user_id}).to_list(100)

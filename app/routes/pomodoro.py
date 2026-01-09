@@ -34,7 +34,7 @@ async def create_session(
     current_user: dict = Depends(get_current_user)
 ):
     """Save a completed pomodoro session"""
-    db = await get_database()
+    db = get_database()
     
     session_data = {
         "userId": current_user["_id"],
@@ -62,7 +62,7 @@ async def get_sessions(
     current_user: dict = Depends(get_current_user)
 ):
     """Get pomodoro sessions, optionally filtered by date"""
-    db = await get_database()
+    db = get_database()
     
     query = {"userId": current_user["_id"]}
     
@@ -98,7 +98,7 @@ async def get_pomodoro_stats(
     current_user: dict = Depends(get_current_user)
 ):
     """Get pomodoro statistics"""
-    db = await get_database()
+    db = get_database()
     
     # Today's sessions
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)

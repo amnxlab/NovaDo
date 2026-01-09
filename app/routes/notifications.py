@@ -48,7 +48,7 @@ async def subscribe(
     current_user: dict = Depends(get_current_user)
 ):
     """Save a push notification subscription"""
-    db = await get_database()
+    db = get_database()
     
     # Store or update subscription
     await db.push_subscriptions.update_one(
@@ -76,7 +76,7 @@ async def unsubscribe(
     current_user: dict = Depends(get_current_user)
 ):
     """Remove a push notification subscription"""
-    db = await get_database()
+    db = get_database()
     
     await db.push_subscriptions.delete_one({"userId": current_user["_id"]})
     
@@ -88,7 +88,7 @@ async def get_subscription_status(
     current_user: dict = Depends(get_current_user)
 ):
     """Check if user has an active push subscription"""
-    db = await get_database()
+    db = get_database()
     
     subscription = await db.push_subscriptions.find_one({"userId": current_user["_id"]})
     
@@ -104,7 +104,7 @@ async def send_notification(
     current_user: dict = Depends(get_current_user)
 ):
     """Send a push notification to the user (for testing)"""
-    db = await get_database()
+    db = get_database()
     
     subscription = await db.push_subscriptions.find_one({"userId": current_user["_id"]})
     
@@ -149,7 +149,7 @@ async def get_notification_settings(
     current_user: dict = Depends(get_current_user)
 ):
     """Get user's notification preferences"""
-    db = await get_database()
+    db = get_database()
     
     user = await db.users.find_one({"_id": current_user["_id"]})
     preferences = user.get("preferences", {}).get("notifications", {})
@@ -179,7 +179,7 @@ async def update_notification_settings(
     current_user: dict = Depends(get_current_user)
 ):
     """Update user's notification preferences"""
-    db = await get_database()
+    db = get_database()
     
     update_data = {}
     for key, value in settings.dict(exclude_none=True).items():

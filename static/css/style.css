@@ -36,8 +36,11 @@
     --sidebar-width: 260px;
     --header-height: 64px;
     
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.25s ease;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 [data-theme="light"] {
@@ -79,6 +82,26 @@ body {
     overflow-x: hidden;
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
 /* Utilities */
 .hidden {
     display: none !important;
@@ -86,6 +109,65 @@ body {
 
 .screen {
     min-height: 100vh;
+}
+
+/* Loading States */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--bg-secondary) 0%,
+        var(--bg-tertiary) 50%,
+        var(--bg-secondary) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: var(--border-radius);
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease;
+}
+
+/* Slide In Animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease;
 }
 
 /* ============================================
@@ -233,14 +315,35 @@ textarea {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-lg);
     font-family: inherit;
     font-size: 0.9375rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-primary {
@@ -249,8 +352,12 @@ textarea {
 }
 
 .btn-primary:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
 }
 
 .btn-secondary {
@@ -261,6 +368,8 @@ textarea {
 
 .btn-secondary:hover {
     background: var(--bg-hover);
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
 }
 
 .btn-icon {
@@ -375,22 +484,47 @@ textarea {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.625rem 0.75rem;
-    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius-lg);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-normal);
     list-style: none;
+    position: relative;
+    user-select: none;
+}
+
+.nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: var(--accent-gradient);
+    border-radius: 0 3px 3px 0;
+    transition: height var(--transition-normal);
 }
 
 .nav-item:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
+    transform: translateX(4px);
+}
+
+.nav-item:hover::before {
+    height: 70%;
 }
 
 .nav-item.active {
-    background: var(--accent-primary);
+    background: var(--accent-gradient);
     color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.nav-item.active::before {
+    display: none;
 }
 
 .nav-icon {
@@ -475,6 +609,29 @@ textarea {
     gap: 1rem;
 }
 
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.menu-toggle span {
+    width: 24px;
+    height: 3px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all var(--transition-normal);
+}
+
+.menu-toggle:hover span {
+    background: var(--accent-primary);
+}
+
 .search-box {
     position: relative;
 }
@@ -514,25 +671,50 @@ textarea {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 1rem;
+    padding: 1rem 1.25rem;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    transition: all var(--transition-fast);
-    cursor: pointer;
+    border-radius: var(--border-radius-lg);
+    transition: all var(--transition-normal);
+    cursor: grab;
+    position: relative;
+    overflow: hidden;
+}
+
+.task-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: var(--accent-gradient);
+    transform: scaleY(0);
+    transition: transform var(--transition-normal);
 }
 
 .task-item:hover {
     background: var(--bg-hover);
     border-color: var(--accent-primary);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
+}
+
+.task-item:hover::before {
+    transform: scaleY(1);
+}
+
+.task-item:active {
+    cursor: grabbing;
 }
 
 .task-item.completed {
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .task-item.completed .task-title {
     text-decoration: line-through;
+    color: var(--text-muted);
 }
 
 .task-checkbox {
@@ -671,15 +853,35 @@ textarea {
 }
 
 .habit-card {
-    padding: 1.25rem;
+    padding: 1.5rem;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
-    transition: all var(--transition-fast);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.habit-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-gradient);
+    transform: scaleX(0);
+    transition: transform var(--transition-normal);
 }
 
 .habit-card:hover {
     border-color: var(--accent-primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.habit-card:hover::before {
+    transform: scaleX(1);
 }
 
 .habit-header {
@@ -802,15 +1004,19 @@ textarea {
 }
 
 .calendar-day {
-    min-height: 100px;
-    padding: 0.5rem;
+    min-height: 120px;
+    padding: 0.75rem;
     background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-normal);
+    position: relative;
 }
 
 .calendar-day:hover {
     background: var(--bg-hover);
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 2px var(--accent-primary);
 }
 
 .calendar-day.other-month {
@@ -818,12 +1024,31 @@ textarea {
 }
 
 .calendar-day.today {
-    background: var(--bg-tertiary);
+    background: var(--bg-secondary);
+    border-color: var(--accent-primary);
+}
+
+.calendar-day.today::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-gradient);
 }
 
 .calendar-day.today .day-number {
     background: var(--accent-primary);
     color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.calendar-day.drag-over {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 3px var(--accent-primary);
+    transform: scale(0.98);
 }
 
 .day-number {
@@ -839,15 +1064,29 @@ textarea {
 }
 
 .calendar-task {
-    padding: 0.25rem 0.5rem;
-    background: var(--accent-primary);
-    border-radius: 4px;
+    padding: 0.4rem 0.75rem;
+    background: var(--accent-gradient);
+    border-radius: var(--border-radius);
     font-size: 0.75rem;
+    font-weight: 500;
     color: white;
-    margin-bottom: 2px;
+    margin-bottom: 0.35rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: move;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+}
+
+.calendar-task:hover {
+    transform: translateX(2px);
+    box-shadow: var(--shadow-md);
+}
+
+.calendar-task.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg) scale(1.05);
 }
 
 /* ============================================
@@ -930,20 +1169,20 @@ textarea {
 .modal-content {
     position: relative;
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
     max-height: 90vh;
     overflow-y: auto;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-lg);
-    animation: modalIn 0.2s ease;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalIn 0.4s var(--spring);
 }
 
 @keyframes modalIn {
     from {
         opacity: 0;
-        transform: scale(0.95) translateY(-10px);
+        transform: scale(0.9) translateY(-30px);
     }
     to {
         opacity: 1;
@@ -1470,26 +1709,28 @@ textarea {
    Drag and Drop
    ============================================ */
 
-.task-item {
-    cursor: grab;
-}
-
-.task-item:active {
-    cursor: grabbing;
-}
-
 .task-item.dragging {
-    opacity: 0.5;
-    transform: scale(1.02);
-    box-shadow: var(--shadow-lg);
+    opacity: 0.8;
+    transform: scale(1.05) rotate(2deg);
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
+    cursor: grabbing;
+    z-index: 1000;
+    background: var(--bg-tertiary);
+    border-color: var(--accent-primary);
 }
 
 .task-item.drag-over {
-    border-top: 2px solid var(--accent-primary);
+    border-top: 3px solid var(--accent-primary);
+    margin-top: 1rem;
+    transition: all var(--transition-normal);
 }
 
 .tasks-list.drag-active .task-item {
-    transition: transform 0.2s ease;
+    transition: all var(--transition-normal);
+}
+
+.tasks-list.drag-active .task-item:not(.dragging) {
+    opacity: 0.7;
 }
 
 /* ============================================
@@ -1829,18 +2070,60 @@ textarea {
    Responsive
    ============================================ */
 
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 240px;
+    }
+    
+    .task-item {
+        padding: 0.875rem 1rem;
+    }
+    
+    .pomodoro-container {
+        padding: 1.5rem;
+    }
+    
+    .timer-display {
+        font-size: 4rem;
+    }
+}
+
 @media (max-width: 768px) {
+    :root {
+        --sidebar-width: 280px;
+    }
+    
     .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 1000;
         transform: translateX(-100%);
         transition: transform var(--transition-normal);
+        box-shadow: var(--shadow-lg);
     }
     
     .sidebar.open {
         transform: translateX(0);
     }
     
+    .sidebar.open::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+        backdrop-filter: blur(2px);
+    }
+    
     .main-content {
         margin-left: 0;
+        width: 100%;
+    }
+    
+    .menu-toggle {
+        display: flex;
     }
     
     .main-header {
@@ -1859,8 +2142,93 @@ textarea {
         grid-template-columns: 1fr;
     }
     
+    .task-item {
+        padding: 0.75rem 1rem;
+    }
+    
+    .task-item:hover {
+        transform: translateX(2px);
+    }
+    
+    .calendar-grid {
+        font-size: 0.85rem;
+    }
+    
     .calendar-day {
-        min-height: 60px;
+        min-height: 70px;
+        padding: 0.5rem;
+    }
+    
+    .calendar-task {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .modal-content {
+        max-width: 95%;
+        margin: 0.5rem;
+    }
+    
+    .pomodoro-container {
+        padding: 1rem;
+    }
+    
+    .timer-display {
+        font-size: 3rem;
+    }
+    
+    .btn {
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn-large {
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .stats-summary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .task-item {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .task-checkbox {
+        align-self: flex-start;
+    }
+    
+    .nav-item {
+        padding: 0.625rem 0.875rem;
+    }
+    
+    .calendar-grid {
+        gap: 2px;
+    }
+    
+    .calendar-day {
+        min-height: 50px;
+        padding: 0.25rem;
+    }
+    
+    .day-number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75rem;
+    }
+    
+    .timer-display {
+        font-size: 2.5rem;
+    }
+    
+    .pomodoro-stats {
+        flex-direction: column;
+        gap: 1rem;
     }
 }
 

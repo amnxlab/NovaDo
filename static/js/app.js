@@ -164,6 +164,9 @@ function setupEventListeners() {
     // Notifications
     document.getElementById('enable-notifications-btn').addEventListener('click', enableNotifications);
     updateNotificationPermissionUI();
+    
+    // Menu toggle for mobile
+    document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
 
     // Calendar navigation
     document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
@@ -514,16 +517,21 @@ function formatDueDate(dateStr) {
 
 async function toggleTask(id, e) {
     e.stopPropagation();
-    const task = state.tasks.find(t => (t._id || t.id) === id);
-    if (!task) return;
+    const taskIndex = state.tasks.findIndex(t => (t._id || t.id) === id);
+    if (taskIndex === -1) return;
+    
+    const task = state.tasks[taskIndex];
+    const newCompleted = !task.completed;
 
     try {
-        await api.updateTask(id, { completed: !task.completed });
-        task.completed = !task.completed;
+        const updatedTask = await api.updateTask(id, { completed: newCompleted });
+        // Update task in state with server response
+        state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask, completed: newCompleted };
         renderTasks();
         updateCounts();
-        showToast(task.completed ? 'Task completed!' : 'Task uncompleted');
+        showToast(newCompleted ? 'Task completed!' : 'Task uncompleted');
     } catch (error) {
+        console.error('Toggle task error:', error);
         showToast('Failed to update task', 'error');
     }
 }
@@ -709,6 +717,8 @@ function renderLists() {
         const li = document.createElement('li');
         li.className = 'nav-item';
         li.dataset.customList = list._id || list.id;
+        li.dataset.listId = list._id || list.id;
+        li.draggable = true;
         li.onclick = () => selectCustomList(list._id || list.id);
 
         const count = state.tasks.filter(t => t.list_id === (list._id || list.id) && !t.completed).length;
@@ -721,6 +731,9 @@ function renderLists() {
 
         elements.customLists.appendChild(li);
     });
+    
+    // Initialize list drag and drop
+    setTimeout(() => initListDragAndDrop(), 100);
 }
 
 function openListModal() {
@@ -948,6 +961,7 @@ function renderCalendar() {
     // Current month
     for (let day = 1; day <= totalDays; day++) {
         const date = new Date(year, month, day);
+        const dateStr = date.toISOString().split('T')[0];
         const isToday = date.getTime() === today.getTime();
         const dayTasks = state.tasks.filter(t => {
             if (!t.due_date) return false;
@@ -958,12 +972,12 @@ function renderCalendar() {
         });
 
         html += `
-            <div class="calendar-day${isToday ? ' today' : ''}">
+            <div class="calendar-day${isToday ? ' today' : ''}" data-date="${dateStr}">
                 <span class="day-number">${day}</span>
                 ${dayTasks.slice(0, 3).map(t => 
-                    `<div class="calendar-task">${escapeHTML(t.title)}</div>`
+                    `<div class="calendar-task" data-task-id="${t._id || t.id}" draggable="true">${escapeHTML(t.title)}</div>`
                 ).join('')}
-                ${dayTasks.length > 3 ? `<div class="calendar-task">+${dayTasks.length - 3} more</div>` : ''}
+                ${dayTasks.length > 3 ? `<div class="calendar-more">+${dayTasks.length - 3} more</div>` : ''}
             </div>
         `;
     }
@@ -971,10 +985,15 @@ function renderCalendar() {
     // Next month padding
     const remaining = 42 - startPadding - totalDays;
     for (let i = 1; i <= remaining; i++) {
-        html += `<div class="calendar-day other-month"><span class="day-number">${i}</span></div>`;
+        const date = new Date(year, month + 1, i);
+        const dateStr = date.toISOString().split('T')[0];
+        html += `<div class="calendar-day other-month" data-date="${dateStr}"><span class="day-number">${i}</span></div>`;
     }
 
     elements.calendarGrid.innerHTML = html;
+    
+    // Initialize calendar drag and drop
+    setTimeout(() => initCalendarDragAndDrop(), 100);
 }
 
 function changeMonth(delta) {
@@ -1878,6 +1897,147 @@ function addDraggableToTasks() {
 }
 
 // ============================================
+// CALENDAR DRAG AND DROP
+// ============================================
+
+function initCalendarDragAndDrop() {
+    const calendarDays = document.querySelectorAll('.calendar-day');
+    const calendarTasks = document.querySelectorAll('.calendar-task');
+    
+    // Make calendar tasks draggable
+    calendarTasks.forEach(task => {
+        task.draggable = true;
+        task.addEventListener('dragstart', handleCalendarTaskDragStart);
+        task.addEventListener('dragend', handleCalendarTaskDragEnd);
+    });
+    
+    // Make calendar days droppable
+    calendarDays.forEach(day => {
+        day.addEventListener('dragover', handleCalendarDayDragOver);
+        day.addEventListener('drop', handleCalendarDayDrop);
+        day.addEventListener('dragleave', handleCalendarDayDragLeave);
+    });
+}
+
+function handleCalendarTaskDragStart(e) {
+    e.stopPropagation();
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+}
+
+function handleCalendarTaskDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.calendar-day.drag-over').forEach(day => {
+        day.classList.remove('drag-over');
+    });
+}
+
+function handleCalendarDayDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleCalendarDayDragLeave(e) {
+    if (e.currentTarget === e.target) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+}
+
+async function handleCalendarDayDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    const taskId = e.dataTransfer.getData('text/plain');
+    const newDate = e.currentTarget.dataset.date;
+    
+    if (!taskId || !newDate) return;
+    
+    try {
+        const task = state.tasks.find(t => (t._id || t.id) === taskId);
+        if (!task) return;
+        
+        // Update task due date
+        await api.updateTask(taskId, { due_date: new Date(newDate).toISOString() });
+        
+        // Update local state
+        task.due_date = new Date(newDate).toISOString();
+        
+        // Re-render calendar
+        renderCalendar();
+        showToast('Task moved successfully', 'success');
+    } catch (error) {
+        console.error('Failed to move task:', error);
+        showToast('Failed to move task', 'error');
+    }
+}
+
+// ============================================
+// LIST DRAG AND DROP (REORDERING SIDEBAR)
+// ============================================
+
+function initListDragAndDrop() {
+    const listItems = document.querySelectorAll('.nav-item[data-list-id]');
+    
+    listItems.forEach(item => {
+        item.draggable = true;
+        item.addEventListener('dragstart', handleListDragStart);
+        item.addEventListener('dragend', handleListDragEnd);
+        item.addEventListener('dragover', handleListDragOver);
+        item.addEventListener('drop', handleListDrop);
+    });
+}
+
+function handleListDragStart(e) {
+    e.stopPropagation();
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.listId);
+}
+
+function handleListDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.nav-item.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+}
+
+function handleListDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const dragging = document.querySelector('.nav-item.dragging');
+    if (!dragging || e.currentTarget === dragging) return;
+    
+    e.currentTarget.classList.add('drag-over');
+}
+
+async function handleListDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const targetId = e.currentTarget.dataset.listId;
+    
+    if (!draggedId || !targetId || draggedId === targetId) return;
+    
+    // Reorder lists in state
+    const draggedIndex = state.lists.findIndex(l => (l._id || l.id) === draggedId);
+    const targetIndex = state.lists.findIndex(l => (l._id || l.id) === targetId);
+    
+    if (draggedIndex === -1 || targetIndex === -1) return;
+    
+    // Move dragged item to target position
+    const [draggedList] = state.lists.splice(draggedIndex, 1);
+    state.lists.splice(targetIndex, 0, draggedList);
+    
+    // Re-render lists
+    renderLists();
+    showToast('List reordered', 'success');
+}
+
+// ============================================
 // NOTIFICATIONS FUNCTIONALITY
 // ============================================
 
@@ -1966,6 +2126,23 @@ function scheduleTaskReminders() {
             );
         }
     });
+}
+
+// Toggle sidebar for mobile
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('open');
+    
+    // Close sidebar when clicking outside
+    if (sidebar.classList.contains('open')) {
+        const closeOnClickOutside = (e) => {
+            if (!sidebar.contains(e.target) && !e.target.closest('.menu-toggle')) {
+                sidebar.classList.remove('open');
+                document.removeEventListener('click', closeOnClickOutside);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeOnClickOutside), 100);
+    }
 }
 
 // Call this after tasks are loaded

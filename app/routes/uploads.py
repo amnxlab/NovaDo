@@ -74,7 +74,7 @@ async def upload_file(
         f.write(content)
     
     # Store metadata in database
-    db = await get_database()
+    db = get_database()
     file_record = {
         "fileId": file_id,
         "userId": current_user["_id"],
@@ -102,7 +102,7 @@ async def get_file(
     current_user: dict = Depends(get_current_user)
 ):
     """Get an uploaded file"""
-    db = await get_database()
+    db = get_database()
     
     # Find file record
     file_record = await db.files.find_one({
@@ -131,7 +131,7 @@ async def delete_file(
     current_user: dict = Depends(get_current_user)
 ):
     """Delete an uploaded file"""
-    db = await get_database()
+    db = get_database()
     
     # Find file record
     file_record = await db.files.find_one({
@@ -158,7 +158,7 @@ async def list_files(
     current_user: dict = Depends(get_current_user)
 ):
     """List all files uploaded by the user"""
-    db = await get_database()
+    db = get_database()
     
     files = await db.files.find({"userId": current_user["_id"]}).to_list(100)
     
