@@ -96,7 +96,7 @@ if __name__ == "__main__":
     print(f"\n  TaskFlow is running!")
     print(f"  Open http://localhost:{port} in your browser\n")
     uvicorn.run(
-        "app:app",
+        "main:app",
         host="0.0.0.0",
         port=port,
         reload=True,

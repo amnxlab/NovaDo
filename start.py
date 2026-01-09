@@ -277,7 +277,7 @@ ENCRYPTION_KEY=change-this-encryption-key-in-production
         backend_script = f"""@echo off
 cd /d "{os.getcwd()}"
 set PYTHONUNBUFFERED=1
-"{str(python_exe)}" app.py
+"{str(python_exe)}" main.py
 pause
 """
         backend_script_path = Path.home() / 'taskflow_backend.bat'
@@ -290,7 +290,7 @@ pause
         backend_script = f"""#!/bin/bash
 cd "{os.getcwd()}"
 export PYTHONUNBUFFERED=1
-"{str(python_exe)}" app.py
+"{str(python_exe)}" main.py
 """
         backend_script_path = Path.home() / 'taskflow_backend.sh'
         backend_script_path.write_text(backend_script, encoding='utf-8')
