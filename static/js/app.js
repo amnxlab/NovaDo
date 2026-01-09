@@ -158,7 +158,7 @@ function setupEventListeners() {
                 const title = e.target.value.trim();
                 e.target.value = '';
                 try {
-                    const listId = state.currentList && !['inbox', 'today', 'week', 'all', 'completed'].includes(state.currentList) 
+                    const listId = state.currentList && !['inbox', 'today', 'week', 'all', 'completed'].includes(state.currentList)
                         ? state.currentList : null;
                     await api.createTask({ title, list: listId });
                     await loadTasks();
@@ -214,12 +214,12 @@ function setupEventListeners() {
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', () => setTheme(btn.dataset.theme));
     });
-    
+
     // Google Calendar
     document.getElementById('connect-google-btn')?.addEventListener('click', connectGoogleCalendar);
     document.getElementById('disconnect-google-btn')?.addEventListener('click', disconnectGoogleCalendar);
     document.getElementById('sync-calendar-btn')?.addEventListener('click', syncGoogleCalendar);
-    
+
     // Load Google Calendar status when settings view is shown
     const settingsBtn = document.getElementById('settings-btn');
     if (settingsBtn) {
@@ -227,11 +227,11 @@ function setupEventListeners() {
             setTimeout(loadGoogleCalendarStatus, 100);
         });
     }
-    
+
     // Notifications
     document.getElementById('enable-notifications-btn').addEventListener('click', enableNotifications);
     updateNotificationPermissionUI();
-    
+
     // Menu toggle for mobile
     document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
 
@@ -239,7 +239,7 @@ function setupEventListeners() {
     document.getElementById('prev-period').addEventListener('click', () => changeCalendarPeriod(-1));
     document.getElementById('next-period').addEventListener('click', () => changeCalendarPeriod(1));
     document.getElementById('today-btn').addEventListener('click', () => goToToday());
-    
+
     // Calendar view mode buttons
     document.querySelectorAll('.view-mode-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -247,7 +247,7 @@ function setupEventListeners() {
             setCalendarViewMode(mode);
         });
     });
-    
+
     // Sidebar item management
     document.querySelectorAll('.section-add-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -255,7 +255,7 @@ function setupEventListeners() {
             openAddSidebarModal(btn.dataset.section);
         });
     });
-    
+
     // Add sidebar modal
     const closeSidebarModalBtn = document.getElementById('close-sidebar-modal');
     if (closeSidebarModalBtn) {
@@ -265,7 +265,7 @@ function setupEventListeners() {
     if (addSidebarOverlay) {
         addSidebarOverlay.addEventListener('click', closeAddSidebarModal);
     }
-    
+
     // Rename modal
     const closeRenameModalBtn = document.getElementById('close-rename-modal');
     if (closeRenameModalBtn) {
@@ -283,7 +283,7 @@ function setupEventListeners() {
     if (renameOverlay) {
         renameOverlay.addEventListener('click', closeRenameModal);
     }
-    
+
     // Context menu actions
     document.querySelectorAll('.context-menu-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -291,9 +291,9 @@ function setupEventListeners() {
             const action = e.currentTarget.dataset.action;
             const itemType = menu.dataset.itemType;
             const itemId = menu.dataset.itemId;
-            
+
             menu.classList.add('hidden');
-            
+
             if (action === 'rename') {
                 openRenameModal(itemType, itemId);
             } else if (action === 'delete') {
@@ -313,10 +313,10 @@ function setupEventListeners() {
     document.getElementById('close-smart-modal').addEventListener('click', closeSmartModal);
     document.querySelector('#smart-input-modal .modal-overlay').addEventListener('click', closeSmartModal);
     document.getElementById('smart-form').addEventListener('submit', handleSmartInput);
-    
+
     // AI floating button
     document.getElementById('ai-chat-btn').addEventListener('click', openAIChat);
-    
+
     // Provider help text
     document.getElementById('llm-provider').addEventListener('change', updateProviderHelp);
 
@@ -407,7 +407,7 @@ async function loadData() {
         // Render sidebar first (from local config)
         renderSmartLists();
         renderTools();
-        
+
         const [tasks, lists, habits] = await Promise.all([
             api.getTasks(),
             api.getLists(),
@@ -429,7 +429,7 @@ async function loadData() {
 // Views
 function showView(view) {
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    
+
     elements.tasksView.classList.add('hidden');
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
@@ -492,12 +492,12 @@ function selectSmartList(listId) {
     };
 
     elements.currentViewTitle.textContent = titles[listId] || listId;
-    
+
     elements.tasksView.classList.remove('hidden');
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
     elements.settingsView.classList.add('hidden');
-    
+
     renderTasks();
 }
 
@@ -510,12 +510,12 @@ function selectCustomList(listId) {
 
     const list = state.lists.find(l => l._id === listId || l.id === listId);
     elements.currentViewTitle.textContent = list?.name || 'List';
-    
+
     elements.tasksView.classList.remove('hidden');
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
     elements.settingsView.classList.add('hidden');
-    
+
     renderTasks();
 }
 
@@ -563,7 +563,7 @@ function renderTasks() {
     // Apply search filter
     const searchTerm = elements.searchInput.value.toLowerCase();
     if (searchTerm) {
-        tasks = tasks.filter(t => 
+        tasks = tasks.filter(t =>
             t.title.toLowerCase().includes(searchTerm) ||
             (t.description && t.description.toLowerCase().includes(searchTerm))
         );
@@ -580,7 +580,7 @@ function renderTasks() {
     });
 
     elements.tasksList.innerHTML = '';
-    
+
     if (tasks.length === 0) {
         elements.emptyState.classList.remove('hidden');
         return;
@@ -592,7 +592,7 @@ function renderTasks() {
         const el = createTaskElement(task);
         elements.tasksList.appendChild(el);
     });
-    
+
     // Add draggable support
     addDraggableToTasks();
 }
@@ -607,7 +607,7 @@ function createTaskElement(task) {
     const dueDateHTML = task.due_date ? formatDueDate(task.due_date) : '';
     const priorityHTML = task.priority ? `<span class="task-priority" data-priority="${task.priority}"></span>` : '';
     const tagsHTML = (task.tags || []).map(tag => `<span class="task-tag">${tag}</span>`).join('');
-    
+
     // Status badge
     const statusConfig = {
         'scheduled': { icon: '📅', label: 'Scheduled', class: 'scheduled' },
@@ -651,7 +651,7 @@ function formatDueDate(dateStr) {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     const dateOnly = new Date(date);
     dateOnly.setHours(0, 0, 0, 0);
 
@@ -671,7 +671,7 @@ function formatDueDate(dateStr) {
     }
 
     const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    
+
     return `<span class="${className}">📅 ${label} ${time !== '12:00 AM' ? time : ''}</span>`;
 }
 
@@ -685,7 +685,7 @@ async function completeTask(id, e) {
     e.stopPropagation();
     const taskIndex = state.tasks.findIndex(t => (t._id || t.id) === id);
     if (taskIndex === -1) return;
-    
+
     const task = state.tasks[taskIndex];
     const newStatus = task.status === 'completed' ? 'scheduled' : 'completed';
 
@@ -707,12 +707,12 @@ async function cycleTaskStatus(id, e) {
     e.stopPropagation();
     const taskIndex = state.tasks.findIndex(t => (t._id || t.id) === id);
     if (taskIndex === -1) return;
-    
+
     const task = state.tasks[taskIndex];
     const statusCycle = ['scheduled', 'in_progress', 'completed'];
     const currentIndex = statusCycle.indexOf(task.status || 'scheduled');
     const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
-    
+
     const statusLabels = {
         'scheduled': 'Scheduled',
         'in_progress': 'In Progress',
@@ -751,10 +751,10 @@ function openTaskModal(taskId = null) {
     const modal = elements.taskModal;
     const form = document.getElementById('task-form');
     const title = document.getElementById('task-modal-title');
-    
+
     form.reset();
     document.getElementById('task-id').value = '';
-    
+
     // Reset subtasks and attachments
     currentSubtasks = [];
     currentAttachments = [];
@@ -781,7 +781,7 @@ function openTaskModal(taskId = null) {
                 const date = new Date(task.due_date);
                 document.getElementById('task-due-date').value = date.toISOString().slice(0, 16);
             }
-            
+
             // Load subtasks
             if (task.subtasks && task.subtasks.length > 0) {
                 currentSubtasks = task.subtasks.map(s => ({
@@ -790,7 +790,7 @@ function openTaskModal(taskId = null) {
                     completed: s.completed || false
                 }));
             }
-            
+
             // Load attachments
             if (task.attachments && task.attachments.length > 0) {
                 currentAttachments = task.attachments.map(a => ({
@@ -809,7 +809,7 @@ function openTaskModal(taskId = null) {
             document.getElementById('task-list').value = state.currentList;
         }
     }
-    
+
     // Render subtasks and attachments
     renderSubtasks();
     renderAttachments();
@@ -824,10 +824,10 @@ function closeTaskModal() {
 
 async function handleTaskSubmit(e) {
     e.preventDefault();
-    
+
     const taskId = document.getElementById('task-id').value;
     let listId = document.getElementById('task-list').value || null;
-    
+
     // If no list selected, find the user's Inbox list
     if (!listId) {
         const inboxList = state.lists.find(l => l.name === 'Inbox' || (l.isDefault && !l.isSmart));
@@ -835,7 +835,7 @@ async function handleTaskSubmit(e) {
             listId = inboxList._id || inboxList.id;
         }
     }
-    
+
     const taskData = {
         title: document.getElementById('task-title').value,
         description: document.getElementById('task-description').value,
@@ -870,7 +870,7 @@ async function handleTaskSubmit(e) {
                 url: a.url
             }));
         }
-        
+
         if (taskId) {
             const updated = await api.updateTask(taskId, taskData);
             const idx = state.tasks.findIndex(t => (t._id || t.id) === taskId);
@@ -916,15 +916,15 @@ function renderSmartLists() {
     const config = getSidebarConfig();
     const smartListsEl = document.getElementById('smart-lists');
     if (!smartListsEl) return;
-    
+
     smartListsEl.innerHTML = '';
-    
+
     config.smartLists.filter(item => item.visible).forEach(item => {
         const li = document.createElement('li');
         li.className = `nav-item${state.currentList === item.id ? ' active' : ''}`;
         li.dataset.list = item.id;
         li.dataset.itemType = 'smart-list';
-        
+
         li.innerHTML = `
             <span class="nav-icon">${item.icon}</span>
             <span class="nav-label">${escapeHTML(item.customLabel || item.label)}</span>
@@ -933,15 +933,15 @@ function renderSmartLists() {
                 <button class="item-action-btn delete" title="Remove" onclick="event.stopPropagation(); removeSidebarItem('smart-list', '${item.id}')">×</button>
             </div>
         `;
-        
+
         li.onclick = (e) => {
             if (!e.target.closest('.item-actions')) {
                 selectSmartList(item.id);
             }
         };
-        
+
         li.oncontextmenu = (e) => showContextMenu(e, 'smart-list', item.id);
-        
+
         smartListsEl.appendChild(li);
     });
 }
@@ -950,15 +950,15 @@ function renderTools() {
     const config = getSidebarConfig();
     const toolsListEl = document.getElementById('tools-list');
     if (!toolsListEl) return;
-    
+
     toolsListEl.innerHTML = '';
-    
+
     config.tools.filter(item => item.visible).forEach(item => {
         const li = document.createElement('li');
         li.className = `nav-item${state.currentView === item.view ? ' active' : ''}`;
         li.dataset.view = item.view;
         li.dataset.itemType = 'tool';
-        
+
         li.innerHTML = `
             <span class="nav-icon">${item.icon}</span>
             <span class="nav-label">${escapeHTML(item.customLabel || item.label)}</span>
@@ -966,15 +966,15 @@ function renderTools() {
                 <button class="item-action-btn delete" title="Remove" onclick="event.stopPropagation(); removeSidebarItem('tool', '${item.id}')">×</button>
             </div>
         `;
-        
+
         li.onclick = (e) => {
             if (!e.target.closest('.item-actions')) {
                 showView(item.view);
             }
         };
-        
+
         li.oncontextmenu = (e) => showContextMenu(e, 'tool', item.id);
-        
+
         toolsListEl.appendChild(li);
     });
 }
@@ -982,17 +982,17 @@ function renderTools() {
 function showContextMenu(e, itemType, itemId) {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const menu = document.getElementById('context-menu');
     if (!menu) return;
-    
+
     menu.dataset.itemType = itemType;
     menu.dataset.itemId = itemId;
-    
+
     menu.style.left = `${e.clientX}px`;
     menu.style.top = `${e.clientY}px`;
     menu.classList.remove('hidden');
-    
+
     // Close menu on click elsewhere
     const closeMenu = () => {
         menu.classList.add('hidden');
@@ -1003,7 +1003,7 @@ function showContextMenu(e, itemType, itemId) {
 
 function removeSidebarItem(itemType, itemId) {
     const config = getSidebarConfig();
-    
+
     if (itemType === 'smart-list') {
         const item = config.smartLists.find(i => i.id === itemId);
         if (item) {
@@ -1024,7 +1024,7 @@ function removeSidebarItem(itemType, itemId) {
             }
         }
     }
-    
+
     saveSidebarConfig(config);
     renderSmartLists();
     renderTools();
@@ -1035,11 +1035,11 @@ function openAddSidebarModal(section) {
     const modal = document.getElementById('add-sidebar-modal');
     const title = document.getElementById('add-sidebar-title');
     const itemsList = document.getElementById('available-sidebar-items');
-    
+
     if (!modal || !title || !itemsList) return;
-    
+
     const config = getSidebarConfig();
-    
+
     let items = [];
     if (section === 'smart-lists') {
         title.textContent = 'Add Smart List';
@@ -1062,7 +1062,7 @@ function openAddSidebarModal(section) {
             };
         });
     }
-    
+
     itemsList.innerHTML = items.map(item => `
         <div class="sidebar-item-option ${item.visible ? 'disabled' : ''}" 
              data-item-id="${item.id}" 
@@ -1073,7 +1073,7 @@ function openAddSidebarModal(section) {
             <span class="item-status">${item.visible ? 'Already added' : 'Click to add'}</span>
         </div>
     `).join('');
-    
+
     modal.classList.remove('hidden');
 }
 
@@ -1084,7 +1084,7 @@ function closeAddSidebarModal() {
 
 function addSidebarItem(section, itemId) {
     const config = getSidebarConfig();
-    
+
     if (section === 'smart-lists') {
         const item = config.smartLists.find(i => i.id === itemId);
         if (item) item.visible = true;
@@ -1092,7 +1092,7 @@ function addSidebarItem(section, itemId) {
         const item = config.tools.find(i => i.id === itemId);
         if (item) item.visible = true;
     }
-    
+
     saveSidebarConfig(config);
     closeAddSidebarModal();
     renderSmartLists();
@@ -1105,24 +1105,24 @@ function openRenameModal(itemType, itemId) {
     const input = document.getElementById('rename-input');
     const itemIdField = document.getElementById('rename-item-id');
     const itemTypeField = document.getElementById('rename-item-type');
-    
+
     if (!modal || !input || !itemIdField || !itemTypeField) return;
-    
+
     const config = getSidebarConfig();
     let item;
-    
+
     if (itemType === 'smart-list') {
         item = config.smartLists.find(i => i.id === itemId);
     } else if (itemType === 'tool') {
         item = config.tools.find(i => i.id === itemId);
     }
-    
+
     if (!item) return;
-    
+
     input.value = item.customLabel || item.label;
     itemIdField.value = itemId;
     itemTypeField.value = itemType;
-    
+
     modal.classList.remove('hidden');
     input.focus();
     input.select();
@@ -1135,22 +1135,22 @@ function closeRenameModal() {
 
 function handleRenameSubmit(e) {
     e.preventDefault();
-    
+
     const input = document.getElementById('rename-input');
     const itemId = document.getElementById('rename-item-id').value;
     const itemType = document.getElementById('rename-item-type').value;
-    
+
     if (!input.value.trim()) return;
-    
+
     const config = getSidebarConfig();
     let item;
-    
+
     if (itemType === 'smart-list') {
         item = config.smartLists.find(i => i.id === itemId);
     } else if (itemType === 'tool') {
         item = config.tools.find(i => i.id === itemId);
     }
-    
+
     if (item) {
         item.customLabel = input.value.trim();
         saveSidebarConfig(config);
@@ -1158,7 +1158,7 @@ function handleRenameSubmit(e) {
         renderTools();
         showToast('Renamed successfully!', 'success');
     }
-    
+
     closeRenameModal();
 }
 
@@ -1184,12 +1184,12 @@ function renderLists() {
                 <button class="item-action-btn delete" title="Delete" onclick="event.stopPropagation(); deleteList('${list._id || list.id}')">×</button>
             </div>
         `;
-        
+
         li.oncontextmenu = (e) => showContextMenu(e, 'custom-list', list._id || list.id);
 
         elements.customLists.appendChild(li);
     });
-    
+
     // Initialize list drag and drop
     setTimeout(() => initListDragAndDrop(), 100);
 }
@@ -1208,25 +1208,25 @@ async function deleteList(listId) {
     if (!confirm('Are you sure you want to delete this list? Tasks in this list will be moved to Inbox.')) {
         return;
     }
-    
+
     try {
         await api.deleteList(listId);
-        
+
         // Move tasks to inbox (no list)
         state.tasks.forEach(task => {
             if (task.list_id === listId) {
                 task.list_id = null;
             }
         });
-        
+
         // Remove from state
         state.lists = state.lists.filter(l => (l._id || l.id) !== listId);
-        
+
         // If current list is deleted, switch to inbox
         if (state.currentList === listId) {
             selectSmartList('inbox');
         }
-        
+
         renderLists();
         renderTasks();
         updateCounts();
@@ -1239,7 +1239,7 @@ async function deleteList(listId) {
 
 async function handleListSubmit(e) {
     e.preventDefault();
-    
+
     const listData = {
         name: document.getElementById('list-name').value,
         color: document.getElementById('list-color').value
@@ -1282,7 +1282,7 @@ function createHabitCard(habit) {
     div.className = 'habit-card';
 
     const today = new Date();
-    const completedToday = (habit.completed_dates || []).some(d => 
+    const completedToday = (habit.completed_dates || []).some(d =>
         isSameDay(new Date(d), today)
     );
 
@@ -1427,12 +1427,12 @@ function renderCalendar() {
     if (elements.calendarDayView) elements.calendarDayView.classList.add('hidden');
     if (elements.calendarWeekView) elements.calendarWeekView.classList.add('hidden');
     if (elements.calendarAgendaView) elements.calendarAgendaView.classList.add('hidden');
-    
+
     // Update active view mode button
     document.querySelectorAll('.view-mode-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === state.calendarViewMode);
     });
-    
+
     switch (state.calendarViewMode) {
         case 'day':
             renderDayView();
@@ -1452,7 +1452,7 @@ function renderCalendar() {
 
 function renderMonthView() {
     elements.calendarGrid.classList.remove('hidden');
-    
+
     const year = state.calendarDate.getFullYear();
     const month = state.calendarDate.getMonth();
 
@@ -1493,13 +1493,13 @@ function renderMonthView() {
             <div class="calendar-day${isToday ? ' today' : ''}" data-date="${dateStr}">
                 <span class="day-number">${day}</span>
                 ${dayTasks.slice(0, 3).map(t => {
-                    const taskStatus = t.status || 'scheduled';
-                    const statusIcon = taskStatus === 'completed' ? '✓' : taskStatus === 'in_progress' ? '▶' : '';
-                    return `<div class="calendar-task status-${taskStatus}" data-task-id="${t._id || t.id}" draggable="true" onclick="toggleCalendarTask('${t._id || t.id}', event)">
+            const taskStatus = t.status || 'scheduled';
+            const statusIcon = taskStatus === 'completed' ? '✓' : taskStatus === 'in_progress' ? '▶' : '';
+            return `<div class="calendar-task status-${taskStatus}" data-task-id="${t._id || t.id}" draggable="true" onclick="toggleCalendarTask('${t._id || t.id}', event)">
                         ${statusIcon ? `<span class="cal-task-status">${statusIcon}</span>` : ''}
                         <span class="cal-task-title">${escapeHTML(t.title)}</span>
                     </div>`;
-                }).join('')}
+        }).join('')}
                 ${dayTasks.length > 3 ? `<div class="calendar-more">+${dayTasks.length - 3} more</div>` : ''}
             </div>
         `;
@@ -1520,17 +1520,17 @@ function renderMonthView() {
 function renderDayView() {
     if (!elements.calendarDayView) return;
     elements.calendarDayView.classList.remove('hidden');
-    
+
     const date = state.calendarDate;
     const dayTasks = getTasksForDate(date);
-    
+
     elements.calendarMonth.textContent = date.toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
         year: 'numeric'
     });
-    
+
     const hours = [];
     for (let h = 0; h < 24; h++) {
         const hourLabel = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
@@ -1539,7 +1539,7 @@ function renderDayView() {
             const [taskHour] = t.due_time.split(':').map(Number);
             return taskHour === h;
         });
-        
+
         hours.push(`
             <div class="day-hour-slot" data-hour="${h}">
                 <div class="hour-label">${hourLabel}</div>
@@ -1553,9 +1553,9 @@ function renderDayView() {
             </div>
         `);
     }
-    
+
     const isToday = isSameDay(date, new Date());
-    
+
     elements.calendarDayView.innerHTML = `
         <div class="day-view-header">
             <div class="day-view-date${isToday ? ' today' : ''}">${date.getDate()}</div>
@@ -1568,19 +1568,19 @@ function renderDayView() {
 function renderWeekView() {
     if (!elements.calendarWeekView) return;
     elements.calendarWeekView.classList.remove('hidden');
-    
+
     // Get start of week (Sunday)
     const startOfWeek = new Date(state.calendarDate);
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    
+
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(endOfWeek.getDate() + 6);
-    
+
     elements.calendarMonth.textContent = `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Header
     let headerHtml = '<div class="week-day-header"></div>'; // Empty corner
     for (let d = 0; d < 7; d++) {
@@ -1594,7 +1594,7 @@ function renderWeekView() {
             </div>
         `;
     }
-    
+
     // Time column and day columns
     let bodyHtml = '<div class="week-time-col">';
     for (let h = 0; h < 24; h++) {
@@ -1602,14 +1602,14 @@ function renderWeekView() {
         bodyHtml += `<div class="week-time-slot">${hourLabel}</div>`;
     }
     bodyHtml += '</div>';
-    
+
     // Day columns with tasks
     for (let d = 0; d < 7; d++) {
         const date = new Date(startOfWeek);
         date.setDate(date.getDate() + d);
         const dayTasks = getTasksForDate(date);
         const dateStr = formatDateLocal(date);
-        
+
         bodyHtml += `<div class="week-day-col" data-date="${dateStr}">`;
         for (let h = 0; h < 24; h++) {
             const hourTasks = dayTasks.filter(t => {
@@ -1617,7 +1617,7 @@ function renderWeekView() {
                 const [taskHour] = t.due_time.split(':').map(Number);
                 return taskHour === h;
             });
-            
+
             bodyHtml += `<div class="week-hour-slot" data-hour="${h}">`;
             hourTasks.forEach(t => {
                 bodyHtml += `<div class="week-task status-${t.status || 'scheduled'}" data-task-id="${t._id || t.id}" onclick="openTaskModal('${t._id || t.id}')">${escapeHTML(t.title)}</div>`;
@@ -1626,7 +1626,7 @@ function renderWeekView() {
         }
         bodyHtml += '</div>';
     }
-    
+
     elements.calendarWeekView.innerHTML = `
         <div class="week-view-header">${headerHtml}</div>
         <div class="week-view-body">${bodyHtml}</div>
@@ -1636,13 +1636,13 @@ function renderWeekView() {
 function renderAgendaView() {
     if (!elements.calendarAgendaView) return;
     elements.calendarAgendaView.classList.remove('hidden');
-    
+
     elements.calendarMonth.textContent = 'Upcoming Tasks';
-    
+
     // Get tasks for next 30 days
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const upcomingTasks = state.tasks
         .filter(t => {
             if (!t.due_date) return false;
@@ -1651,12 +1651,12 @@ function renderAgendaView() {
             return taskDate >= today;
         })
         .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-    
+
     if (upcomingTasks.length === 0) {
         elements.calendarAgendaView.innerHTML = '<div class="agenda-empty">No upcoming tasks</div>';
         return;
     }
-    
+
     // Group by date
     const grouped = {};
     upcomingTasks.forEach(task => {
@@ -1664,17 +1664,17 @@ function renderAgendaView() {
         if (!grouped[dateKey]) grouped[dateKey] = [];
         grouped[dateKey].push(task);
     });
-    
+
     let html = '';
     Object.keys(grouped).slice(0, 14).forEach(dateKey => {
         const date = new Date(dateKey);
         const isToday = isSameDay(date, today);
         const isTomorrow = isSameDay(date, new Date(today.getTime() + 86400000));
-        
+
         let dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         if (isToday) dateLabel = 'Today';
         else if (isTomorrow) dateLabel = 'Tomorrow';
-        
+
         html += `
             <div class="agenda-day-group">
                 <div class="agenda-day-header">
@@ -1693,7 +1693,7 @@ function renderAgendaView() {
             </div>
         `;
     });
-    
+
     elements.calendarAgendaView.innerHTML = html;
 }
 
@@ -1715,8 +1715,8 @@ function getTasksForDate(date) {
 
 function isSameDay(d1, d2) {
     return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
 }
 
 function setCalendarViewMode(mode) {
@@ -1756,7 +1756,7 @@ function changeMonth(delta) {
 // Settings
 async function handleProfileSubmit(e) {
     e.preventDefault();
-    
+
     try {
         const updated = await api.updateProfile({
             name: document.getElementById('settings-name').value
@@ -1772,9 +1772,9 @@ async function handleProfileSubmit(e) {
 async function loadLLMConfig() {
     try {
         const config = await api.getLLMConfig();
-        document.getElementById('ai-status').textContent = 
+        document.getElementById('ai-status').textContent =
             config.configured ? '✓ AI configured' : 'Not configured';
-        document.getElementById('ai-status').className = 
+        document.getElementById('ai-status').className =
             'status-text' + (config.configured ? ' success' : '');
     } catch (error) {
         // Ignore
@@ -1814,21 +1814,21 @@ async function loadGoogleCalendarStatus() {
     try {
         const config = await api.getCalendarConfig();
         const status = await api.getCalendarStatus();
-        
+
         // Show/hide status sections
         const notConfigured = document.getElementById('gcal-not-configured');
         const disconnected = document.getElementById('gcal-disconnected');
         const connected = document.getElementById('gcal-connected');
-        
+
         if (!config.configured) {
             notConfigured?.classList.remove('hidden');
             disconnected?.classList.add('hidden');
             connected?.classList.add('hidden');
             return;
         }
-        
+
         notConfigured?.classList.add('hidden');
-        
+
         if (status.connected) {
             disconnected?.classList.add('hidden');
             connected?.classList.remove('hidden');
@@ -1846,7 +1846,7 @@ async function loadGoogleCalendarStatus() {
 async function connectGoogleCalendar() {
     try {
         const response = await api.startGoogleAuth();
-        
+
         if (response.authorization_url) {
             // Redirect directly to Google OAuth (like Todoist does)
             window.location.href = response.authorization_url;
@@ -1861,7 +1861,7 @@ async function disconnectGoogleCalendar() {
     if (!confirm('Are you sure you want to disconnect Google Calendar?')) {
         return;
     }
-    
+
     try {
         await api.disconnectGoogle();
         loadGoogleCalendarStatus();
@@ -1878,7 +1878,7 @@ async function syncGoogleCalendar() {
     try {
         showToast('Syncing calendar...', 'info');
         const response = await api.syncCalendar();
-        
+
         if (response.count > 0) {
             await loadData();
             showToast(`Synced ${response.count} new events`, 'success');
@@ -1896,7 +1896,7 @@ function checkGoogleAuthCallback() {
     const urlParams = new URLSearchParams(window.location.search);
     const authStatus = urlParams.get('google_auth');
     const imported = urlParams.get('imported');
-    
+
     if (authStatus === 'success') {
         const importedCount = parseInt(imported) || 0;
         if (importedCount > 0) {
@@ -1952,7 +1952,7 @@ async function handleSmartInput(e) {
     const input = document.getElementById('smart-input');
     const chat = document.getElementById('smart-chat');
     const message = input.value.trim();
-    
+
     if (!message) return;
 
     // Add user message to chat
@@ -1964,7 +1964,7 @@ async function handleSmartInput(e) {
     `;
     input.value = '';
     input.disabled = true;
-    
+
     // Add typing indicator
     const typingId = 'typing-' + Date.now();
     chat.innerHTML += `
@@ -1982,13 +1982,13 @@ async function handleSmartInput(e) {
     try {
         // Add to conversation history
         conversationHistory.push({ role: 'user', content: message });
-        
+
         // Call chat API
         const result = await api.chatLLM(message, conversationHistory);
-        
+
         // Remove typing indicator
         document.getElementById(typingId)?.remove();
-        
+
         // Add assistant response
         chat.innerHTML += `
             <div class="chat-message assistant">
@@ -1996,10 +1996,10 @@ async function handleSmartInput(e) {
                 <div class="chat-bubble">${formatAIResponse(result.message)}</div>
             </div>
         `;
-        
+
         // Add to conversation history
         conversationHistory.push({ role: 'assistant', content: result.message });
-        
+
         // If a task was parsed, create it
         if (result.task) {
             try {
@@ -2007,7 +2007,7 @@ async function handleSmartInput(e) {
                 state.tasks.push(created);
                 renderTasks();
                 updateCounts();
-                
+
                 chat.innerHTML += `
                     <div class="chat-message assistant">
                         <div class="chat-avatar">✅</div>
@@ -2027,11 +2027,11 @@ async function handleSmartInput(e) {
     } catch (error) {
         // Remove typing indicator
         document.getElementById(typingId)?.remove();
-        
-        const errorMessage = error.message.includes('not configured') 
+
+        const errorMessage = error.message.includes('not configured')
             ? 'AI is not configured. Please go to Settings and add your API key.'
             : 'Sorry, I encountered an error. Please try again.';
-        
+
         chat.innerHTML += `
             <div class="chat-message assistant">
                 <div class="chat-avatar">🤖</div>
@@ -2039,7 +2039,7 @@ async function handleSmartInput(e) {
             </div>
         `;
     }
-    
+
     input.disabled = false;
     input.focus();
     chat.scrollTop = chat.scrollHeight;
@@ -2056,13 +2056,13 @@ function formatAIResponse(text) {
 function updateProviderHelp() {
     const provider = document.getElementById('llm-provider').value;
     const helpEl = document.getElementById('provider-help');
-    
+
     const helpText = {
         gemini: 'Get free API key at <a href="https://ai.google.dev" target="_blank">ai.google.dev</a>',
         groq: 'Get free API key at <a href="https://console.groq.com" target="_blank">console.groq.com</a>',
         openai: 'Get API key at <a href="https://platform.openai.com" target="_blank">platform.openai.com</a> (paid)'
     };
-    
+
     helpEl.innerHTML = helpText[provider] || '';
 }
 
@@ -2097,8 +2097,8 @@ function handleSearch() {
 
 function isSameDay(d1, d2) {
     return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
 }
 
 function escapeHTML(str) {
@@ -2124,15 +2124,15 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     const icons = { success: '✓', error: '✗', warning: '⚠' };
     toast.innerHTML = `
         <span class="toast-icon">${icons[type] || icons.success}</span>
         <span class="toast-message">${escapeHTML(message)}</span>
     `;
-    
+
     container.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(100%)';
@@ -2147,15 +2147,15 @@ function showToast(message, type = 'success') {
 function addSubtask() {
     const input = document.getElementById('new-subtask');
     const title = input.value.trim();
-    
+
     if (!title) return;
-    
+
     currentSubtasks.push({
         id: Date.now().toString(),
         title: title,
         completed: false
     });
-    
+
     input.value = '';
     renderSubtasks();
 }
@@ -2163,16 +2163,16 @@ function addSubtask() {
 function renderSubtasks() {
     const list = document.getElementById('subtasks-list');
     const progress = document.getElementById('subtask-progress');
-    
+
     if (currentSubtasks.length === 0) {
         list.innerHTML = '';
         progress.textContent = '';
         return;
     }
-    
+
     const completed = currentSubtasks.filter(s => s.completed).length;
     progress.textContent = `${completed}/${currentSubtasks.length}`;
-    
+
     list.innerHTML = currentSubtasks.map((subtask, index) => `
         <div class="subtask-item ${subtask.completed ? 'completed' : ''}" data-index="${index}">
             <div class="subtask-checkbox" onclick="toggleSubtask(${index})"></div>
@@ -2199,14 +2199,14 @@ function deleteSubtask(index) {
 async function handleAttachmentUpload(e) {
     const files = e.target.files;
     if (!files.length) return;
-    
+
     for (const file of files) {
         // Check file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             showToast(`${file.name} is too large (max 5MB)`, 'error');
             continue;
         }
-        
+
         // Create a preview object
         const attachment = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -2216,15 +2216,15 @@ async function handleAttachmentUpload(e) {
             file: file,
             preview: null
         };
-        
+
         // Generate preview for images
         if (file.type.startsWith('image/')) {
             attachment.preview = await readFileAsDataURL(file);
         }
-        
+
         currentAttachments.push(attachment);
     }
-    
+
     renderAttachments();
     e.target.value = ''; // Reset file input
 }
@@ -2240,16 +2240,16 @@ function readFileAsDataURL(file) {
 
 function renderAttachments() {
     const list = document.getElementById('attachments-list');
-    
+
     if (currentAttachments.length === 0) {
         list.innerHTML = '';
         return;
     }
-    
+
     list.innerHTML = currentAttachments.map((att, index) => `
         <div class="attachment-item" data-index="${index}">
-            ${att.preview ? `<img src="${att.preview}" alt="${escapeHTML(att.name)}">` : 
-              `<span class="attachment-icon">📄</span>`}
+            ${att.preview ? `<img src="${att.preview}" alt="${escapeHTML(att.name)}">` :
+            `<span class="attachment-icon">📄</span>`}
             <span class="attachment-name" title="${escapeHTML(att.name)}">${escapeHTML(att.name)}</span>
             <button type="button" class="attachment-delete" onclick="deleteAttachment(${index})">×</button>
         </div>
@@ -2268,7 +2268,7 @@ function deleteAttachment(index) {
 function initDragAndDrop() {
     const tasksList = document.getElementById('tasks-list');
     if (!tasksList) return;
-    
+
     tasksList.addEventListener('dragstart', handleDragStart);
     tasksList.addEventListener('dragend', handleDragEnd);
     tasksList.addEventListener('dragover', handleDragOver);
@@ -2277,20 +2277,20 @@ function initDragAndDrop() {
 
 function handleDragStart(e) {
     if (!e.target.classList.contains('task-item')) return;
-    
+
     e.target.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', e.target.dataset.id);
-    
+
     document.getElementById('tasks-list').classList.add('drag-active');
 }
 
 function handleDragEnd(e) {
     if (!e.target.classList.contains('task-item')) return;
-    
+
     e.target.classList.remove('dragging');
     document.getElementById('tasks-list').classList.remove('drag-active');
-    
+
     document.querySelectorAll('.task-item.drag-over').forEach(item => {
         item.classList.remove('drag-over');
     });
@@ -2299,18 +2299,18 @@ function handleDragEnd(e) {
 function handleDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    
+
     const dragging = document.querySelector('.task-item.dragging');
     if (!dragging) return;
-    
+
     const afterElement = getDragAfterElement(e.clientY);
     const tasksList = document.getElementById('tasks-list');
-    
+
     // Remove previous drag-over indicators
     document.querySelectorAll('.task-item.drag-over').forEach(item => {
         item.classList.remove('drag-over');
     });
-    
+
     if (afterElement) {
         afterElement.classList.add('drag-over');
     }
@@ -2318,11 +2318,11 @@ function handleDragOver(e) {
 
 function getDragAfterElement(y) {
     const draggableElements = [...document.querySelectorAll('.task-item:not(.dragging)')];
-    
+
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
-        
+
         if (offset < 0 && offset > closest.offset) {
             return { offset: offset, element: child };
         } else {
@@ -2333,23 +2333,23 @@ function getDragAfterElement(y) {
 
 async function handleDrop(e) {
     e.preventDefault();
-    
+
     const taskId = e.dataTransfer.getData('text/plain');
     const dragging = document.querySelector('.task-item.dragging');
     if (!dragging) return;
-    
+
     const afterElement = getDragAfterElement(e.clientY);
     const tasksList = document.getElementById('tasks-list');
-    
+
     if (afterElement) {
         tasksList.insertBefore(dragging, afterElement);
     } else {
         tasksList.appendChild(dragging);
     }
-    
+
     // Update order in state
     const newOrder = [...document.querySelectorAll('.task-item')].map(item => item.dataset.id);
-    
+
     // Update positions in state
     newOrder.forEach((id, index) => {
         const task = state.tasks.find(t => t.id === id);
@@ -2357,7 +2357,7 @@ async function handleDrop(e) {
             task.position = index;
         }
     });
-    
+
     // Save order to backend (if endpoint exists)
     try {
         await api.updateTaskOrder(newOrder);
@@ -2382,12 +2382,12 @@ function loadPomodoroSettings() {
     if (saved) {
         Object.assign(pomodoroState.settings, JSON.parse(saved));
     }
-    
+
     document.getElementById('pomo-work-duration').value = pomodoroState.settings.workDuration;
     document.getElementById('pomo-short-break').value = pomodoroState.settings.shortBreak;
     document.getElementById('pomo-long-break').value = pomodoroState.settings.longBreak;
     document.getElementById('pomo-sessions-count').value = pomodoroState.settings.sessionsBeforeLongBreak;
-    
+
     // Listen for settings changes
     ['pomo-work-duration', 'pomo-short-break', 'pomo-long-break', 'pomo-sessions-count'].forEach(id => {
         document.getElementById(id).addEventListener('change', savePomodoroSettings);
@@ -2399,9 +2399,9 @@ function savePomodoroSettings() {
     pomodoroState.settings.shortBreak = parseInt(document.getElementById('pomo-short-break').value) || 5;
     pomodoroState.settings.longBreak = parseInt(document.getElementById('pomo-long-break').value) || 15;
     pomodoroState.settings.sessionsBeforeLongBreak = parseInt(document.getElementById('pomo-sessions-count').value) || 4;
-    
+
     localStorage.setItem('pomodoroSettings', JSON.stringify(pomodoroState.settings));
-    
+
     if (!pomodoroState.isRunning) {
         pomodoroState.timeLeft = pomodoroState.settings.workDuration * 60;
         updateTimerDisplay();
@@ -2411,12 +2411,12 @@ function savePomodoroSettings() {
 function populatePomodoroTasks() {
     const select = document.getElementById('pomo-task-select');
     const incompleteTasks = state.tasks.filter(t => !t.completed);
-    
+
     select.innerHTML = '<option value="">No task selected</option>' +
-        incompleteTasks.map(task => 
+        incompleteTasks.map(task =>
             `<option value="${task.id}">${escapeHTML(task.title)}</option>`
         ).join('');
-    
+
     select.addEventListener('change', (e) => {
         pomodoroState.currentTaskId = e.target.value || null;
     });
@@ -2428,27 +2428,27 @@ function startPomodoro() {
         pomodoroState.isPaused = false;
     } else {
         // Fresh start
-        pomodoroState.timeLeft = pomodoroState.isBreak 
-            ? (pomodoroState.sessionsCompleted % pomodoroState.settings.sessionsBeforeLongBreak === 0 
-                ? pomodoroState.settings.longBreak 
+        pomodoroState.timeLeft = pomodoroState.isBreak
+            ? (pomodoroState.sessionsCompleted % pomodoroState.settings.sessionsBeforeLongBreak === 0
+                ? pomodoroState.settings.longBreak
                 : pomodoroState.settings.shortBreak) * 60
             : pomodoroState.settings.workDuration * 60;
     }
-    
+
     pomodoroState.isRunning = true;
-    
+
     document.getElementById('timer-start').disabled = true;
     document.getElementById('timer-pause').disabled = false;
-    
+
     pomodoroState.interval = setInterval(updatePomodoro, 1000);
 }
 
 function pausePomodoro() {
     pomodoroState.isRunning = false;
     pomodoroState.isPaused = true;
-    
+
     clearInterval(pomodoroState.interval);
-    
+
     document.getElementById('timer-start').disabled = false;
     document.getElementById('timer-start').textContent = '▶ Resume';
     document.getElementById('timer-pause').disabled = true;
@@ -2458,35 +2458,35 @@ function resetPomodoro() {
     pomodoroState.isRunning = false;
     pomodoroState.isPaused = false;
     pomodoroState.isBreak = false;
-    
+
     clearInterval(pomodoroState.interval);
-    
+
     pomodoroState.timeLeft = pomodoroState.settings.workDuration * 60;
-    
+
     document.getElementById('timer-start').disabled = false;
     document.getElementById('timer-start').textContent = '▶ Start';
     document.getElementById('timer-pause').disabled = true;
     document.getElementById('timer-label').textContent = 'Focus Time';
     document.getElementById('timer-label').classList.remove('break');
-    
+
     updateTimerDisplay();
 }
 
 function updatePomodoro() {
     pomodoroState.timeLeft--;
-    
+
     if (pomodoroState.timeLeft <= 0) {
         clearInterval(pomodoroState.interval);
         pomodoroState.isRunning = false;
-        
+
         if (!pomodoroState.isBreak) {
             // Work session completed
             pomodoroState.sessionsCompleted++;
             pomodoroState.totalFocusTime += pomodoroState.settings.workDuration;
-            
+
             // Save session
             savePomodoroSession();
-            
+
             // Notify user
             playNotificationSound();
             if (Notification.permission === 'granted') {
@@ -2495,14 +2495,14 @@ function updatePomodoro() {
                     icon: '/favicon.ico'
                 });
             }
-            
+
             showToast('Focus session complete! Take a break.', 'success');
-            
+
             // Switch to break
             pomodoroState.isBreak = true;
             const isLongBreak = pomodoroState.sessionsCompleted % pomodoroState.settings.sessionsBeforeLongBreak === 0;
             pomodoroState.timeLeft = (isLongBreak ? pomodoroState.settings.longBreak : pomodoroState.settings.shortBreak) * 60;
-            
+
             document.getElementById('timer-label').textContent = isLongBreak ? 'Long Break' : 'Short Break';
             document.getElementById('timer-label').classList.add('break');
         } else {
@@ -2514,22 +2514,22 @@ function updatePomodoro() {
                     icon: '/favicon.ico'
                 });
             }
-            
+
             showToast('Break over! Ready to focus?', 'success');
-            
+
             // Switch back to work
             pomodoroState.isBreak = false;
             pomodoroState.timeLeft = pomodoroState.settings.workDuration * 60;
-            
+
             document.getElementById('timer-label').textContent = 'Focus Time';
             document.getElementById('timer-label').classList.remove('break');
         }
-        
+
         document.getElementById('timer-start').disabled = false;
         document.getElementById('timer-start').textContent = '▶ Start';
         document.getElementById('timer-pause').disabled = true;
     }
-    
+
     updateTimerDisplay();
     updatePomodoroStats();
 }
@@ -2537,7 +2537,7 @@ function updatePomodoro() {
 function updateTimerDisplay() {
     const minutes = Math.floor(pomodoroState.timeLeft / 60);
     const seconds = pomodoroState.timeLeft % 60;
-    document.getElementById('timer-display').textContent = 
+    document.getElementById('timer-display').textContent =
         `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -2556,7 +2556,7 @@ async function savePomodoroSession() {
     } catch (error) {
         console.log('Pomodoro session saved locally only');
     }
-    
+
     // Save to localStorage as backup
     const today = new Date().toISOString().split('T')[0];
     const sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '{}');
@@ -2573,10 +2573,10 @@ function loadTodayPomodoroStats() {
     const today = new Date().toISOString().split('T')[0];
     const sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '{}');
     const todaySessions = sessions[today] || [];
-    
+
     pomodoroState.sessionsCompleted = todaySessions.length;
     pomodoroState.totalFocusTime = todaySessions.reduce((sum, s) => sum + s.duration, 0);
-    
+
     updatePomodoroStats();
 }
 
@@ -2584,8 +2584,8 @@ function playNotificationSound() {
     try {
         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1idHx8fHx8fHx8fHx8fHx8fHx8fHx8fH19fX19fX19fX19fX19fX19fX19fX19fX19');
         audio.volume = 0.5;
-        audio.play().catch(() => {});
-    } catch (e) {}
+        audio.play().catch(() => { });
+    } catch (e) { }
 }
 
 // ============================================
@@ -2606,10 +2606,10 @@ async function loadStats() {
 function calculateLocalStats() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const weekStart = new Date(today);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    
+
     // Completed today
     const completedToday = state.tasks.filter(t => {
         if (!t.completed || !t.completed_at) return false;
@@ -2617,21 +2617,21 @@ function calculateLocalStats() {
         completedDate.setHours(0, 0, 0, 0);
         return completedDate.getTime() === today.getTime();
     }).length;
-    
+
     // Completed this week
     const completedWeek = state.tasks.filter(t => {
         if (!t.completed || !t.completed_at) return false;
         const completedDate = new Date(t.completed_at);
         return completedDate >= weekStart;
     }).length;
-    
+
     // Calculate streak (days in a row with completed tasks)
     const streak = calculateStreak();
-    
+
     // Pomodoro sessions
     const sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '{}');
     const todaySessions = sessions[today.toISOString().split('T')[0]] || [];
-    
+
     renderStats({
         completedToday,
         completedWeek,
@@ -2644,59 +2644,59 @@ function calculateLocalStats() {
 function calculateStreak() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     let streak = 0;
     let checkDate = new Date(today);
-    
+
     while (true) {
         const dayStart = new Date(checkDate);
         const dayEnd = new Date(checkDate);
         dayEnd.setDate(dayEnd.getDate() + 1);
-        
+
         const completedOnDay = state.tasks.some(t => {
             if (!t.completed || !t.completed_at) return false;
             const completedDate = new Date(t.completed_at);
             return completedDate >= dayStart && completedDate < dayEnd;
         });
-        
+
         if (completedOnDay) {
             streak++;
             checkDate.setDate(checkDate.getDate() - 1);
         } else {
             break;
         }
-        
+
         // Safety limit
         if (streak > 365) break;
     }
-    
+
     return streak;
 }
 
 function calculateWeeklyData() {
     const data = [];
     const today = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         date.setHours(0, 0, 0, 0);
-        
+
         const nextDay = new Date(date);
         nextDay.setDate(nextDay.getDate() + 1);
-        
+
         const count = state.tasks.filter(t => {
             if (!t.completed || !t.completed_at) return false;
             const completedDate = new Date(t.completed_at);
             return completedDate >= date && completedDate < nextDay;
         }).length;
-        
+
         data.push({
             day: date.toLocaleDateString('en', { weekday: 'short' }),
             count
         });
     }
-    
+
     return data;
 }
 
@@ -2705,11 +2705,11 @@ function renderStats(stats) {
     document.getElementById('stat-completed-week').textContent = stats.completedWeek || 0;
     document.getElementById('stat-streak').textContent = stats.streak || 0;
     document.getElementById('stat-pomodoros').textContent = stats.pomodoros || 0;
-    
+
     // Render weekly chart
     const weeklyData = stats.weeklyData || calculateWeeklyData();
     renderWeeklyChart(weeklyData);
-    
+
     // Update productivity score
     const maxPossible = 10; // Target tasks per day
     const productivity = Math.min(100, Math.round((stats.completedToday / maxPossible) * 100));
@@ -2719,17 +2719,17 @@ function renderStats(stats) {
 function renderWeeklyChart(data) {
     const barsContainer = document.querySelector('.chart-bars');
     const labelsContainer = document.querySelector('.chart-labels');
-    
+
     if (!barsContainer || !labelsContainer) return;
-    
+
     const maxValue = Math.max(...data.map(d => d.count), 1);
-    
+
     barsContainer.innerHTML = data.map(d => {
         const height = Math.max(4, (d.count / maxValue) * 150);
         return `<div class="chart-bar" style="height: ${height}px" data-value="${d.count}"></div>`;
     }).join('');
-    
-    labelsContainer.innerHTML = data.map(d => 
+
+    labelsContainer.innerHTML = data.map(d =>
         `<span class="chart-label">${d.day}</span>`
     ).join('');
 }
@@ -2737,12 +2737,12 @@ function renderWeeklyChart(data) {
 function updateProductivityRing(percentage) {
     const ring = document.getElementById('productivity-ring');
     const scoreEl = document.getElementById('productivity-score');
-    
+
     if (!ring || !scoreEl) return;
-    
+
     const circumference = 2 * Math.PI * 45; // r = 45
     const offset = circumference - (percentage / 100) * circumference;
-    
+
     ring.style.strokeDashoffset = offset;
     scoreEl.textContent = `${percentage}%`;
 }
@@ -2765,14 +2765,14 @@ function addDraggableToTasks() {
 function initCalendarDragAndDrop() {
     const calendarDays = document.querySelectorAll('.calendar-day');
     const calendarTasks = document.querySelectorAll('.calendar-task');
-    
+
     // Make calendar tasks draggable
     calendarTasks.forEach(task => {
         task.draggable = true;
         task.addEventListener('dragstart', handleCalendarTaskDragStart);
         task.addEventListener('dragend', handleCalendarTaskDragEnd);
     });
-    
+
     // Make calendar days droppable
     calendarDays.forEach(day => {
         day.addEventListener('dragover', handleCalendarDayDragOver);
@@ -2785,10 +2785,10 @@ function initCalendarDragAndDrop() {
 async function toggleCalendarTask(id, e) {
     e.stopPropagation();
     e.preventDefault();
-    
+
     // Don't complete on drag
     if (e.target.classList.contains('dragging')) return;
-    
+
     await completeTask(id, e);
 }
 
@@ -2821,27 +2821,27 @@ function handleCalendarDayDragLeave(e) {
 async function handleCalendarDayDrop(e) {
     e.preventDefault();
     e.currentTarget.classList.remove('drag-over');
-    
+
     const taskId = e.dataTransfer.getData('text/plain');
     const newDateStr = e.currentTarget.dataset.date; // Format: YYYY-MM-DD
-    
+
     if (!taskId || !newDateStr) return;
-    
+
     try {
         const task = state.tasks.find(t => (t._id || t.id) === taskId);
         if (!task) return;
-        
+
         // Parse date correctly to avoid timezone issues
         // newDateStr is "YYYY-MM-DD", parse it as local date
         const [year, month, day] = newDateStr.split('-').map(Number);
         const localDate = new Date(year, month - 1, day, 12, 0, 0); // Set to noon to avoid timezone issues
-        
+
         // Update task due date
         await api.updateTask(taskId, { due_date: localDate.toISOString() });
-        
+
         // Update local state
         task.due_date = localDate.toISOString();
-        
+
         // Re-render calendar
         renderCalendar();
         showToast('Task moved successfully', 'success');
@@ -2857,7 +2857,7 @@ async function handleCalendarDayDrop(e) {
 
 function initListDragAndDrop() {
     const listItems = document.querySelectorAll('.nav-item[data-list-id]');
-    
+
     listItems.forEach(item => {
         item.draggable = true;
         item.addEventListener('dragstart', handleListDragStart);
@@ -2884,32 +2884,32 @@ function handleListDragEnd(e) {
 function handleListDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    
+
     const dragging = document.querySelector('.nav-item.dragging');
     if (!dragging || e.currentTarget === dragging) return;
-    
+
     e.currentTarget.classList.add('drag-over');
 }
 
 async function handleListDrop(e) {
     e.preventDefault();
     e.currentTarget.classList.remove('drag-over');
-    
+
     const draggedId = e.dataTransfer.getData('text/plain');
     const targetId = e.currentTarget.dataset.listId;
-    
+
     if (!draggedId || !targetId || draggedId === targetId) return;
-    
+
     // Reorder lists in state
     const draggedIndex = state.lists.findIndex(l => (l._id || l.id) === draggedId);
     const targetIndex = state.lists.findIndex(l => (l._id || l.id) === targetId);
-    
+
     if (draggedIndex === -1 || targetIndex === -1) return;
-    
+
     // Move dragged item to target position
     const [draggedList] = state.lists.splice(draggedIndex, 1);
     state.lists.splice(targetIndex, 0, draggedList);
-    
+
     // Re-render lists
     renderLists();
     showToast('List reordered', 'success');
@@ -2924,17 +2924,17 @@ async function enableNotifications() {
         showToast('Notifications not supported in this browser', 'error');
         return;
     }
-    
+
     const permission = await Notification.requestPermission();
-    
+
     if (permission === 'granted') {
         showToast('Notifications enabled!', 'success');
-        
+
         // Try to subscribe to push notifications
         if (window.notificationManager) {
             await window.notificationManager.subscribe();
         }
-        
+
         // Show a test notification
         if (window.notificationManager) {
             window.notificationManager.showLocalNotification('NovaDo', {
@@ -2945,26 +2945,26 @@ async function enableNotifications() {
     } else if (permission === 'denied') {
         showToast('Notification permission denied', 'error');
     }
-    
+
     updateNotificationPermissionUI();
 }
 
 function updateNotificationPermissionUI() {
     const stateEl = document.getElementById('notification-permission-state');
     const btn = document.getElementById('enable-notifications-btn');
-    
+
     if (!stateEl || !btn) return;
-    
+
     if (!('Notification' in window)) {
         stateEl.textContent = 'Not Supported';
         btn.disabled = true;
         btn.textContent = 'Not Available';
         return;
     }
-    
+
     const permission = Notification.permission;
     stateEl.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
-    
+
     switch (permission) {
         case 'granted':
             stateEl.style.color = 'var(--success)';
@@ -2986,15 +2986,15 @@ function updateNotificationPermissionUI() {
 // Schedule reminders for tasks with due dates
 function scheduleTaskReminders() {
     if (!window.notificationManager || Notification.permission !== 'granted') return;
-    
+
     const now = new Date();
-    
+
     state.tasks.forEach(task => {
         if (task.completed || !task.due_date) return;
-        
+
         const dueDate = new Date(task.due_date);
         const timeDiff = dueDate.getTime() - now.getTime();
-        
+
         // Only schedule for tasks due in the next 24 hours
         if (timeDiff > 0 && timeDiff < 24 * 60 * 60 * 1000) {
             window.notificationManager.scheduleReminder(
@@ -3006,11 +3006,121 @@ function scheduleTaskReminders() {
     });
 }
 
+// ============================================
+// GOOGLE CALENDAR INTEGRATION
+// ============================================
+
+// Load Google Calendar connection status
+async function loadGoogleCalendarStatus() {
+    try {
+        const config = await api.getCalendarConfig();
+        const status = await api.getCalendarStatus();
+
+        const notConfigured = document.getElementById('gcal-not-configured');
+        const disconnected = document.getElementById('gcal-disconnected');
+        const connected = document.getElementById('gcal-connected');
+
+        if (!config.configured) {
+            notConfigured?.classList.remove('hidden');
+            disconnected?.classList.add('hidden');
+            connected?.classList.add('hidden');
+            return;
+        }
+
+        notConfigured?.classList.add('hidden');
+
+        if (status.connected) {
+            disconnected?.classList.add('hidden');
+            connected?.classList.remove('hidden');
+            const emailEl = document.getElementById('gcal-email');
+            if (emailEl) emailEl.textContent = status.email || 'Connected';
+        } else {
+            disconnected?.classList.remove('hidden');
+            connected?.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Failed to load Google Calendar status:', error);
+    }
+}
+
+// Connect Google Calendar - redirect to OAuth
+async function connectGoogleCalendar() {
+    try {
+        const response = await api.startGoogleAuth();
+
+        if (response.authorization_url) {
+            // Redirect directly to Google OAuth (like Todoist)
+            window.location.href = response.authorization_url;
+        }
+    } catch (error) {
+        console.error('Connect Google Calendar error:', error);
+        showToast(error.message || 'Failed to connect Google Calendar', 'error');
+    }
+}
+
+// Disconnect Google Calendar
+async function disconnectGoogleCalendar() {
+    if (!confirm('Are you sure you want to disconnect Google Calendar? This will not delete any imported tasks.')) {
+        return;
+    }
+
+    try {
+        await api.disconnectGoogle();
+        loadGoogleCalendarStatus();
+        showToast('Google Calendar disconnected', 'success');
+    } catch (error) {
+        console.error('Disconnect error:', error);
+        showToast('Failed to disconnect', 'error');
+    }
+}
+
+// Sync Google Calendar - import new events
+async function syncGoogleCalendar() {
+    try {
+        showToast('Syncing calendar...', 'info');
+        const response = await api.syncCalendar();
+
+        if (response.count > 0) {
+            await loadData(); // Reload tasks
+            showToast(`Synced ${response.count} new events`, 'success');
+        } else {
+            showToast('No new events to sync', 'info');
+        }
+    } catch (error) {
+        console.error('Sync error:', error);
+        showToast(error.message || 'Failed to sync calendar', 'error');
+    }
+}
+
+// Check for OAuth callback parameters on page load
+function checkGoogleAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authStatus = urlParams.get('google_auth');
+    const imported = urlParams.get('imported');
+
+    if (authStatus === 'success') {
+        const importedCount = parseInt(imported) || 0;
+        if (importedCount > 0) {
+            showToast(`Google Calendar connected! Imported ${importedCount} events as tasks.`, 'success');
+            loadData(); // Reload tasks to show imported events
+        } else {
+            showToast('Google Calendar connected successfully!', 'success');
+        }
+        loadGoogleCalendarStatus();
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (authStatus === 'error') {
+        const message = urlParams.get('message') || 'Authentication failed';
+        showToast(`Google Calendar: ${message}`, 'error');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
 // Toggle sidebar for mobile
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     sidebar.classList.toggle('open');
-    
+
     // Close sidebar when clicking outside
     if (sidebar.classList.contains('open')) {
         const closeOnClickOutside = (e) => {
