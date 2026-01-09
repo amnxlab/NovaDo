@@ -982,36 +982,231 @@ textarea {
     margin-top: 0.5rem;
 }
 
-/* Smart Input */
+/* AI Chat Interface */
+.modal-chat {
+    max-width: 540px;
+}
+
 .smart-input-container {
-    padding: 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+    max-height: 70vh;
 }
 
 .smart-chat {
-    min-height: 200px;
-    max-height: 400px;
+    flex: 1;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 1.5rem;
     background: var(--bg-primary);
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .chat-message {
-    margin-bottom: 1rem;
-    padding: 0.75rem 1rem;
-    border-radius: var(--border-radius);
-    max-width: 85%;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    max-width: 90%;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .chat-message.user {
-    background: var(--accent-primary);
-    color: white;
+    flex-direction: row-reverse;
     margin-left: auto;
 }
 
 .chat-message.assistant {
+    margin-right: auto;
+}
+
+.chat-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.chat-message.user .chat-avatar {
+    background: var(--accent-primary);
+}
+
+.chat-bubble {
+    padding: 0.875rem 1rem;
+    border-radius: var(--border-radius-lg);
+    background: var(--bg-tertiary);
+    line-height: 1.5;
+}
+
+.chat-message.user .chat-bubble {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.chat-bubble ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.25rem;
+}
+
+.chat-bubble li {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.chat-message.user .chat-bubble li {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.chat-bubble.success {
+    background: var(--success);
+    color: white;
+}
+
+.chat-bubble.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error);
+    border: 1px solid var(--error);
+}
+
+/* Typing indicator */
+.chat-bubble.typing {
+    display: flex;
+    gap: 4px;
+    padding: 1rem 1.25rem;
+}
+
+.chat-bubble.typing .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.chat-bubble.typing .dot:nth-child(1) { animation-delay: -0.32s; }
+.chat-bubble.typing .dot:nth-child(2) { animation-delay: -0.16s; }
+.chat-bubble.typing .dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* Chat input form */
+.chat-input-form {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+.chat-input-form input {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.chat-input-form input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.btn-send {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+/* Floating AI Button */
+.ai-fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    z-index: 900;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.ai-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+}
+
+.ai-fab-icon {
+    font-size: 1.75rem;
+    z-index: 1;
+}
+
+.ai-fab-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    animation: pulse 2s infinite;
+    z-index: 0;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 0; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+/* Settings help text */
+.settings-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.form-help {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.form-help a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.form-help a:hover {
+    text-decoration: underline;
 }
 
 #smart-form {
@@ -1079,6 +1274,555 @@ textarea {
 
 .toast-message {
     font-size: 0.9375rem;
+}
+
+/* ============================================
+   Subtasks / Checklist
+   ============================================ */
+
+.subtasks-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+.subtasks-section label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.subtask-progress {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+.subtasks-list {
+    margin: 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    transition: background var(--transition-fast);
+}
+
+.subtask-item:hover {
+    background: var(--bg-hover);
+}
+
+.subtask-item.completed .subtask-title {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.subtask-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.subtask-checkbox:hover {
+    border-color: var(--accent-primary);
+}
+
+.subtask-item.completed .subtask-checkbox {
+    background: var(--success);
+    border-color: var(--success);
+}
+
+.subtask-item.completed .subtask-checkbox::after {
+    content: '✓';
+    color: white;
+    font-size: 12px;
+}
+
+.subtask-title {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.subtask-delete {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: opacity var(--transition-fast);
+}
+
+.subtask-item:hover .subtask-delete {
+    opacity: 1;
+}
+
+.subtask-delete:hover {
+    color: var(--error);
+}
+
+.subtask-add {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.subtask-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.subtask-input:focus {
+    outline: none;
+    border-style: solid;
+    border-color: var(--accent-primary);
+}
+
+.btn-small {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+/* ============================================
+   Attachments
+   ============================================ */
+
+.attachments-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+.attachments-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    max-width: 200px;
+}
+
+.attachment-item img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.attachment-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-delete {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.attachment-delete:hover {
+    color: var(--error);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-outline:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* ============================================
+   Drag and Drop
+   ============================================ */
+
+.task-item {
+    cursor: grab;
+}
+
+.task-item:active {
+    cursor: grabbing;
+}
+
+.task-item.dragging {
+    opacity: 0.5;
+    transform: scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+.task-item.drag-over {
+    border-top: 2px solid var(--accent-primary);
+}
+
+.tasks-list.drag-active .task-item {
+    transition: transform 0.2s ease;
+}
+
+/* ============================================
+   Pomodoro Timer
+   ============================================ */
+
+.pomodoro-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+}
+
+.pomodoro-timer {
+    margin-bottom: 2rem;
+}
+
+.timer-display {
+    font-size: 5rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.timer-label {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.timer-label.break {
+    color: var(--success);
+}
+
+.pomodoro-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.pomodoro-stats {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+}
+
+.pomo-stat {
+    text-align: center;
+}
+
+.pomo-stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+}
+
+.pomo-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.pomodoro-task {
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.pomodoro-task label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.pomodoro-task select {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+}
+
+.pomodoro-settings {
+    text-align: left;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+}
+
+.pomodoro-settings h3 {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.pomo-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.pomo-setting label {
+    color: var(--text-primary);
+}
+
+.pomo-setting input {
+    width: 60px;
+    padding: 0.5rem;
+    text-align: center;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Statistics Dashboard
+   ============================================ */
+
+.stats-container {
+    padding: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform var(--transition-fast);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.stats-chart-section {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stats-chart-section h3 {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.weekly-chart {
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-bars {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.chart-bar {
+    flex: 1;
+    max-width: 60px;
+    background: var(--accent-gradient);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    min-height: 4px;
+    transition: height 0.3s ease;
+    position: relative;
+}
+
+.chart-bar::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.chart-labels {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 0.5rem;
+}
+
+.chart-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    flex: 1;
+    max-width: 60px;
+}
+
+.stats-productivity {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stats-productivity h3 {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.productivity-ring {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.productivity-ring svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.ring-bg {
+    fill: none;
+    stroke: var(--bg-tertiary);
+    stroke-width: 8;
+}
+
+.ring-progress {
+    fill: none;
+    stroke: url(#gradient);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.ring-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Notification Settings
+   ============================================ */
+
+.notification-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.notification-permission {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
+}
+
+.notification-permission span {
+    color: var(--text-secondary);
+}
+
+.notification-permission strong {
+    color: var(--text-primary);
+}
+
+.notification-option {
+    padding: 0.5rem 0;
+}
+
+.notification-option label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.notification-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
 }
 
 /* ============================================

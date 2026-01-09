@@ -9,7 +9,7 @@ A smart task management application with AI integration and Google Calendar sync
 - **Custom Lists**: Create your own lists with custom colors
 - **Habit Tracking**: Track daily habits with streak counting
 - **Calendar View**: Visualize tasks on a monthly calendar
-- **AI Integration**: Natural language task creation (requires OpenAI API key)
+- **🤖 AI Assistant**: Natural language task creation with FREE options (Google Gemini, Groq)
 - **Dark/Light Theme**: Toggle between themes
 - **Local Database**: Works offline with Mongita (file-based database)
 
@@ -134,16 +134,30 @@ http://localhost:5000
 3. Enter the habit name and frequency
 4. Click the day circles to mark habits as complete
 
-### AI Features (Optional)
+### AI Assistant (Free Options Available!)
 
-To enable AI-powered task creation:
+TaskFlow includes an AI assistant that lets you create tasks using natural language. Click the **🤖 floating button** in the bottom-right corner to start chatting!
 
-1. Go to **Settings**
-2. Under AI Configuration, select a provider (OpenAI)
-3. Enter your API key
-4. Click **Save**
+**Example commands:**
+- "Remind me to call mom tomorrow at 3pm"
+- "Create an urgent task to review the quarterly report"
+- "Add a task to buy groceries with low priority"
 
-Now you can use natural language to create tasks!
+#### Setting Up AI (Choose a Free Provider)
+
+1. Go to **Settings** (gear icon)
+2. Under **AI Assistant**, select a provider:
+
+| Provider | Free Tier | How to Get API Key |
+|----------|-----------|-------------------|
+| **Google Gemini** ⭐ | Yes, generous limits | Visit [ai.google.dev](https://ai.google.dev) → Get API Key |
+| **Groq (Llama)** ⚡ | Yes, fast inference | Visit [console.groq.com](https://console.groq.com) → Create API Key |
+| OpenAI | No (paid only) | Visit [platform.openai.com](https://platform.openai.com) |
+
+3. Paste your API key
+4. Click **Configure AI**
+
+**Recommended:** Start with **Google Gemini** - it's free and works great!
 
 ## Project Structure
 

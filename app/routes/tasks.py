@@ -2,6 +2,7 @@
 Task routes
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, status
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import timedelta
 from datetime import datetime
@@ -9,6 +10,10 @@ from app.models import TaskCreate, TaskUpdate, TaskResponse
 from app.auth import get_current_user
 from app.database import get_database
 from bson import ObjectId
+
+
+class TaskReorderRequest(BaseModel):
+    taskIds: List[str]
 
 router = APIRouter()
 
@@ -143,7 +148,7 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
         "status": "active",
         "tags": task_data.tags,
         "subtasks": [s.dict() for s in task_data.subtasks],
-        "attachments": [],
+        "attachments": [a.dict() for a in task_data.attachments] if task_data.attachments else [],
         "reminders": [],
         "recurrence": task_data.recurrence.dict() if task_data.recurrence else {"enabled": False},
         "googleCalendarEventId": None,
@@ -222,6 +227,8 @@ async def update_task(
         update_data["tags"] = task_data.tags
     if task_data.subtasks is not None:
         update_data["subtasks"] = [s.dict() for s in task_data.subtasks]
+    if task_data.attachments is not None:
+        update_data["attachments"] = [a.dict() for a in task_data.attachments]
     
     update_data["updatedAt"] = datetime.now()
     
@@ -313,3 +320,23 @@ async def get_task_stats(current_user: dict = Depends(get_current_user)):
         }
     }
 
+
+@router.post("/reorder", response_model=dict)
+async def reorder_tasks(
+    request: TaskReorderRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Reorder tasks by their IDs"""
+    db = get_database()
+    
+    # Update order for each task
+    for index, task_id in enumerate(request.taskIds):
+        await db.tasks.update_one(
+            {
+                "_id": ObjectId(task_id),
+                "user": ObjectId(current_user["_id"])
+            },
+            {"$set": {"order": index}}
+        )
+    
+    return {"success": True, "message": "Tasks reordered"}

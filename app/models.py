@@ -51,9 +51,18 @@ class UserResponse(BaseModel):
 
 # Task Models
 class Subtask(BaseModel):
+    id: Optional[str] = None
     title: str
     completed: bool = False
     order: int = 0
+
+
+class Attachment(BaseModel):
+    id: str
+    name: str
+    type: str
+    url: str
+    size: Optional[int] = None
 
 
 class Recurrence(BaseModel):
@@ -74,6 +83,7 @@ class TaskCreate(BaseModel):
     priority: Priority = Priority.NONE
     tags: List[str] = []
     subtasks: List[Subtask] = []
+    attachments: List[Attachment] = []
     recurrence: Optional[Recurrence] = None
     reminders: List[datetime] = []
 
@@ -87,6 +97,7 @@ class TaskUpdate(BaseModel):
     priority: Optional[Priority] = None
     tags: Optional[List[str]] = None
     subtasks: Optional[List[Subtask]] = None
+    attachments: Optional[List[Attachment]] = None
     status: Optional[TaskStatus] = None
     recurrence: Optional[Recurrence] = None
 

@@ -12,7 +12,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 from app.database import connect_db, close_db
-from app.routes import auth, tasks, lists, habits, calendar, llm, user
+from app.routes import auth, tasks, lists, habits, calendar, llm, user, pomodoro, stats, uploads, notifications
 
 # Load environment variables
 load_dotenv()
@@ -57,6 +57,10 @@ app.include_router(habits.router, prefix="/api/habits", tags=["Habits"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["Calendar"])
 app.include_router(llm.router, prefix="/api/llm", tags=["LLM"])
 app.include_router(user.router, prefix="/api/user", tags=["User"])
+app.include_router(pomodoro.router, prefix="/api/pomodoro", tags=["Pomodoro"])
+app.include_router(stats.router, prefix="/api/stats", tags=["Statistics"])
+app.include_router(uploads.router, prefix="/api/uploads", tags=["Uploads"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 
 
 @app.get("/api/health")

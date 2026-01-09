@@ -295,11 +295,61 @@ class API {
         });
     }
 
-    async chatLLM(message, conversationId) {
+    async chatLLM(message, conversationHistory = []) {
         return this.request('/llm/chat', {
             method: 'POST',
-            body: JSON.stringify({ message, conversation_id: conversationId })
+            body: JSON.stringify({ message, conversationHistory })
         });
+    }
+    
+    async getLLMProviders() {
+        return this.request('/llm/providers');
+    }
+    
+    // File uploads
+    async uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${this.baseUrl}/uploads/`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.token}`
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('Upload failed');
+        }
+        
+        return response.json();
+    }
+    
+    // Task ordering
+    async updateTaskOrder(taskIds) {
+        return this.request('/tasks/reorder', {
+            method: 'POST',
+            body: JSON.stringify({ taskIds })
+        });
+    }
+    
+    // Pomodoro
+    async savePomodoroSession(session) {
+        return this.request('/pomodoro/', {
+            method: 'POST',
+            body: JSON.stringify(session)
+        });
+    }
+    
+    async getPomodoroSessions(date = null) {
+        const query = date ? `?date=${date}` : '';
+        return this.request(`/pomodoro/${query}`);
+    }
+    
+    // Statistics
+    async getStats() {
+        return this.request('/stats/');
     }
 }
 

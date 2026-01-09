@@ -42,7 +42,31 @@ const elements = {
     listModal: document.getElementById('list-modal'),
     habitModal: document.getElementById('habit-modal'),
     smartModal: document.getElementById('smart-input-modal'),
-    searchInput: document.getElementById('search-input')
+    searchInput: document.getElementById('search-input'),
+    pomodoroView: document.getElementById('pomodoro-view'),
+    statsView: document.getElementById('stats-view')
+};
+
+// Subtasks state for current task being edited
+let currentSubtasks = [];
+let currentAttachments = [];
+
+// Pomodoro state
+const pomodoroState = {
+    isRunning: false,
+    isPaused: false,
+    isBreak: false,
+    timeLeft: 25 * 60,
+    sessionsCompleted: 0,
+    totalFocusTime: 0,
+    currentTaskId: null,
+    interval: null,
+    settings: {
+        workDuration: 25,
+        shortBreak: 5,
+        longBreak: 15,
+        sessionsBeforeLongBreak: 4
+    }
 };
 
 // Initialize
@@ -110,12 +134,36 @@ function setupEventListeners() {
     document.querySelector('#habit-modal .modal-overlay').addEventListener('click', closeHabitModal);
     document.getElementById('habit-form').addEventListener('submit', handleHabitSubmit);
 
+    // Subtasks
+    document.getElementById('add-subtask-btn').addEventListener('click', addSubtask);
+    document.getElementById('new-subtask').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addSubtask();
+        }
+    });
+
+    // Attachments
+    document.getElementById('add-attachment-btn').addEventListener('click', () => {
+        document.getElementById('attachment-input').click();
+    });
+    document.getElementById('attachment-input').addEventListener('change', handleAttachmentUpload);
+
+    // Pomodoro
+    document.getElementById('timer-start').addEventListener('click', startPomodoro);
+    document.getElementById('timer-pause').addEventListener('click', pausePomodoro);
+    document.getElementById('timer-reset').addEventListener('click', resetPomodoro);
+
     // Settings
     document.getElementById('profile-form').addEventListener('submit', handleProfileSubmit);
     document.getElementById('ai-config-form').addEventListener('submit', handleAIConfigSubmit);
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', () => setTheme(btn.dataset.theme));
     });
+    
+    // Notifications
+    document.getElementById('enable-notifications-btn').addEventListener('click', enableNotifications);
+    updateNotificationPermissionUI();
 
     // Calendar navigation
     document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
@@ -124,10 +172,16 @@ function setupEventListeners() {
     // Search
     elements.searchInput.addEventListener('input', debounce(handleSearch, 300));
 
-    // Smart input
+    // Smart input / AI chat
     document.getElementById('close-smart-modal').addEventListener('click', closeSmartModal);
     document.querySelector('#smart-input-modal .modal-overlay').addEventListener('click', closeSmartModal);
     document.getElementById('smart-form').addEventListener('submit', handleSmartInput);
+    
+    // AI floating button
+    document.getElementById('ai-chat-btn').addEventListener('click', openAIChat);
+    
+    // Provider help text
+    document.getElementById('llm-provider').addEventListener('change', updateProviderHelp);
 
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -239,6 +293,8 @@ function showView(view) {
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
     elements.settingsView.classList.add('hidden');
+    elements.pomodoroView.classList.add('hidden');
+    elements.statsView.classList.add('hidden');
 
     state.currentView = view;
 
@@ -254,6 +310,18 @@ function showView(view) {
             elements.currentViewTitle.textContent = 'Calendar';
             document.querySelector('[data-view="calendar"]')?.classList.add('active');
             renderCalendar();
+            break;
+        case 'pomodoro':
+            elements.pomodoroView.classList.remove('hidden');
+            elements.currentViewTitle.textContent = 'Pomodoro Timer';
+            document.querySelector('[data-view="pomodoro"]')?.classList.add('active');
+            initPomodoro();
+            break;
+        case 'stats':
+            elements.statsView.classList.remove('hidden');
+            elements.currentViewTitle.textContent = 'Statistics';
+            document.querySelector('[data-view="stats"]')?.classList.add('active');
+            loadStats();
             break;
         case 'settings':
             elements.settingsView.classList.remove('hidden');
@@ -382,6 +450,9 @@ function renderTasks() {
         const el = createTaskElement(task);
         elements.tasksList.appendChild(el);
     });
+    
+    // Add draggable support
+    addDraggableToTasks();
 }
 
 function createTaskElement(task) {
@@ -479,6 +550,10 @@ function openTaskModal(taskId = null) {
     
     form.reset();
     document.getElementById('task-id').value = '';
+    
+    // Reset subtasks and attachments
+    currentSubtasks = [];
+    currentAttachments = [];
 
     // Populate list select
     const listSelect = document.getElementById('task-list');
@@ -501,6 +576,26 @@ function openTaskModal(taskId = null) {
                 const date = new Date(task.due_date);
                 document.getElementById('task-due-date').value = date.toISOString().slice(0, 16);
             }
+            
+            // Load subtasks
+            if (task.subtasks && task.subtasks.length > 0) {
+                currentSubtasks = task.subtasks.map(s => ({
+                    id: s.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                    title: s.title,
+                    completed: s.completed || false
+                }));
+            }
+            
+            // Load attachments
+            if (task.attachments && task.attachments.length > 0) {
+                currentAttachments = task.attachments.map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    type: a.type,
+                    url: a.url,
+                    preview: a.type && a.type.startsWith('image/') ? a.url : null
+                }));
+            }
         }
     } else {
         title.textContent = 'New Task';
@@ -508,6 +603,10 @@ function openTaskModal(taskId = null) {
             document.getElementById('task-list').value = state.currentList;
         }
     }
+    
+    // Render subtasks and attachments
+    renderSubtasks();
+    renderAttachments();
 
     modal.classList.remove('hidden');
     document.getElementById('task-title').focus();
@@ -536,7 +635,12 @@ async function handleTaskSubmit(e) {
         description: document.getElementById('task-description').value,
         priority: parseInt(document.getElementById('task-priority').value),
         list_id: listId,
-        tags: document.getElementById('task-tags').value.split(',').map(t => t.trim()).filter(Boolean)
+        tags: document.getElementById('task-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+        subtasks: currentSubtasks.map(s => ({
+            id: s.id,
+            title: s.title,
+            completed: s.completed
+        }))
     };
 
     const dueDate = document.getElementById('task-due-date').value;
@@ -545,6 +649,21 @@ async function handleTaskSubmit(e) {
     }
 
     try {
+        // Handle file uploads first if any new files
+        const newFiles = currentAttachments.filter(a => a.file);
+        if (newFiles.length > 0) {
+            const uploadedAttachments = await uploadAttachments(newFiles);
+            const existingAttachments = currentAttachments.filter(a => !a.file && a.url);
+            taskData.attachments = [...existingAttachments, ...uploadedAttachments];
+        } else {
+            taskData.attachments = currentAttachments.filter(a => a.url).map(a => ({
+                id: a.id,
+                name: a.name,
+                type: a.type,
+                url: a.url
+            }));
+        }
+        
         if (taskId) {
             const updated = await api.updateTask(taskId, taskData);
             const idx = state.tasks.findIndex(t => (t._id || t.id) === taskId);
@@ -562,6 +681,24 @@ async function handleTaskSubmit(e) {
     } catch (error) {
         showToast('Failed to save task', 'error');
     }
+}
+
+async function uploadAttachments(files) {
+    const uploaded = [];
+    for (const file of files) {
+        try {
+            const result = await api.uploadFile(file.file);
+            uploaded.push({
+                id: result.id,
+                name: result.name,
+                type: result.type,
+                url: result.url
+            });
+        } catch (error) {
+            console.error('Failed to upload:', file.name);
+        }
+    }
+    return uploaded;
 }
 
 // Lists
@@ -898,10 +1035,35 @@ function setTheme(theme) {
     });
 }
 
-// Smart Input
+// AI Chat
+const conversationHistory = [];
+
+function openAIChat() {
+    if (!api.token) {
+        showToast('Please log in to use AI assistant', 'error');
+        return;
+    }
+    elements.smartModal.classList.remove('hidden');
+    document.getElementById('smart-input').focus();
+}
+
 function closeSmartModal() {
     elements.smartModal.classList.add('hidden');
-    document.getElementById('smart-chat').innerHTML = '';
+    // Reset to welcome message
+    document.getElementById('smart-chat').innerHTML = `
+        <div class="chat-message assistant">
+            <div class="chat-avatar">🤖</div>
+            <div class="chat-bubble">
+                Hi! I'm your AI assistant. I can help you create tasks using natural language. Try saying something like:
+                <ul>
+                    <li>"Remind me to call mom tomorrow at 3pm"</li>
+                    <li>"Create an urgent task to review the report"</li>
+                    <li>"Add a low priority task to water the plants weekly"</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    conversationHistory.length = 0;
 }
 
 async function handleSmartInput(e) {
@@ -912,33 +1074,115 @@ async function handleSmartInput(e) {
     
     if (!message) return;
 
-    chat.innerHTML += `<div class="chat-message user">${escapeHTML(message)}</div>`;
+    // Add user message to chat
+    chat.innerHTML += `
+        <div class="chat-message user">
+            <div class="chat-bubble">${escapeHTML(message)}</div>
+            <div class="chat-avatar">👤</div>
+        </div>
+    `;
     input.value = '';
+    input.disabled = true;
+    
+    // Add typing indicator
+    const typingId = 'typing-' + Date.now();
+    chat.innerHTML += `
+        <div class="chat-message assistant" id="${typingId}">
+            <div class="chat-avatar">🤖</div>
+            <div class="chat-bubble typing">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+        </div>
+    `;
+    chat.scrollTop = chat.scrollHeight;
 
     try {
-        const result = await api.parseLLM(message);
+        // Add to conversation history
+        conversationHistory.push({ role: 'user', content: message });
         
+        // Call chat API
+        const result = await api.chatLLM(message, conversationHistory);
+        
+        // Remove typing indicator
+        document.getElementById(typingId)?.remove();
+        
+        // Add assistant response
+        chat.innerHTML += `
+            <div class="chat-message assistant">
+                <div class="chat-avatar">🤖</div>
+                <div class="chat-bubble">${formatAIResponse(result.message)}</div>
+            </div>
+        `;
+        
+        // Add to conversation history
+        conversationHistory.push({ role: 'assistant', content: result.message });
+        
+        // If a task was parsed, create it
         if (result.task) {
-            chat.innerHTML += `<div class="chat-message assistant">
-                Got it! Creating task: "${escapeHTML(result.task.title)}"
-                ${result.task.due_date ? `<br>Due: ${new Date(result.task.due_date).toLocaleString()}` : ''}
-            </div>`;
-            
-            const created = await api.createTask(result.task);
-            state.tasks.push(created);
-            renderTasks();
-            updateCounts();
-            showToast('Task created via AI');
-            
-            setTimeout(closeSmartModal, 1500);
-        } else if (result.message) {
-            chat.innerHTML += `<div class="chat-message assistant">${escapeHTML(result.message)}</div>`;
+            try {
+                const created = await api.createTask(result.task);
+                state.tasks.push(created);
+                renderTasks();
+                updateCounts();
+                
+                chat.innerHTML += `
+                    <div class="chat-message assistant">
+                        <div class="chat-avatar">✅</div>
+                        <div class="chat-bubble success">Task created successfully!</div>
+                    </div>
+                `;
+                showToast('Task created via AI', 'success');
+            } catch (taskError) {
+                chat.innerHTML += `
+                    <div class="chat-message assistant">
+                        <div class="chat-avatar">❌</div>
+                        <div class="chat-bubble error">Failed to create task. Please try again.</div>
+                    </div>
+                `;
+            }
         }
     } catch (error) {
-        chat.innerHTML += `<div class="chat-message assistant">Sorry, I couldn't process that. Make sure AI is configured in Settings.</div>`;
+        // Remove typing indicator
+        document.getElementById(typingId)?.remove();
+        
+        const errorMessage = error.message.includes('not configured') 
+            ? 'AI is not configured. Please go to Settings and add your API key.'
+            : 'Sorry, I encountered an error. Please try again.';
+        
+        chat.innerHTML += `
+            <div class="chat-message assistant">
+                <div class="chat-avatar">🤖</div>
+                <div class="chat-bubble error">${errorMessage}</div>
+            </div>
+        `;
     }
-
+    
+    input.disabled = false;
+    input.focus();
     chat.scrollTop = chat.scrollHeight;
+}
+
+function formatAIResponse(text) {
+    if (!text) return '';
+    // Convert markdown-style formatting
+    return escapeHTML(text)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+}
+
+function updateProviderHelp() {
+    const provider = document.getElementById('llm-provider').value;
+    const helpEl = document.getElementById('provider-help');
+    
+    const helpText = {
+        gemini: 'Get free API key at <a href="https://ai.google.dev" target="_blank">ai.google.dev</a>',
+        groq: 'Get free API key at <a href="https://console.groq.com" target="_blank">console.groq.com</a>',
+        openai: 'Get API key at <a href="https://platform.openai.com" target="_blank">platform.openai.com</a> (paid)'
+    };
+    
+    helpEl.innerHTML = helpText[provider] || '';
 }
 
 // Utilities
@@ -1014,3 +1258,720 @@ function showToast(message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// ============================================
+// SUBTASKS FUNCTIONALITY
+// ============================================
+
+function addSubtask() {
+    const input = document.getElementById('new-subtask');
+    const title = input.value.trim();
+    
+    if (!title) return;
+    
+    currentSubtasks.push({
+        id: Date.now().toString(),
+        title: title,
+        completed: false
+    });
+    
+    input.value = '';
+    renderSubtasks();
+}
+
+function renderSubtasks() {
+    const list = document.getElementById('subtasks-list');
+    const progress = document.getElementById('subtask-progress');
+    
+    if (currentSubtasks.length === 0) {
+        list.innerHTML = '';
+        progress.textContent = '';
+        return;
+    }
+    
+    const completed = currentSubtasks.filter(s => s.completed).length;
+    progress.textContent = `${completed}/${currentSubtasks.length}`;
+    
+    list.innerHTML = currentSubtasks.map((subtask, index) => `
+        <div class="subtask-item ${subtask.completed ? 'completed' : ''}" data-index="${index}">
+            <div class="subtask-checkbox" onclick="toggleSubtask(${index})"></div>
+            <span class="subtask-title">${escapeHTML(subtask.title)}</span>
+            <button type="button" class="subtask-delete" onclick="deleteSubtask(${index})">×</button>
+        </div>
+    `).join('');
+}
+
+function toggleSubtask(index) {
+    currentSubtasks[index].completed = !currentSubtasks[index].completed;
+    renderSubtasks();
+}
+
+function deleteSubtask(index) {
+    currentSubtasks.splice(index, 1);
+    renderSubtasks();
+}
+
+// ============================================
+// ATTACHMENTS FUNCTIONALITY
+// ============================================
+
+async function handleAttachmentUpload(e) {
+    const files = e.target.files;
+    if (!files.length) return;
+    
+    for (const file of files) {
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast(`${file.name} is too large (max 5MB)`, 'error');
+            continue;
+        }
+        
+        // Create a preview object
+        const attachment = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            file: file,
+            preview: null
+        };
+        
+        // Generate preview for images
+        if (file.type.startsWith('image/')) {
+            attachment.preview = await readFileAsDataURL(file);
+        }
+        
+        currentAttachments.push(attachment);
+    }
+    
+    renderAttachments();
+    e.target.value = ''; // Reset file input
+}
+
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderAttachments() {
+    const list = document.getElementById('attachments-list');
+    
+    if (currentAttachments.length === 0) {
+        list.innerHTML = '';
+        return;
+    }
+    
+    list.innerHTML = currentAttachments.map((att, index) => `
+        <div class="attachment-item" data-index="${index}">
+            ${att.preview ? `<img src="${att.preview}" alt="${escapeHTML(att.name)}">` : 
+              `<span class="attachment-icon">📄</span>`}
+            <span class="attachment-name" title="${escapeHTML(att.name)}">${escapeHTML(att.name)}</span>
+            <button type="button" class="attachment-delete" onclick="deleteAttachment(${index})">×</button>
+        </div>
+    `).join('');
+}
+
+function deleteAttachment(index) {
+    currentAttachments.splice(index, 1);
+    renderAttachments();
+}
+
+// ============================================
+// DRAG AND DROP FUNCTIONALITY
+// ============================================
+
+function initDragAndDrop() {
+    const tasksList = document.getElementById('tasks-list');
+    if (!tasksList) return;
+    
+    tasksList.addEventListener('dragstart', handleDragStart);
+    tasksList.addEventListener('dragend', handleDragEnd);
+    tasksList.addEventListener('dragover', handleDragOver);
+    tasksList.addEventListener('drop', handleDrop);
+}
+
+function handleDragStart(e) {
+    if (!e.target.classList.contains('task-item')) return;
+    
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.id);
+    
+    document.getElementById('tasks-list').classList.add('drag-active');
+}
+
+function handleDragEnd(e) {
+    if (!e.target.classList.contains('task-item')) return;
+    
+    e.target.classList.remove('dragging');
+    document.getElementById('tasks-list').classList.remove('drag-active');
+    
+    document.querySelectorAll('.task-item.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const dragging = document.querySelector('.task-item.dragging');
+    if (!dragging) return;
+    
+    const afterElement = getDragAfterElement(e.clientY);
+    const tasksList = document.getElementById('tasks-list');
+    
+    // Remove previous drag-over indicators
+    document.querySelectorAll('.task-item.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+    
+    if (afterElement) {
+        afterElement.classList.add('drag-over');
+    }
+}
+
+function getDragAfterElement(y) {
+    const draggableElements = [...document.querySelectorAll('.task-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+async function handleDrop(e) {
+    e.preventDefault();
+    
+    const taskId = e.dataTransfer.getData('text/plain');
+    const dragging = document.querySelector('.task-item.dragging');
+    if (!dragging) return;
+    
+    const afterElement = getDragAfterElement(e.clientY);
+    const tasksList = document.getElementById('tasks-list');
+    
+    if (afterElement) {
+        tasksList.insertBefore(dragging, afterElement);
+    } else {
+        tasksList.appendChild(dragging);
+    }
+    
+    // Update order in state
+    const newOrder = [...document.querySelectorAll('.task-item')].map(item => item.dataset.id);
+    
+    // Update positions in state
+    newOrder.forEach((id, index) => {
+        const task = state.tasks.find(t => t.id === id);
+        if (task) {
+            task.position = index;
+        }
+    });
+    
+    // Save order to backend (if endpoint exists)
+    try {
+        await api.updateTaskOrder(newOrder);
+    } catch (error) {
+        console.log('Order update not saved to server (endpoint may not exist)');
+    }
+}
+
+// ============================================
+// POMODORO TIMER FUNCTIONALITY
+// ============================================
+
+function initPomodoro() {
+    loadPomodoroSettings();
+    populatePomodoroTasks();
+    updateTimerDisplay();
+    loadTodayPomodoroStats();
+}
+
+function loadPomodoroSettings() {
+    const saved = localStorage.getItem('pomodoroSettings');
+    if (saved) {
+        Object.assign(pomodoroState.settings, JSON.parse(saved));
+    }
+    
+    document.getElementById('pomo-work-duration').value = pomodoroState.settings.workDuration;
+    document.getElementById('pomo-short-break').value = pomodoroState.settings.shortBreak;
+    document.getElementById('pomo-long-break').value = pomodoroState.settings.longBreak;
+    document.getElementById('pomo-sessions-count').value = pomodoroState.settings.sessionsBeforeLongBreak;
+    
+    // Listen for settings changes
+    ['pomo-work-duration', 'pomo-short-break', 'pomo-long-break', 'pomo-sessions-count'].forEach(id => {
+        document.getElementById(id).addEventListener('change', savePomodoroSettings);
+    });
+}
+
+function savePomodoroSettings() {
+    pomodoroState.settings.workDuration = parseInt(document.getElementById('pomo-work-duration').value) || 25;
+    pomodoroState.settings.shortBreak = parseInt(document.getElementById('pomo-short-break').value) || 5;
+    pomodoroState.settings.longBreak = parseInt(document.getElementById('pomo-long-break').value) || 15;
+    pomodoroState.settings.sessionsBeforeLongBreak = parseInt(document.getElementById('pomo-sessions-count').value) || 4;
+    
+    localStorage.setItem('pomodoroSettings', JSON.stringify(pomodoroState.settings));
+    
+    if (!pomodoroState.isRunning) {
+        pomodoroState.timeLeft = pomodoroState.settings.workDuration * 60;
+        updateTimerDisplay();
+    }
+}
+
+function populatePomodoroTasks() {
+    const select = document.getElementById('pomo-task-select');
+    const incompleteTasks = state.tasks.filter(t => !t.completed);
+    
+    select.innerHTML = '<option value="">No task selected</option>' +
+        incompleteTasks.map(task => 
+            `<option value="${task.id}">${escapeHTML(task.title)}</option>`
+        ).join('');
+    
+    select.addEventListener('change', (e) => {
+        pomodoroState.currentTaskId = e.target.value || null;
+    });
+}
+
+function startPomodoro() {
+    if (pomodoroState.isPaused) {
+        // Resume
+        pomodoroState.isPaused = false;
+    } else {
+        // Fresh start
+        pomodoroState.timeLeft = pomodoroState.isBreak 
+            ? (pomodoroState.sessionsCompleted % pomodoroState.settings.sessionsBeforeLongBreak === 0 
+                ? pomodoroState.settings.longBreak 
+                : pomodoroState.settings.shortBreak) * 60
+            : pomodoroState.settings.workDuration * 60;
+    }
+    
+    pomodoroState.isRunning = true;
+    
+    document.getElementById('timer-start').disabled = true;
+    document.getElementById('timer-pause').disabled = false;
+    
+    pomodoroState.interval = setInterval(updatePomodoro, 1000);
+}
+
+function pausePomodoro() {
+    pomodoroState.isRunning = false;
+    pomodoroState.isPaused = true;
+    
+    clearInterval(pomodoroState.interval);
+    
+    document.getElementById('timer-start').disabled = false;
+    document.getElementById('timer-start').textContent = '▶ Resume';
+    document.getElementById('timer-pause').disabled = true;
+}
+
+function resetPomodoro() {
+    pomodoroState.isRunning = false;
+    pomodoroState.isPaused = false;
+    pomodoroState.isBreak = false;
+    
+    clearInterval(pomodoroState.interval);
+    
+    pomodoroState.timeLeft = pomodoroState.settings.workDuration * 60;
+    
+    document.getElementById('timer-start').disabled = false;
+    document.getElementById('timer-start').textContent = '▶ Start';
+    document.getElementById('timer-pause').disabled = true;
+    document.getElementById('timer-label').textContent = 'Focus Time';
+    document.getElementById('timer-label').classList.remove('break');
+    
+    updateTimerDisplay();
+}
+
+function updatePomodoro() {
+    pomodoroState.timeLeft--;
+    
+    if (pomodoroState.timeLeft <= 0) {
+        clearInterval(pomodoroState.interval);
+        pomodoroState.isRunning = false;
+        
+        if (!pomodoroState.isBreak) {
+            // Work session completed
+            pomodoroState.sessionsCompleted++;
+            pomodoroState.totalFocusTime += pomodoroState.settings.workDuration;
+            
+            // Save session
+            savePomodoroSession();
+            
+            // Notify user
+            playNotificationSound();
+            if (Notification.permission === 'granted') {
+                new Notification('Pomodoro Complete!', {
+                    body: 'Time for a break!',
+                    icon: '/favicon.ico'
+                });
+            }
+            
+            showToast('Focus session complete! Take a break.', 'success');
+            
+            // Switch to break
+            pomodoroState.isBreak = true;
+            const isLongBreak = pomodoroState.sessionsCompleted % pomodoroState.settings.sessionsBeforeLongBreak === 0;
+            pomodoroState.timeLeft = (isLongBreak ? pomodoroState.settings.longBreak : pomodoroState.settings.shortBreak) * 60;
+            
+            document.getElementById('timer-label').textContent = isLongBreak ? 'Long Break' : 'Short Break';
+            document.getElementById('timer-label').classList.add('break');
+        } else {
+            // Break completed
+            playNotificationSound();
+            if (Notification.permission === 'granted') {
+                new Notification('Break Over!', {
+                    body: 'Ready to focus again?',
+                    icon: '/favicon.ico'
+                });
+            }
+            
+            showToast('Break over! Ready to focus?', 'success');
+            
+            // Switch back to work
+            pomodoroState.isBreak = false;
+            pomodoroState.timeLeft = pomodoroState.settings.workDuration * 60;
+            
+            document.getElementById('timer-label').textContent = 'Focus Time';
+            document.getElementById('timer-label').classList.remove('break');
+        }
+        
+        document.getElementById('timer-start').disabled = false;
+        document.getElementById('timer-start').textContent = '▶ Start';
+        document.getElementById('timer-pause').disabled = true;
+    }
+    
+    updateTimerDisplay();
+    updatePomodoroStats();
+}
+
+function updateTimerDisplay() {
+    const minutes = Math.floor(pomodoroState.timeLeft / 60);
+    const seconds = pomodoroState.timeLeft % 60;
+    document.getElementById('timer-display').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function updatePomodoroStats() {
+    document.getElementById('pomo-sessions').textContent = pomodoroState.sessionsCompleted;
+    document.getElementById('pomo-total-time').textContent = `${pomodoroState.totalFocusTime}m`;
+}
+
+async function savePomodoroSession() {
+    try {
+        await api.savePomodoroSession({
+            taskId: pomodoroState.currentTaskId,
+            duration: pomodoroState.settings.workDuration,
+            completedAt: new Date().toISOString()
+        });
+    } catch (error) {
+        console.log('Pomodoro session saved locally only');
+    }
+    
+    // Save to localStorage as backup
+    const today = new Date().toISOString().split('T')[0];
+    const sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '{}');
+    if (!sessions[today]) sessions[today] = [];
+    sessions[today].push({
+        taskId: pomodoroState.currentTaskId,
+        duration: pomodoroState.settings.workDuration,
+        completedAt: new Date().toISOString()
+    });
+    localStorage.setItem('pomodoroSessions', JSON.stringify(sessions));
+}
+
+function loadTodayPomodoroStats() {
+    const today = new Date().toISOString().split('T')[0];
+    const sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '{}');
+    const todaySessions = sessions[today] || [];
+    
+    pomodoroState.sessionsCompleted = todaySessions.length;
+    pomodoroState.totalFocusTime = todaySessions.reduce((sum, s) => sum + s.duration, 0);
+    
+    updatePomodoroStats();
+}
+
+function playNotificationSound() {
+    try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1idHx8fHx8fHx8fHx8fHx8fHx8fHx8fH19fX19fX19fX19fX19fX19fX19fX19fX19');
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+    } catch (e) {}
+}
+
+// ============================================
+// STATISTICS FUNCTIONALITY
+// ============================================
+
+async function loadStats() {
+    try {
+        // Try to get stats from API
+        const stats = await api.getStats();
+        renderStats(stats);
+    } catch (error) {
+        // Fall back to local calculation
+        calculateLocalStats();
+    }
+}
+
+function calculateLocalStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    
+    // Completed today
+    const completedToday = state.tasks.filter(t => {
+        if (!t.completed || !t.completed_at) return false;
+        const completedDate = new Date(t.completed_at);
+        completedDate.setHours(0, 0, 0, 0);
+        return completedDate.getTime() === today.getTime();
+    }).length;
+    
+    // Completed this week
+    const completedWeek = state.tasks.filter(t => {
+        if (!t.completed || !t.completed_at) return false;
+        const completedDate = new Date(t.completed_at);
+        return completedDate >= weekStart;
+    }).length;
+    
+    // Calculate streak (days in a row with completed tasks)
+    const streak = calculateStreak();
+    
+    // Pomodoro sessions
+    const sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '{}');
+    const todaySessions = sessions[today.toISOString().split('T')[0]] || [];
+    
+    renderStats({
+        completedToday,
+        completedWeek,
+        streak,
+        pomodoros: todaySessions.length,
+        weeklyData: calculateWeeklyData()
+    });
+}
+
+function calculateStreak() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let streak = 0;
+    let checkDate = new Date(today);
+    
+    while (true) {
+        const dayStart = new Date(checkDate);
+        const dayEnd = new Date(checkDate);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+        
+        const completedOnDay = state.tasks.some(t => {
+            if (!t.completed || !t.completed_at) return false;
+            const completedDate = new Date(t.completed_at);
+            return completedDate >= dayStart && completedDate < dayEnd;
+        });
+        
+        if (completedOnDay) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            break;
+        }
+        
+        // Safety limit
+        if (streak > 365) break;
+    }
+    
+    return streak;
+}
+
+function calculateWeeklyData() {
+    const data = [];
+    const today = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        const count = state.tasks.filter(t => {
+            if (!t.completed || !t.completed_at) return false;
+            const completedDate = new Date(t.completed_at);
+            return completedDate >= date && completedDate < nextDay;
+        }).length;
+        
+        data.push({
+            day: date.toLocaleDateString('en', { weekday: 'short' }),
+            count
+        });
+    }
+    
+    return data;
+}
+
+function renderStats(stats) {
+    document.getElementById('stat-completed-today').textContent = stats.completedToday || 0;
+    document.getElementById('stat-completed-week').textContent = stats.completedWeek || 0;
+    document.getElementById('stat-streak').textContent = stats.streak || 0;
+    document.getElementById('stat-pomodoros').textContent = stats.pomodoros || 0;
+    
+    // Render weekly chart
+    const weeklyData = stats.weeklyData || calculateWeeklyData();
+    renderWeeklyChart(weeklyData);
+    
+    // Update productivity score
+    const maxPossible = 10; // Target tasks per day
+    const productivity = Math.min(100, Math.round((stats.completedToday / maxPossible) * 100));
+    updateProductivityRing(productivity);
+}
+
+function renderWeeklyChart(data) {
+    const barsContainer = document.querySelector('.chart-bars');
+    const labelsContainer = document.querySelector('.chart-labels');
+    
+    if (!barsContainer || !labelsContainer) return;
+    
+    const maxValue = Math.max(...data.map(d => d.count), 1);
+    
+    barsContainer.innerHTML = data.map(d => {
+        const height = Math.max(4, (d.count / maxValue) * 150);
+        return `<div class="chart-bar" style="height: ${height}px" data-value="${d.count}"></div>`;
+    }).join('');
+    
+    labelsContainer.innerHTML = data.map(d => 
+        `<span class="chart-label">${d.day}</span>`
+    ).join('');
+}
+
+function updateProductivityRing(percentage) {
+    const ring = document.getElementById('productivity-ring');
+    const scoreEl = document.getElementById('productivity-score');
+    
+    if (!ring || !scoreEl) return;
+    
+    const circumference = 2 * Math.PI * 45; // r = 45
+    const offset = circumference - (percentage / 100) * circumference;
+    
+    ring.style.strokeDashoffset = offset;
+    scoreEl.textContent = `${percentage}%`;
+}
+
+// Initialize drag and drop when tasks are rendered
+const originalRenderTasks = typeof renderTasks === 'function' ? renderTasks : null;
+
+// Extend renderTasks to add draggable attribute
+function addDraggableToTasks() {
+    document.querySelectorAll('.task-item').forEach(item => {
+        item.draggable = true;
+    });
+    initDragAndDrop();
+}
+
+// ============================================
+// NOTIFICATIONS FUNCTIONALITY
+// ============================================
+
+async function enableNotifications() {
+    if (!('Notification' in window)) {
+        showToast('Notifications not supported in this browser', 'error');
+        return;
+    }
+    
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+        showToast('Notifications enabled!', 'success');
+        
+        // Try to subscribe to push notifications
+        if (window.notificationManager) {
+            await window.notificationManager.subscribe();
+        }
+        
+        // Show a test notification
+        if (window.notificationManager) {
+            window.notificationManager.showLocalNotification('TaskFlow', {
+                body: 'Notifications are now enabled!',
+                tag: 'test-notification'
+            });
+        }
+    } else if (permission === 'denied') {
+        showToast('Notification permission denied', 'error');
+    }
+    
+    updateNotificationPermissionUI();
+}
+
+function updateNotificationPermissionUI() {
+    const stateEl = document.getElementById('notification-permission-state');
+    const btn = document.getElementById('enable-notifications-btn');
+    
+    if (!stateEl || !btn) return;
+    
+    if (!('Notification' in window)) {
+        stateEl.textContent = 'Not Supported';
+        btn.disabled = true;
+        btn.textContent = 'Not Available';
+        return;
+    }
+    
+    const permission = Notification.permission;
+    stateEl.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
+    
+    switch (permission) {
+        case 'granted':
+            stateEl.style.color = 'var(--success)';
+            btn.textContent = 'Enabled';
+            btn.disabled = true;
+            break;
+        case 'denied':
+            stateEl.style.color = 'var(--error)';
+            btn.textContent = 'Blocked by Browser';
+            btn.disabled = true;
+            break;
+        default:
+            stateEl.style.color = 'var(--warning)';
+            btn.textContent = 'Enable Notifications';
+            btn.disabled = false;
+    }
+}
+
+// Schedule reminders for tasks with due dates
+function scheduleTaskReminders() {
+    if (!window.notificationManager || Notification.permission !== 'granted') return;
+    
+    const now = new Date();
+    
+    state.tasks.forEach(task => {
+        if (task.completed || !task.due_date) return;
+        
+        const dueDate = new Date(task.due_date);
+        const timeDiff = dueDate.getTime() - now.getTime();
+        
+        // Only schedule for tasks due in the next 24 hours
+        if (timeDiff > 0 && timeDiff < 24 * 60 * 60 * 1000) {
+            window.notificationManager.scheduleReminder(
+                task.title,
+                task.due_date,
+                task.id || task._id
+            );
+        }
+    });
+}
+
+// Call this after tasks are loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize notification manager
+    if (window.notificationManager && window.notificationManager.isSupported) {
+        window.notificationManager.init();
+    }
+});
