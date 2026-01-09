@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NovaDo - Smart Task Management</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=3">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <div id="app">
         <!-- Auth Screen -->
@@ -20,12 +24,12 @@
                     </div>
                     <p class="tagline">Smart Task Management</p>
                 </div>
-                
+
                 <div class="auth-tabs">
                     <button class="tab-btn active" data-tab="login">Sign In</button>
                     <button class="tab-btn" data-tab="register">Sign Up</button>
                 </div>
-                
+
                 <!-- Login Form -->
                 <form id="login-form" class="auth-form">
                     <div class="form-group">
@@ -39,7 +43,7 @@
                     <button type="submit" class="btn btn-primary">Sign In</button>
                     <div id="login-error" class="error-message"></div>
                 </form>
-                
+
                 <!-- Register Form -->
                 <form id="register-form" class="auth-form hidden">
                     <div class="form-group">
@@ -59,7 +63,7 @@
                 </form>
             </div>
         </div>
-        
+
         <!-- Main App Screen -->
         <div id="main-screen" class="screen hidden">
             <!-- Sidebar -->
@@ -70,16 +74,17 @@
                         <span class="logo-text">NovaDo</span>
                     </div>
                 </div>
-                
+
                 <nav class="sidebar-nav">
                     <div class="nav-section" data-section="smart-lists">
                         <h3>
                             Smart Lists
-                            <button class="btn-icon section-add-btn" data-section="smart-lists" title="Add Smart List">+</button>
+                            <button class="btn-icon section-add-btn" data-section="smart-lists"
+                                title="Add Smart List">+</button>
                         </h3>
                         <ul id="smart-lists"></ul>
                     </div>
-                    
+
                     <div class="nav-section" data-section="my-lists">
                         <h3>
                             My Lists
@@ -87,7 +92,7 @@
                         </h3>
                         <ul id="custom-lists"></ul>
                     </div>
-                    
+
                     <div class="nav-section" data-section="tools">
                         <h3>
                             Tools
@@ -96,7 +101,7 @@
                         <ul id="tools-list"></ul>
                     </div>
                 </nav>
-                
+
                 <div class="sidebar-footer">
                     <div class="user-info" id="user-info">
                         <span class="user-avatar">👤</span>
@@ -106,7 +111,7 @@
                     <button class="btn-icon" id="logout-btn" title="Logout">🚪</button>
                 </div>
             </aside>
-            
+
             <!-- Main Content -->
             <main class="main-content">
                 <header class="main-header">
@@ -125,7 +130,7 @@
                         </button>
                     </div>
                 </header>
-                
+
                 <!-- Tasks View -->
                 <div id="tasks-view" class="view">
                     <div class="quick-add-task" id="quick-add-task">
@@ -139,7 +144,7 @@
                         <p>Press Enter to add your first task</p>
                     </div>
                 </div>
-                
+
                 <!-- Habits View -->
                 <div id="habits-view" class="view hidden">
                     <div class="habits-header">
@@ -149,7 +154,7 @@
                     </div>
                     <div id="habits-list" class="habits-list"></div>
                 </div>
-                
+
                 <!-- Calendar View -->
                 <div id="calendar-view" class="view hidden">
                     <div class="calendar-toolbar">
@@ -173,7 +178,7 @@
                         <div class="calendar-agenda-view hidden" id="calendar-agenda-view"></div>
                     </div>
                 </div>
-                
+
                 <!-- Pomodoro View -->
                 <div id="pomodoro-view" class="view hidden">
                     <div class="pomodoro-container">
@@ -223,7 +228,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Statistics View -->
                 <div id="stats-view" class="view hidden">
                     <div class="stats-container">
@@ -261,15 +266,15 @@
                             <div class="productivity-ring">
                                 <svg viewBox="0 0 100 100">
                                     <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
-                                    <circle class="ring-progress" id="productivity-ring" cx="50" cy="50" r="45" 
-                                            stroke-dasharray="283" stroke-dashoffset="283"></circle>
+                                    <circle class="ring-progress" id="productivity-ring" cx="50" cy="50" r="45"
+                                        stroke-dasharray="283" stroke-dashoffset="283"></circle>
                                 </svg>
                                 <div class="ring-value" id="productivity-score">0%</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Settings View -->
                 <div id="settings-view" class="view hidden">
                     <div class="settings-section">
@@ -286,10 +291,11 @@
                             <button type="submit" class="btn btn-primary">Save Changes</button>
                         </form>
                     </div>
-                    
+
                     <div class="settings-section">
                         <h2>AI Assistant</h2>
-                        <p class="settings-description">Enable AI-powered task creation with natural language. Choose a free provider below:</p>
+                        <p class="settings-description">Enable AI-powered task creation with natural language. Choose a
+                            free provider below:</p>
                         <form id="ai-config-form">
                             <div class="form-group">
                                 <label for="llm-provider">Provider</label>
@@ -298,7 +304,8 @@
                                     <option value="groq">⚡ Groq / Llama (Free)</option>
                                     <option value="openai">OpenAI (Paid)</option>
                                 </select>
-                                <small id="provider-help" class="form-help">Get free API key at <a href="https://ai.google.dev" target="_blank">ai.google.dev</a></small>
+                                <small id="provider-help" class="form-help">Get free API key at <a
+                                        href="https://ai.google.dev" target="_blank">ai.google.dev</a></small>
                             </div>
                             <div class="form-group">
                                 <label for="llm-api-key">API Key</label>
@@ -308,24 +315,28 @@
                             <p id="ai-status" class="status-text"></p>
                         </form>
                     </div>
-                    
+
                     <div class="settings-section">
                         <h2>📅 Google Calendar</h2>
-                        <p class="settings-description">Connect your Google Calendar to automatically import events and keep everything in sync.</p>
+                        <p class="settings-description">Connect your Google Calendar to automatically import events and
+                            keep everything in sync.</p>
                         <div id="google-calendar-settings">
                             <div id="gcal-not-configured" class="gcal-status hidden">
                                 <div class="status-badge warning">⚠️ Not Configured</div>
-                                <p>Google Calendar integration requires setup. Add your Google OAuth credentials to the .env file:</p>
+                                <p>Google Calendar integration requires setup. Add your Google OAuth credentials to the
+                                    .env file:</p>
                                 <code class="code-block">
 GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                                 </code>
-                                <p><a href="https://console.cloud.google.com/apis/credentials" target="_blank">Get credentials from Google Cloud Console →</a></p>
+                                <p><a href="https://console.cloud.google.com/apis/credentials" target="_blank">Get
+                                        credentials from Google Cloud Console →</a></p>
                             </div>
                             <div id="gcal-disconnected" class="gcal-status hidden">
                                 <div class="status-badge neutral">Not Connected</div>
-                                <p>Click below to connect your Google Calendar. Your events will be automatically imported as tasks.</p>
+                                <p>Click below to connect your Google Calendar. Your events will be automatically
+                                    imported as tasks.</p>
                                 <button class="btn btn-primary" id="connect-google-btn">
                                     <span class="google-icon">G</span> Connect Google Calendar
                                 </button>
@@ -333,22 +344,39 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                             <div id="gcal-connected" class="gcal-status hidden">
                                 <div class="status-badge success">✓ Connected</div>
                                 <p>Connected as: <strong id="gcal-email"></strong></p>
-                                <p class="settings-description" style="margin-top: 0.5rem;">Your calendar events are automatically synced. New events will appear as tasks.</p>
+                                <p class="settings-description" style="margin-top: 0.5rem;">Your calendar events are
+                                    automatically synced. New events will appear as tasks.</p>
+
+                                <div id="gcal-calendars-list" class="gcal-calendars-list hidden"
+                                    style="margin: 1rem 0;">
+                                    <label class="gcal-list-label"
+                                        style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Select
+                                        Calendars to Sync:</label>
+                                    <div id="gcal-calendars-container" class="gcal-calendars-container"
+                                        style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px;">
+                                        <!-- Checkboxes will be rendered here -->
+                                    </div>
+                                    <button id="save-calendars-btn" class="btn btn-small btn-primary hidden"
+                                        style="margin-top: 1rem;">Save Selection</button>
+                                </div>
                                 <div class="gcal-actions">
                                     <button class="btn btn-secondary" id="sync-calendar-btn">🔄 Sync Now</button>
-                                    <button class="btn btn-outline danger" id="disconnect-google-btn">Disconnect</button>
+                                    <button class="btn btn-outline danger"
+                                        id="disconnect-google-btn">Disconnect</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="settings-section">
                         <h2>Notifications</h2>
                         <p class="settings-description">Get reminders for tasks, habits, and pomodoro sessions.</p>
                         <div class="notification-settings">
                             <div class="notification-permission">
-                                <span id="notification-status">Permission: <strong id="notification-permission-state">Unknown</strong></span>
-                                <button class="btn btn-secondary" id="enable-notifications-btn">Enable Notifications</button>
+                                <span id="notification-status">Permission: <strong
+                                        id="notification-permission-state">Unknown</strong></span>
+                                <button class="btn btn-secondary" id="enable-notifications-btn">Enable
+                                    Notifications</button>
                             </div>
                             <div class="form-group notification-option">
                                 <label>
@@ -370,19 +398,20 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="settings-section">
                         <h2>Theme</h2>
                         <div class="theme-toggle">
                             <button class="theme-btn active" data-theme="dark">🌙 Dark</button>
                             <button class="theme-btn" data-theme="light">☀️ Light</button>
+                            <button class="theme-btn" data-theme="hacker">💻 Hacker</button>
                         </div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
-    
+
     <!-- Task Modal -->
     <div id="task-modal" class="modal hidden">
         <div class="modal-overlay"></div>
@@ -434,7 +463,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                     <label for="task-tags">Tags (comma separated)</label>
                     <input type="text" id="task-tags" placeholder="work, urgent, project">
                 </div>
-                
+
                 <!-- Subtasks/Checklist -->
                 <div class="form-group subtasks-section">
                     <label>
@@ -447,7 +476,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                         <button type="button" class="btn btn-small" id="add-subtask-btn">+ Add</button>
                     </div>
                 </div>
-                
+
                 <!-- Attachments -->
                 <div class="form-group attachments-section">
                     <label>Attachments</label>
@@ -459,7 +488,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancel-task">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Task</button>
@@ -467,7 +496,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
             </form>
         </div>
     </div>
-    
+
     <!-- List Modal -->
     <div id="list-modal" class="modal hidden">
         <div class="modal-overlay"></div>
@@ -492,7 +521,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
             </form>
         </div>
     </div>
-    
+
     <!-- Habit Modal -->
     <div id="habit-modal" class="modal hidden">
         <div class="modal-overlay"></div>
@@ -525,7 +554,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
             </form>
         </div>
     </div>
-    
+
     <!-- AI Chat Modal -->
     <div id="smart-input-modal" class="modal hidden">
         <div class="modal-overlay"></div>
@@ -539,7 +568,8 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                     <div class="chat-message assistant">
                         <div class="chat-avatar">🤖</div>
                         <div class="chat-bubble">
-                            Hi! I'm your AI assistant. I can help you create tasks using natural language. Try saying something like:
+                            Hi! I'm your AI assistant. I can help you create tasks using natural language. Try saying
+                            something like:
                             <ul>
                                 <li>"Remind me to call mom tomorrow at 3pm"</li>
                                 <li>"Create an urgent task to review the report"</li>
@@ -557,13 +587,13 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
             </div>
         </div>
     </div>
-    
+
     <!-- Floating AI Button -->
     <button id="ai-chat-btn" class="ai-fab" title="AI Assistant">
         <span class="ai-fab-icon">🤖</span>
         <span class="ai-fab-pulse"></span>
     </button>
-    
+
     <!-- Context Menu for Sidebar Items -->
     <div id="context-menu" class="context-menu hidden">
         <button class="context-menu-item" data-action="rename">
@@ -573,7 +603,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
             <span>🗑️</span> Remove
         </button>
     </div>
-    
+
     <!-- Add Sidebar Item Modal -->
     <div id="add-sidebar-modal" class="modal hidden">
         <div class="modal-overlay"></div>
@@ -587,7 +617,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
             </div>
         </div>
     </div>
-    
+
     <!-- Rename Modal -->
     <div id="rename-modal" class="modal hidden">
         <div class="modal-overlay"></div>
@@ -610,13 +640,13 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
             </form>
         </div>
     </div>
-    
+
     <!-- Toast Container -->
     <div id="toast-container"></div>
-    
-    <script src="js/api.js"></script>
-    <script src="js/notifications.js"></script>
-    <script src="js/app.js"></script>
-</body>
-</html>
 
+    <script src="js/api.js?v=3"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/app.js?v=3"></script>
+</body>
+
+</html>

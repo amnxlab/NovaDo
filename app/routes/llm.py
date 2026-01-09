@@ -13,6 +13,9 @@ import hashlib
 import httpx
 import json
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -309,6 +312,7 @@ async def parse_input(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("LLM Parse Error")
         raise HTTPException(status_code=500, detail=f"Failed to process request: {str(e)}")
 
 
@@ -317,7 +321,7 @@ async def chat(
     request: LLMChatRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Chat with AI assistant for task management help"""
+    """Chat with AI assistant for task management help - with full task access"""
     if not current_user.get("llmProvider") or not current_user.get("llmApiKey"):
         raise HTTPException(
             status_code=400,
@@ -327,18 +331,60 @@ async def chat(
     try:
         api_key = decrypt_api_key(current_user["llmApiKey"])
         provider = current_user["llmProvider"]
+        db = get_database()
+        user_id = str(current_user["_id"])
         
-        # Chat system prompt
-        chat_system = """You are a helpful task management assistant called NovaDo AI. You help users:
-- Create and organize tasks
-- Set priorities and due dates
-- Manage their productivity
+        # Fetch user's tasks for context
+        tasks_cursor = db.tasks.find({"user": user_id})
+        tasks = []
+        async for task in tasks_cursor:
+            tasks.append(task)
+        
+        # Fetch user's lists for context
+        lists_cursor = db.lists.find({"user": user_id})
+        lists = []
+        async for lst in lists_cursor:
+            lists.append(lst)
+        
+        # Build task context for LLM
+        task_context = format_tasks_for_context(tasks, lists)
+        current_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        # Enhanced system prompt with task context and actions
+        chat_system = f"""You are NovaDo AI, a powerful task management assistant with FULL ACCESS to the user's tasks.
 
-Be concise, friendly, and helpful. If a user wants to create a task, extract the details and confirm what you'll create.
-When you understand a task, respond with the task details in JSON format like this:
-{"action": "create_task", "task": {"title": "...", "description": "...", "dueDate": null, "priority": "none", "tags": []}}
+## Current Date & Time: {current_date}
 
-For general questions or conversation, just respond normally without JSON."""
+## User's Current Tasks:
+{task_context}
+
+## Your Capabilities:
+You can VIEW, CREATE, UPDATE, COMPLETE, and DELETE tasks. You are a super admin with full control.
+
+## How to Execute Actions:
+When the user wants you to perform an action, respond with JSON in this format:
+
+1. **Create a task:**
+{{"action": "create_task", "task": {{"title": "Task title", "description": "", "dueDate": null, "priority": "none", "tags": []}}}}
+
+2. **Complete a task:**
+{{"action": "complete_task", "task_id": "the_task_id_here"}}
+
+3. **Delete a task:**
+{{"action": "delete_task", "task_id": "the_task_id_here"}}
+
+4. **Update a task:**
+{{"action": "update_task", "task_id": "the_task_id_here", "updates": {{"title": "New title", "priority": "high"}}}}
+
+## Rules:
+- When listing tasks, show them in a readable format with their status
+- When you see a task action, include the JSON at the END of your response
+- Always confirm what you did after taking an action
+- Use the exact task IDs from the task list above
+- Be helpful, friendly, and proactive
+- If a task seems ambiguous, ask for clarification
+
+Remember: You have FULL ACCESS. Execute actions immediately when requested."""
         
         # Build conversation history
         messages = []
@@ -348,36 +394,174 @@ For general questions or conversation, just respond normally without JSON."""
         
         response_text = await call_llm(provider, api_key, messages, chat_system)
         
-        # Check if response contains a task action
-        task = None
+        # Check if response contains an action and execute it
+        action_result = None
+        executed_action = None
+        task_data = None
+        
         try:
-            if '{"action"' in response_text:
+            if '{"action"' in response_text or "{'action'" in response_text:
                 start = response_text.find('{')
                 end = response_text.rfind('}') + 1
                 if start != -1 and end > start:
-                    action_data = json.loads(response_text[start:end])
-                    if action_data.get("action") == "create_task":
-                        task = action_data.get("task")
-                        response_text = f"I'll create this task for you:\n\n**{task.get('title')}**"
-                        if task.get('description'):
-                            response_text += f"\n{task.get('description')}"
-                        if task.get('dueDate'):
-                            response_text += f"\nDue: {task.get('dueDate')}"
-                        if task.get('priority') and task.get('priority') != 'none':
-                            response_text += f"\nPriority: {task.get('priority').capitalize()}"
-        except:
+                    json_str = response_text[start:end]
+                    action_data = json.loads(json_str)
+                    action = action_data.get("action")
+                    
+                    if action == "create_task":
+                        # Create the task
+                        task = action_data.get("task", {})
+                        task_doc = {
+                            "title": task.get("title", "New Task"),
+                            "description": task.get("description", ""),
+                            "user": user_id,
+                            "list": None,
+                            "dueDate": datetime.fromisoformat(task["dueDate"]) if task.get("dueDate") else None,
+                            "dueTime": None,
+                            "priority": task.get("priority", "none"),
+                            "status": "scheduled",
+                            "tags": task.get("tags", []),
+                            "subtasks": [],
+                            "attachments": [],
+                            "order": 0,
+                            "createdByAI": True,
+                            "createdAt": datetime.now(),
+                            "updatedAt": datetime.now()
+                        }
+                        result = await db.tasks.insert_one(task_doc)
+                        task_doc["_id"] = str(result.inserted_id)
+                        task_data = task_doc
+                        executed_action = "create_task"
+                        action_result = f"✅ Created task: {task.get('title')}"
+                        
+                    elif action == "complete_task":
+                        task_id = action_data.get("task_id")
+                        if task_id:
+                            result = await db.tasks.update_one(
+                                {"_id": ObjectId(task_id), "user": user_id},
+                                {"$set": {"status": "completed", "updatedAt": datetime.now()}}
+                            )
+                            if result.modified_count > 0:
+                                executed_action = "complete_task"
+                                action_result = f"✅ Task marked as complete"
+                            else:
+                                action_result = "❌ Task not found"
+                                
+                    elif action == "delete_task":
+                        task_id = action_data.get("task_id")
+                        if task_id:
+                            result = await db.tasks.delete_one(
+                                {"_id": ObjectId(task_id), "user": user_id}
+                            )
+                            if result.deleted_count > 0:
+                                executed_action = "delete_task"
+                                action_result = f"✅ Task deleted"
+                            else:
+                                action_result = "❌ Task not found"
+                                
+                    elif action == "update_task":
+                        task_id = action_data.get("task_id")
+                        updates = action_data.get("updates", {})
+                        if task_id and updates:
+                            updates["updatedAt"] = datetime.now()
+                            if "dueDate" in updates and updates["dueDate"]:
+                                updates["dueDate"] = datetime.fromisoformat(updates["dueDate"])
+                            result = await db.tasks.update_one(
+                                {"_id": ObjectId(task_id), "user": user_id},
+                                {"$set": updates}
+                            )
+                            if result.modified_count > 0:
+                                executed_action = "update_task"
+                                action_result = f"✅ Task updated"
+                            else:
+                                action_result = "❌ Task not found"
+                                
+        except json.JSONDecodeError:
             pass
+        except Exception as e:
+            print(f"Action execution error: {e}")
+            action_result = f"❌ Error: {str(e)}"
+        
+        # Clean up response text if it contains JSON
+        clean_response = response_text
+        if executed_action:
+            # Remove JSON from response for cleaner display
+            if '{' in clean_response and '}' in clean_response:
+                json_start = clean_response.find('{')
+                json_end = clean_response.rfind('}') + 1
+                clean_response = clean_response[:json_start].strip() + "\n\n" + (action_result or "")
+                clean_response = clean_response.strip()
         
         return {
             "success": True,
-            "message": response_text,
-            "task": task
+            "message": clean_response,
+            "task": task_data,
+            "action": executed_action,
+            "actionResult": action_result
         }
         
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("LLM Chat Error")
         raise HTTPException(status_code=500, detail=f"Failed to process request: {str(e)}")
+
+
+def format_tasks_for_context(tasks: list, lists: list) -> str:
+    """Format tasks into a readable context string for the LLM"""
+    if not tasks:
+        return "No tasks yet. The user's task list is empty."
+    
+    # Build a lookup for list names
+    list_lookup = {}
+    for lst in lists:
+        list_id = str(lst.get("_id", ""))
+        list_lookup[list_id] = lst.get("name", "Unknown List")
+    
+    context_lines = []
+    incomplete_tasks = []
+    completed_tasks = []
+    
+    for task in tasks:
+        task_id = str(task.get("_id", ""))
+        title = task.get("title", "Untitled")
+        status = task.get("status", "scheduled")
+        priority = task.get("priority", "none")
+        due_date = task.get("dueDate")
+        tags = task.get("tags", [])
+        
+        # Format due date
+        due_str = ""
+        if due_date:
+            if isinstance(due_date, datetime):
+                due_str = f" | Due: {due_date.strftime('%Y-%m-%d %H:%M')}"
+            else:
+                due_str = f" | Due: {due_date}"
+        
+        # Format priority
+        priority_str = "" if priority == "none" else f" | Priority: {priority.upper()}"
+        
+        # Format tags
+        tags_str = "" if not tags else f" | Tags: {', '.join(tags)}"
+        
+        task_line = f"- [{task_id}] {title} ({status}){priority_str}{due_str}{tags_str}"
+        
+        if status == "completed":
+            completed_tasks.append(task_line)
+        else:
+            incomplete_tasks.append(task_line)
+    
+    if incomplete_tasks:
+        context_lines.append(f"### Incomplete Tasks ({len(incomplete_tasks)}):")
+        context_lines.extend(incomplete_tasks)
+    
+    if completed_tasks:
+        context_lines.append(f"\n### Completed Tasks ({len(completed_tasks)}):")
+        context_lines.extend(completed_tasks[:5])  # Only show last 5 completed
+        if len(completed_tasks) > 5:
+            context_lines.append(f"  ... and {len(completed_tasks) - 5} more completed tasks")
+    
+    return "\n".join(context_lines)
 
 
 @router.get("/providers", response_model=dict)

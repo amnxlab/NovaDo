@@ -163,6 +163,15 @@ class MongitaCursorWrapper:
             logger.error(f"to_list error: {e}")
             return []
 
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self._cursor)
+        except StopIteration:
+            raise StopAsyncIteration
+
 
 class MongitaDatabaseWrapper:
     """Wrapper for Mongita database to provide async-compatible access"""

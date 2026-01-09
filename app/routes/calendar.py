@@ -11,6 +11,13 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 import os
 import json
+from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Ensure .env is loaded (in case this module is imported before main.py loads it)
+load_dotenv()
 
 # Google OAuth imports
 from google.oauth2.credentials import Credentials
@@ -20,10 +27,20 @@ from google.auth.transport.requests import Request as GoogleRequest
 
 router = APIRouter()
 
-# Google OAuth Configuration
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:5000/api/calendar/callback")
+
+def get_google_client_id():
+    """Get GOOGLE_CLIENT_ID at runtime"""
+    return os.getenv("GOOGLE_CLIENT_ID", "")
+
+
+def get_google_client_secret():
+    """Get GOOGLE_CLIENT_SECRET at runtime"""
+    return os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+
+def get_google_redirect_uri():
+    """Get GOOGLE_REDIRECT_URI at runtime"""
+    return os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:5000/api/calendar/callback")
 
 # OAuth scopes for Google Calendar
 SCOPES = [
@@ -31,6 +48,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/calendar.events.readonly",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
+    "openid",
 ]
 
 # Store OAuth states temporarily (in production, use Redis or database)
@@ -56,23 +74,27 @@ class CalendarEvent(BaseModel):
 
 def get_oauth_flow():
     """Create OAuth flow with client config"""
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    client_id = get_google_client_id()
+    client_secret = get_google_client_secret()
+    redirect_uri = get_google_redirect_uri()
+    
+    if not client_id or not client_secret:
         return None
     
     client_config = {
         "web": {
-            "client_id": GOOGLE_CLIENT_ID,
-            "client_secret": GOOGLE_CLIENT_SECRET,
+            "client_id": client_id,
+            "client_secret": client_secret,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
-            "redirect_uris": [GOOGLE_REDIRECT_URI],
+            "redirect_uris": [redirect_uri],
         }
     }
     
     flow = Flow.from_client_config(
         client_config,
         scopes=SCOPES,
-        redirect_uri=GOOGLE_REDIRECT_URI
+        redirect_uri=redirect_uri
     )
     return flow
 
@@ -86,8 +108,8 @@ def get_credentials_from_user(user: dict) -> Optional[Credentials]:
         token=user.get("googleAccessToken"),
         refresh_token=user.get("googleRefreshToken"),
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=GOOGLE_CLIENT_ID,
-        client_secret=GOOGLE_CLIENT_SECRET,
+        client_id=get_google_client_id(),
+        client_secret=get_google_client_secret(),
         scopes=SCOPES
     )
     
@@ -111,10 +133,16 @@ def get_credentials_from_user(user: dict) -> Optional[Credentials]:
     return creds
 
 
+class CalendarSelection(BaseModel):
+    calendar_ids: List[str]
+
+
 @router.get("/config")
 async def get_calendar_config():
     """Get Google Calendar configuration status"""
-    is_configured = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+    client_id = get_google_client_id()
+    client_secret = get_google_client_secret()
+    is_configured = bool(client_id and client_secret)
     return {
         "configured": is_configured,
         "message": "Google Calendar is configured" if is_configured else "Google Calendar credentials not set. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env file."
@@ -124,24 +152,29 @@ async def get_calendar_config():
 @router.get("/status")
 async def get_calendar_status(current_user: dict = Depends(get_current_user)):
     """Check Google Calendar connection status"""
-    is_connected = bool(
-        current_user.get("googleAccessToken") and
-        current_user.get("googleRefreshToken")
-    )
+    has_access = bool(current_user.get("googleAccessToken"))
+    has_refresh = bool(current_user.get("googleRefreshToken"))
+    
+    logger.info(f"DEBUG: Calendar Status Check - User: {current_user.get('username')}, Access: {has_access}, Refresh: {has_refresh}")
+    
+    # Relaxed check: connected if we have access token. 
+    # Refresh token might be missing if re-authed without consent, but access still works for 1h.
+    is_connected = has_access 
     
     google_email = current_user.get("googleEmail")
     
     return {
         "connected": is_connected,
         "email": google_email if is_connected else None,
-        "configured": bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+        "configured": bool(get_google_client_id() and get_google_client_secret()),
+        "warning": "Refresh token missing - connection will expire" if (is_connected and not has_refresh) else None
     }
 
 
 @router.get("/auth")
 async def start_google_auth(current_user: dict = Depends(get_current_user)):
     """Start Google OAuth flow - returns authorization URL"""
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    if not get_google_client_id() or not get_google_client_secret():
         raise HTTPException(
             status_code=400,
             detail="Google Calendar not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your .env file."
@@ -158,12 +191,15 @@ async def start_google_auth(current_user: dict = Depends(get_current_user)):
         prompt="consent"
     )
     
-    # Store state with user ID for callback
+    # Store state with user ID for callback in DATABASE (persistent)
     user_id = str(current_user.get("_id"))
-    oauth_states[state] = {
+    logger.info(f"DEBUG: Starting OAuth - User: {user_id}, State: {state}")
+    db = get_database()
+    await db.oauth_states.insert_one({
+        "state": state,
         "user_id": user_id,
         "created_at": datetime.now()
-    }
+    })
     
     return {
         "authorization_url": authorization_url,
@@ -178,6 +214,7 @@ async def google_auth_callback(
     error: str = Query(None)
 ):
     """Handle Google OAuth callback - automatically import calendar after connection"""
+    logger.info(f"DEBUG: OAuth Callback - Code: {bool(code)}, State: {state}, Error: {error}")
     # Check for errors
     if error:
         return RedirectResponse(
@@ -191,8 +228,10 @@ async def google_auth_callback(
             status_code=302
         )
     
-    # Verify state
-    state_data = oauth_states.get(state)
+    # Verify state from DATABASE
+    db = get_database()
+    state_data = await db.oauth_states.find_one({"state": state})
+    
     if not state_data:
         return RedirectResponse(
             url="/?google_auth=error&message=Invalid state parameter",
@@ -200,7 +239,8 @@ async def google_auth_callback(
         )
     
     user_id = state_data["user_id"]
-    del oauth_states[state]  # Clean up state
+    # Clean up state
+    await db.oauth_states.delete_one({"_id": state_data["_id"]})
     
     try:
         flow = get_oauth_flow()
@@ -217,111 +257,35 @@ async def google_auth_callback(
         
         # Update user in database
         db = get_database()
-        db.users.update_one(
+        
+        # Default to selecting primary calendar if not set
+        current_selection = await db.users.find_one({"_id": ObjectId(user_id)}, {"googleSelectedCalendars": 1})
+        selected_calendars = current_selection.get("googleSelectedCalendars", ["primary"]) if current_selection else ["primary"]
+
+        update_data = {
+            "googleAccessToken": credentials.token,
+            "googleEmail": user_info.get("email"),
+            "googleConnectedAt": datetime.now(),
+            "googleSelectedCalendars": selected_calendars
+        }
+        
+        if credentials.refresh_token:
+            update_data["googleRefreshToken"] = credentials.refresh_token
+
+        await db.users.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {
-                "googleAccessToken": credentials.token,
-                "googleRefreshToken": credentials.refresh_token,
-                "googleEmail": user_info.get("email"),
-                "googleConnectedAt": datetime.now()
-            }}
+            {"$set": update_data}
         )
         
-        # Automatically import calendar events as tasks
-        try:
-            calendar_service = build("calendar", "v3", credentials=credentials)
-            
-            # Get events from last 30 days and next 90 days
-            now = datetime.utcnow()
-            time_min = (now - timedelta(days=30)).isoformat() + "Z"
-            time_max = (now + timedelta(days=90)).isoformat() + "Z"
-            
-            events_result = calendar_service.events().list(
-                calendarId="primary",
-                timeMin=time_min,
-                timeMax=time_max,
-                singleEvents=True,
-                orderBy="startTime",
-                maxResults=500
-            ).execute()
-            
-            events = events_result.get("items", [])
-            imported_count = 0
-            
-            for event in events:
-                start = event.get("start", {})
-                end = event.get("end", {})
-                
-                is_all_day = "date" in start
-                
-                if is_all_day:
-                    start_dt = datetime.fromisoformat(start["date"])
-                    due_time = None
-                else:
-                    start_str = start.get("dateTime", "")
-                    if start_str:
-                        start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                        due_time = start_dt.strftime("%H:%M")
-                    else:
-                        continue
-                
-                google_event_id = event.get("id")
-                
-                # Check if already imported
-                existing = db.tasks.find_one({
-                    "user": user_id,
-                    "googleEventId": google_event_id
-                })
-                
-                if existing:
-                    continue
-                
-                # Create as task
-                task_doc = {
-                    "title": event.get("summary", "Untitled"),
-                    "description": event.get("description", ""),
-                    "user": user_id,
-                    "list": None,
-                    "dueDate": start_dt,
-                    "dueTime": due_time,
-                    "priority": "none",
-                    "status": "scheduled",
-                    "tags": ["google-calendar"],
-                    "subtasks": [],
-                    "attachments": [],
-                    "order": 0,
-                    "createdByAI": False,
-                    "googleEventId": google_event_id,
-                    "googleCalendarId": "primary",
-                    "createdAt": datetime.now(),
-                    "updatedAt": datetime.now()
-                }
-                
-                db.tasks.insert_one(task_doc)
-                imported_count += 1
-            
-            # Update last sync time
-            db.users.update_one(
-                {"_id": ObjectId(user_id)},
-                {"$set": {"lastCalendarSync": datetime.utcnow()}}
-            )
-            
-            return RedirectResponse(
-                url=f"/?google_auth=success&imported={imported_count}",
-                status_code=302
-            )
-        except Exception as import_error:
-            print(f"Auto-import error (connection still saved): {import_error}")
-            # Still return success - connection is saved, import can be retried
-            return RedirectResponse(
-                url="/?google_auth=success&imported=0",
-                status_code=302
-            )
+        return RedirectResponse(
+            url=f"/?google_auth=success",
+            status_code=302
+        )
         
     except Exception as e:
-        print(f"Google auth callback error: {e}")
+        logger.exception("Google auth callback error")
         return RedirectResponse(
-            url=f"/?google_auth=error&message=Authentication failed",
+            url=f"/?google_auth=error&message=Authentication failed: {str(e)}",
             status_code=302
         )
 
@@ -337,7 +301,8 @@ async def disconnect_google(current_user: dict = Depends(get_current_user)):
             "googleAccessToken": "",
             "googleRefreshToken": "",
             "googleEmail": "",
-            "googleConnectedAt": ""
+            "googleConnectedAt": "",
+            "googleSelectedCalendars": ""
         }}
     )
     
@@ -356,13 +321,17 @@ async def list_calendars(current_user: dict = Depends(get_current_user)):
         calendars_result = service.calendarList().list().execute()
         calendars = calendars_result.get("items", [])
         
+        # Get selected calendars from user profile
+        selected_ids = current_user.get("googleSelectedCalendars", ["primary"])
+        
         return {
             "calendars": [
                 {
                     "id": cal["id"],
                     "name": cal["summary"],
                     "primary": cal.get("primary", False),
-                    "color": cal.get("backgroundColor", "#4772fa")
+                    "color": cal.get("backgroundColor", "#4772fa"),
+                    "selected": cal["id"] in selected_ids
                 }
                 for cal in calendars
             ]
@@ -370,6 +339,22 @@ async def list_calendars(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         print(f"List calendars error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to list calendars: {str(e)}")
+
+
+@router.post("/calendars/select")
+async def select_calendars(
+    selection: CalendarSelection,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update selected Google Calendars"""
+    db = get_database()
+    
+    await db.users.update_one(
+        {"_id": ObjectId(current_user["_id"])},
+        {"$set": {"googleSelectedCalendars": selection.calendar_ids}}
+    )
+    
+    return {"message": "Calendar selection updated", "selected": selection.calendar_ids}
 
 
 @router.get("/events")
@@ -527,7 +512,7 @@ async def import_calendar(
                     "updatedAt": datetime.now()
                 }
                 
-                result = db.tasks.insert_one(task_doc)
+                result = await db.tasks.insert_one(task_doc)
                 task_doc["_id"] = str(result.inserted_id)
                 imported_items.append(task_doc)
                 imported_count += 1
@@ -547,7 +532,7 @@ async def import_calendar(
                     "updatedAt": datetime.now()
                 }
                 
-                result = db.calendar_events.insert_one(event_doc)
+                result = await db.calendar_events.insert_one(event_doc)
                 event_doc["_id"] = str(result.inserted_id)
                 imported_items.append(event_doc)
                 imported_count += 1
@@ -565,7 +550,7 @@ async def import_calendar(
 
 @router.post("/sync")
 async def sync_calendar(current_user: dict = Depends(get_current_user)):
-    """Sync new events from Google Calendar"""
+    """Sync new events from ALL selected Google Calendars"""
     creds = get_credentials_from_user(current_user)
     if not creds:
         raise HTTPException(status_code=400, detail="Google Calendar not connected")
@@ -575,80 +560,100 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
         db = get_database()
         user_id = str(current_user["_id"])
         
+        # Get selected calendars and their colors
+        selected_ids = current_user.get("googleSelectedCalendars", ["primary"])
+        
+        # Fetch calendar colors
+        calendars_result = service.calendarList().list().execute()
+        calendars_items = calendars_result.get("items", [])
+        calendar_colors = {c['id']: c.get('backgroundColor', '#4772fa') for c in calendars_items}
+        
         # Get events from last sync or last 7 days
         last_sync = current_user.get("lastCalendarSync")
         if last_sync:
-            time_min = last_sync.isoformat() + "Z"
+            # Buffer back 1 hour to ensure nothing missed
+            time_min = (last_sync - timedelta(hours=1)).isoformat() + "Z"
         else:
             time_min = (datetime.utcnow() - timedelta(days=7)).isoformat() + "Z"
-        
+            
         time_max = (datetime.utcnow() + timedelta(days=90)).isoformat() + "Z"
         
-        events_result = service.events().list(
-            calendarId="primary",
-            timeMin=time_min,
-            timeMax=time_max,
-            singleEvents=True,
-            orderBy="startTime",
-            maxResults=100
-        ).execute()
-        
-        events = events_result.get("items", [])
         synced_count = 0
         
-        for event in events:
-            google_event_id = event.get("id")
-            
-            # Check if exists
-            existing = db.tasks.find_one({
-                "user": user_id,
-                "googleEventId": google_event_id
-            })
-            
-            if not existing:
-                start = event.get("start", {})
-                is_all_day = "date" in start
+        # Iterate over EACH selected calendar
+        for cal_id in selected_ids:
+            try:
+                events_result = service.events().list(
+                    calendarId=cal_id,
+                    timeMin=time_min,
+                    timeMax=time_max,
+                    singleEvents=True,
+                    orderBy="startTime",
+                    maxResults=200
+                ).execute()
                 
-                if is_all_day:
-                    start_dt = datetime.fromisoformat(start["date"])
-                    due_time = None
-                else:
-                    start_str = start.get("dateTime", "")
-                    if start_str:
-                        start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                        due_time = start_dt.strftime("%H:%M")
-                    else:
-                        continue
+                events = events_result.get("items", [])
+                cal_color = calendar_colors.get(cal_id, "#4772fa")
                 
-                task_doc = {
-                    "title": event.get("summary", "Untitled"),
-                    "description": event.get("description", ""),
-                    "user": user_id,
-                    "list": None,
-                    "dueDate": start_dt,
-                    "dueTime": due_time,
-                    "priority": "none",
-                    "status": "scheduled",
-                    "tags": ["google-calendar", "synced"],
-                    "subtasks": [],
-                    "attachments": [],
-                    "order": 0,
-                    "googleEventId": google_event_id,
-                    "createdAt": datetime.now(),
-                    "updatedAt": datetime.now()
-                }
-                
-                db.tasks.insert_one(task_doc)
-                synced_count += 1
+                for event in events:
+                    google_event_id = event.get("id")
+                    
+                    # Check if exists
+                    existing = await db.tasks.find_one({
+                        "user": user_id,
+                        "googleEventId": google_event_id
+                    })
+                    
+                    if not existing:
+                        start = event.get("start", {})
+                        is_all_day = "date" in start
+                        
+                        if is_all_day:
+                            start_dt = datetime.fromisoformat(start["date"])
+                            due_time = None
+                        else:
+                            start_str = start.get("dateTime", "")
+                            if start_str:
+                                start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+                                due_time = start_dt.strftime("%H:%M")
+                            else:
+                                continue
+                        
+                        task_doc = {
+                            "title": event.get("summary", "Untitled"),
+                            "description": event.get("description", ""),
+                            "user": user_id,
+                            "list": None,
+                            "dueDate": start_dt,
+                            "dueTime": due_time,
+                            "priority": "none",
+                            "status": "scheduled",
+                            "tags": ["google-calendar", "synced"],
+                            "subtasks": [],
+                            "attachments": [],
+                            "order": 0,
+                            "googleEventId": google_event_id,
+                            "googleCalendarId": cal_id,
+                            "googleCalendarColor": cal_color,
+                            "createdAt": datetime.now(),
+                            "updatedAt": datetime.now()
+                        }
+                        
+                        await db.tasks.insert_one(task_doc)
+                        synced_count += 1
+                        
+            except Exception as cal_error:
+                print(f"Error syncing calendar {cal_id}: {cal_error}")
+                continue
         
         # Update last sync time
-        db.users.update_one(
+        await db.users.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"lastCalendarSync": datetime.utcnow()}}
         )
         
         return {
-            "message": f"Synced {synced_count} new events",
+            "message": f"Synced {synced_count} new events from {len(selected_ids)} calendars",
             "count": synced_count
         }
         

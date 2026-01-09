@@ -159,7 +159,7 @@ class API {
     _convertPriorityToEnum(priority) {
         // Frontend uses numbers (0=none, 1=low, 2=medium, 3=high)
         // Backend expects enum strings
-        const priorityMap = {0: "none", 1: "low", 2: "medium", 3: "high"};
+        const priorityMap = { 0: "none", 1: "low", 2: "medium", 3: "high" };
         if (typeof priority === "number") {
             return priorityMap[priority] || "none";
         }
@@ -169,7 +169,7 @@ class API {
     _normalizeTask(task) {
         // Convert backend format to frontend format
         if (!task) return task;
-        const normalized = {...task};
+        const normalized = { ...task };
         // Convert list object to list_id string
         if (normalized.list) {
             if (typeof normalized.list === 'object' && normalized.list._id) {
@@ -198,7 +198,7 @@ class API {
         // Convert priority enum to number
         if (normalized.priority) {
             if (typeof normalized.priority === "string") {
-                const priorityMap = {"none": 0, "low": 1, "medium": 2, "high": 3};
+                const priorityMap = { "none": 0, "low": 1, "medium": 2, "high": 3 };
                 normalized.priority = priorityMap[normalized.priority] || 0;
             }
         } else {
@@ -310,16 +310,16 @@ class API {
             body: JSON.stringify({ message, conversationHistory })
         });
     }
-    
+
     async getLLMProviders() {
         return this.request('/llm/providers');
     }
-    
+
     // File uploads
     async uploadFile(file) {
         const formData = new FormData();
         formData.append('file', file);
-        
+
         const response = await fetch(`${this.baseUrl}/uploads/`, {
             method: 'POST',
             headers: {
@@ -327,14 +327,14 @@ class API {
             },
             body: formData
         });
-        
+
         if (!response.ok) {
             throw new Error('Upload failed');
         }
-        
+
         return response.json();
     }
-    
+
     // Task ordering
     async updateTaskOrder(taskIds) {
         return this.request('/tasks/reorder', {
@@ -342,7 +342,7 @@ class API {
             body: JSON.stringify({ taskIds })
         });
     }
-    
+
     // Pomodoro
     async savePomodoroSession(session) {
         return this.request('/pomodoro/', {
@@ -350,44 +350,44 @@ class API {
             body: JSON.stringify(session)
         });
     }
-    
+
     async getPomodoroSessions(date = null) {
         const query = date ? `?date=${date}` : '';
         return this.request(`/pomodoro/${query}`);
     }
-    
+
     // Statistics
     async getStats() {
         return this.request('/stats/');
     }
-    
+
     // Google Calendar
     async getCalendarConfig() {
-        return this.request('/calendar/config');
+        return this.request(`/calendar/config?t=${Date.now()}`);
     }
-    
+
     async getCalendarStatus() {
-        return this.request('/calendar/status');
+        return this.request(`/calendar/status?t=${Date.now()}`);
     }
-    
+
     async startGoogleAuth() {
-        return this.request('/calendar/auth');
+        return this.request(`/calendar/auth?t=${Date.now()}`);
     }
-    
+
     async disconnectGoogle() {
         return this.request('/calendar/disconnect', {
             method: 'POST'
         });
     }
-    
+
     async listCalendars() {
-        return this.request('/calendar/calendars');
+        return this.request(`/calendar/calendars?t=${Date.now()}`);
     }
-    
+
     async getCalendarEvents(calendarId = 'primary', daysBack = 30, daysForward = 90) {
-        return this.request(`/calendar/events?calendar_id=${calendarId}&days_back=${daysBack}&days_forward=${daysForward}`);
+        return this.request(`/calendar/events?calendar_id=${calendarId}&days_back=${daysBack}&days_forward=${daysForward}&t=${Date.now()}`);
     }
-    
+
     async importCalendar(importAs, calendarId = 'primary', daysBack = 30, daysForward = 90) {
         return this.request('/calendar/import', {
             method: 'POST',
@@ -399,10 +399,17 @@ class API {
             })
         });
     }
-    
+
     async syncCalendar() {
         return this.request('/calendar/sync', {
             method: 'POST'
+        });
+    }
+
+    async selectCalendars(calendarIds) {
+        return this.request('/calendar/calendars/select', {
+            method: 'POST',
+            body: JSON.stringify({ calendar_ids: calendarIds })
         });
     }
 }
