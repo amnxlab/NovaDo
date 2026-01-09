@@ -1,5 +1,5 @@
 /**
- * TaskFlow Notifications
+ * NovaDo Notifications
  * Handles push notifications and reminders
  */
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TaskFlow - Complete Start Script
+NovaDo - Complete Start Script
 Handles installation, setup, and starting all services
 """
 import os
@@ -141,7 +141,7 @@ def kill_process_on_port(port):
             pass
 
 def main():
-    print_header("TaskFlow - Starting All Services")
+    print_header("NovaDo - Starting All Services")
     
     errors = []
     
@@ -309,7 +309,7 @@ export PYTHONUNBUFFERED=1
     webbrowser.open('http://localhost:5000')
     
     # Final message
-    print_header("TaskFlow is Running!")
+    print_header("NovaDo is Running!")
     print(f"App:       http://localhost:5000")
     print(f"API Docs:  http://localhost:5000/docs\n")
     print(f"A console window is running the server.")

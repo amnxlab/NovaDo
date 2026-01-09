@@ -15,7 +15,8 @@ class Priority(str, Enum):
 
 
 class TaskStatus(str, Enum):
-    ACTIVE = "active"
+    SCHEDULED = "scheduled"
+    IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     DELETED = "deleted"
 

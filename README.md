@@ -1,4 +1,4 @@
-# TaskFlow
+# NovaDo
 
 A smart task management application with AI integration and Google Calendar sync, built with FastAPI (Python) and vanilla JavaScript.
 
@@ -136,7 +136,7 @@ http://localhost:5000
 
 ### AI Assistant (Free Options Available!)
 
-TaskFlow includes an AI assistant that lets you create tasks using natural language. Click the **🤖 floating button** in the bottom-right corner to start chatting!
+NovaDo includes an AI assistant that lets you create tasks using natural language. Click the **🤖 floating button** in the bottom-right corner to start chatting!
 
 **Example commands:**
 - "Remind me to call mom tomorrow at 3pm"

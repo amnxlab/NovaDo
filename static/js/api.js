@@ -1,5 +1,5 @@
 /**
- * TaskFlow API Client
+ * NovaDo API Client
  */
 
 const API_URL = window.location.origin + '/api';
@@ -120,7 +120,8 @@ class API {
             list: listId || null,  // Convert list_id to list, null if empty (backend will find Inbox)
             dueDate: task.due_date ? new Date(task.due_date) : null,  // Convert due_date to dueDate
             priority: this._convertPriorityToEnum(task.priority),  // Convert number to enum
-            tags: task.tags || []
+            tags: task.tags || [],
+            status: task.status || "scheduled"
         };
         const data = await this.request('/tasks/', {
             method: 'POST',
@@ -140,7 +141,12 @@ class API {
         if (task.due_date !== undefined) backendTask.dueDate = task.due_date ? new Date(task.due_date) : null;
         if (task.priority !== undefined) backendTask.priority = this._convertPriorityToEnum(task.priority);
         if (task.tags !== undefined) backendTask.tags = task.tags;
-        if (task.completed !== undefined) backendTask.status = task.completed ? "completed" : "active";
+        // Handle status - support both old 'completed' boolean and new 'status' string
+        if (task.status !== undefined) {
+            backendTask.status = task.status;
+        } else if (task.completed !== undefined) {
+            backendTask.status = task.completed ? "completed" : "scheduled";
+        }
         const data = await this.request(`/tasks/${id}`, {
             method: 'PUT',
             body: JSON.stringify(backendTask)
@@ -180,12 +186,15 @@ class API {
         if (normalized.dueDate) {
             normalized.due_date = normalized.dueDate;
         }
-        // Convert status to completed boolean
-        if (normalized.status !== undefined) {
-            normalized.completed = normalized.status === "completed";
-        } else if (normalized.completed === undefined) {
-            normalized.completed = false;
+        // Normalize status - keep the status field, also set completed for backward compatibility
+        if (!normalized.status) {
+            normalized.status = 'scheduled';
         }
+        // Handle legacy 'active' status -> 'scheduled'
+        if (normalized.status === 'active') {
+            normalized.status = 'scheduled';
+        }
+        normalized.completed = normalized.status === "completed";
         // Convert priority enum to number
         if (normalized.priority) {
             if (typeof normalized.priority === "string") {

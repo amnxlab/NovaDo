@@ -1,5 +1,5 @@
 @echo off
-REM TaskFlow - Windows Batch Wrapper
+REM NovaDo - Windows Batch Wrapper
 REM Calls the Python start script
 
 python start.py

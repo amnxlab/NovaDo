@@ -329,7 +329,7 @@ async def chat(
         provider = current_user["llmProvider"]
         
         # Chat system prompt
-        chat_system = """You are a helpful task management assistant called TaskFlow AI. You help users:
+        chat_system = """You are a helpful task management assistant called NovaDo AI. You help users:
 - Create and organize tasks
 - Set priorities and due dates
 - Manage their productivity

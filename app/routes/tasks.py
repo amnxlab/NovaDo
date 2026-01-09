@@ -145,7 +145,7 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
         "dueDate": task_data.dueDate,
         "dueTime": task_data.dueTime,
         "priority": task_data.priority.value,
-        "status": "active",
+        "status": "scheduled",
         "tags": task_data.tags,
         "subtasks": [s.dict() for s in task_data.subtasks],
         "attachments": [a.dict() for a in task_data.attachments] if task_data.attachments else [],
@@ -216,6 +216,10 @@ async def update_task(
         update_data["priority"] = task_data.priority.value
     if task_data.status is not None:
         update_data["status"] = task_data.status.value
+        # Track when task was started (in_progress)
+        if task_data.status.value == "in_progress" and task.get("status") != "in_progress":
+            update_data["startedAt"] = datetime.now()
+        # Track when task was completed
         if task_data.status.value == "completed" and task.get("status") != "completed":
             update_data["completedAt"] = datetime.now()
             # Update user stats
@@ -223,6 +227,9 @@ async def update_task(
                 {"_id": ObjectId(current_user["_id"])},
                 {"$inc": {"stats.totalTasksCompleted": 1}}
             )
+        # If task is reopened, clear completedAt
+        if task_data.status.value != "completed" and task.get("status") == "completed":
+            update_data["completedAt"] = None
     if task_data.tags is not None:
         update_data["tags"] = task_data.tags
     if task_data.subtasks is not None:
@@ -303,7 +310,7 @@ async def get_task_stats(current_user: dict = Depends(get_current_user)):
     
     total_active = await db.tasks.count_documents({
         "user": ObjectId(current_user["_id"]),
-        "status": "active"
+        "status": "scheduled"
     })
     
     completed_today = await db.tasks.count_documents({
@@ -314,14 +321,14 @@ async def get_task_stats(current_user: dict = Depends(get_current_user)):
     
     overdue = await db.tasks.count_documents({
         "user": ObjectId(current_user["_id"]),
-        "status": "active",
+        "status": "scheduled",
         "dueDate": {"$lt": today}
     })
     
     next_week = today.replace(day=today.day + 7)
     upcoming = await db.tasks.count_documents({
         "user": ObjectId(current_user["_id"]),
-        "status": "active",
+        "status": "scheduled",
         "dueDate": {"$gte": today, "$lte": next_week}
     })
     

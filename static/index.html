@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskFlow - Smart Task Management</title>
+    <title>NovaDo - Smart Task Management</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -15,8 +15,8 @@
             <div class="auth-container">
                 <div class="auth-header">
                     <div class="logo">
-                        <span class="logo-icon">✓</span>
-                        <span class="logo-text">TaskFlow</span>
+                        <span class="logo-icon">✦</span>
+                        <span class="logo-text">NovaDo</span>
                     </div>
                     <p class="tagline">Smart Task Management</p>
                 </div>
@@ -66,44 +66,21 @@
             <aside class="sidebar">
                 <div class="sidebar-header">
                     <div class="logo">
-                        <span class="logo-icon">✓</span>
-                        <span class="logo-text">TaskFlow</span>
+                        <span class="logo-icon">✦</span>
+                        <span class="logo-text">NovaDo</span>
                     </div>
                 </div>
                 
                 <nav class="sidebar-nav">
-                    <div class="nav-section">
-                        <h3>Smart Lists</h3>
-                        <ul id="smart-lists">
-                            <li class="nav-item active" data-list="inbox">
-                                <span class="nav-icon">📥</span>
-                                <span class="nav-label">Inbox</span>
-                                <span class="nav-count" id="inbox-count">0</span>
-                            </li>
-                            <li class="nav-item" data-list="today">
-                                <span class="nav-icon">📅</span>
-                                <span class="nav-label">Today</span>
-                                <span class="nav-count" id="today-count">0</span>
-                            </li>
-                            <li class="nav-item" data-list="week">
-                                <span class="nav-icon">📆</span>
-                                <span class="nav-label">Next 7 Days</span>
-                                <span class="nav-count" id="week-count">0</span>
-                            </li>
-                            <li class="nav-item" data-list="all">
-                                <span class="nav-icon">📋</span>
-                                <span class="nav-label">All Tasks</span>
-                                <span class="nav-count" id="all-count">0</span>
-                            </li>
-                            <li class="nav-item" data-list="completed">
-                                <span class="nav-icon">✅</span>
-                                <span class="nav-label">Completed</span>
-                                <span class="nav-count" id="completed-count">0</span>
-                            </li>
-                        </ul>
+                    <div class="nav-section" data-section="smart-lists">
+                        <h3>
+                            Smart Lists
+                            <button class="btn-icon section-add-btn" data-section="smart-lists" title="Add Smart List">+</button>
+                        </h3>
+                        <ul id="smart-lists"></ul>
                     </div>
                     
-                    <div class="nav-section">
+                    <div class="nav-section" data-section="my-lists">
                         <h3>
                             My Lists
                             <button class="btn-icon" id="add-list-btn" title="Add List">+</button>
@@ -111,26 +88,12 @@
                         <ul id="custom-lists"></ul>
                     </div>
                     
-                    <div class="nav-section">
-                        <h3>Tools</h3>
-                        <ul>
-                            <li class="nav-item" data-view="habits">
-                                <span class="nav-icon">🎯</span>
-                                <span class="nav-label">Habits</span>
-                            </li>
-                            <li class="nav-item" data-view="calendar">
-                                <span class="nav-icon">📆</span>
-                                <span class="nav-label">Calendar</span>
-                            </li>
-                            <li class="nav-item" data-view="pomodoro">
-                                <span class="nav-icon">🍅</span>
-                                <span class="nav-label">Pomodoro</span>
-                            </li>
-                            <li class="nav-item" data-view="stats">
-                                <span class="nav-icon">📊</span>
-                                <span class="nav-label">Statistics</span>
-                            </li>
-                        </ul>
+                    <div class="nav-section" data-section="tools">
+                        <h3>
+                            Tools
+                            <button class="btn-icon section-add-btn" data-section="tools" title="Add Tool">+</button>
+                        </h3>
+                        <ul id="tools-list"></ul>
                     </div>
                 </nav>
                 
@@ -165,11 +128,15 @@
                 
                 <!-- Tasks View -->
                 <div id="tasks-view" class="view">
+                    <div class="quick-add-task" id="quick-add-task">
+                        <span class="add-icon">+</span>
+                        <input type="text" id="quick-task-input" placeholder="Add a task...">
+                    </div>
                     <div id="tasks-list" class="tasks-list"></div>
                     <div id="empty-state" class="empty-state hidden">
                         <div class="empty-icon">📝</div>
                         <h3>No tasks yet</h3>
-                        <p>Click "New Task" to get started</p>
+                        <p>Press Enter to add your first task</p>
                     </div>
                 </div>
                 
@@ -185,12 +152,26 @@
                 
                 <!-- Calendar View -->
                 <div id="calendar-view" class="view hidden">
-                    <div class="calendar-header">
-                        <button class="btn-icon" id="prev-month">◀</button>
-                        <h2 id="calendar-month"></h2>
-                        <button class="btn-icon" id="next-month">▶</button>
+                    <div class="calendar-toolbar">
+                        <div class="calendar-nav">
+                            <button class="btn-icon" id="prev-period">◀</button>
+                            <h2 id="calendar-month"></h2>
+                            <button class="btn-icon" id="next-period">▶</button>
+                            <button class="btn btn-secondary" id="today-btn">Today</button>
+                        </div>
+                        <div class="calendar-view-modes">
+                            <button class="view-mode-btn" data-mode="day">Day</button>
+                            <button class="view-mode-btn" data-mode="week">Week</button>
+                            <button class="view-mode-btn active" data-mode="month">Month</button>
+                            <button class="view-mode-btn" data-mode="agenda">Agenda</button>
+                        </div>
                     </div>
-                    <div class="calendar-grid" id="calendar-grid"></div>
+                    <div class="calendar-container">
+                        <div class="calendar-grid" id="calendar-grid"></div>
+                        <div class="calendar-day-view hidden" id="calendar-day-view"></div>
+                        <div class="calendar-week-view hidden" id="calendar-week-view"></div>
+                        <div class="calendar-agenda-view hidden" id="calendar-agenda-view"></div>
+                    </div>
                 </div>
                 
                 <!-- Pomodoro View -->
@@ -329,6 +310,39 @@
                     </div>
                     
                     <div class="settings-section">
+                        <h2>📅 Google Calendar</h2>
+                        <p class="settings-description">Connect your Google Calendar to import events and keep everything in sync.</p>
+                        <div id="google-calendar-settings">
+                            <div id="gcal-not-configured" class="gcal-status hidden">
+                                <div class="status-badge warning">⚠️ Not Configured</div>
+                                <p>Google Calendar integration requires setup. Add your Google OAuth credentials to the .env file:</p>
+                                <code class="code-block">
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
+                                </code>
+                                <p><a href="https://console.cloud.google.com/apis/credentials" target="_blank">Get credentials from Google Cloud Console →</a></p>
+                            </div>
+                            <div id="gcal-disconnected" class="gcal-status hidden">
+                                <div class="status-badge neutral">Not Connected</div>
+                                <p>Connect your Google Calendar to import events and sync your schedule.</p>
+                                <button class="btn btn-primary" id="connect-google-btn">
+                                    <span class="google-icon">G</span> Connect Google Calendar
+                                </button>
+                            </div>
+                            <div id="gcal-connected" class="gcal-status hidden">
+                                <div class="status-badge success">✓ Connected</div>
+                                <p>Connected as: <strong id="gcal-email"></strong></p>
+                                <div class="gcal-actions">
+                                    <button class="btn btn-primary" id="import-calendar-btn">📥 Import Events</button>
+                                    <button class="btn btn-secondary" id="sync-calendar-btn">🔄 Sync Now</button>
+                                    <button class="btn btn-outline danger" id="disconnect-google-btn">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
                         <h2>Notifications</h2>
                         <p class="settings-description">Get reminders for tasks, habits, and pomodoro sessions.</p>
                         <div class="notification-settings">
@@ -402,9 +416,19 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="task-list">List</label>
-                    <select id="task-list"></select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-status">Status</label>
+                        <select id="task-status">
+                            <option value="scheduled">📅 Scheduled</option>
+                            <option value="in_progress">▶️ In Progress</option>
+                            <option value="completed">✓ Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-list">List</label>
+                        <select id="task-list"></select>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="task-tags">Tags (comma separated)</label>
@@ -507,7 +531,7 @@
         <div class="modal-overlay"></div>
         <div class="modal-content modal-chat">
             <div class="modal-header">
-                <h2>🤖 TaskFlow AI</h2>
+                <h2>🤖 NovaDo AI</h2>
                 <button class="btn-close" id="close-smart-modal">&times;</button>
             </div>
             <div class="smart-input-container">
@@ -539,6 +563,117 @@
         <span class="ai-fab-icon">🤖</span>
         <span class="ai-fab-pulse"></span>
     </button>
+    
+    <!-- Google Calendar Import Modal -->
+    <div id="gcal-import-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📅 Import from Google Calendar</h2>
+                <button class="btn-close" id="close-gcal-import">&times;</button>
+            </div>
+            <div class="gcal-import-content">
+                <div class="form-group">
+                    <label for="gcal-select">Select Calendar</label>
+                    <select id="gcal-select">
+                        <option value="primary">Primary Calendar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Import As</label>
+                    <div class="import-type-options">
+                        <label class="import-option">
+                            <input type="radio" name="import-type" value="tasks" checked>
+                            <div class="import-option-card">
+                                <span class="import-icon">✓</span>
+                                <span class="import-label">Tasks</span>
+                                <span class="import-desc">Add to your task list with due dates</span>
+                            </div>
+                        </label>
+                        <label class="import-option">
+                            <input type="radio" name="import-type" value="events">
+                            <div class="import-option-card">
+                                <span class="import-icon">📅</span>
+                                <span class="import-label">Events</span>
+                                <span class="import-desc">Keep as calendar events only</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Time Range</label>
+                    <div class="time-range-options">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="days-back">Days Back</label>
+                                <input type="number" id="days-back" value="30" min="0" max="365">
+                            </div>
+                            <div class="form-group">
+                                <label for="days-forward">Days Forward</label>
+                                <input type="number" id="days-forward" value="90" min="0" max="365">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="gcal-preview" class="gcal-preview hidden">
+                    <h4>Preview (<span id="preview-count">0</span> events)</h4>
+                    <div id="gcal-preview-list" class="preview-list"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="preview-import-btn">👁️ Preview</button>
+                    <button type="button" class="btn btn-primary" id="confirm-import-btn">📥 Import</button>
+                </div>
+                <div id="import-status" class="import-status"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Menu for Sidebar Items -->
+    <div id="context-menu" class="context-menu hidden">
+        <button class="context-menu-item" data-action="rename">
+            <span>✏️</span> Rename
+        </button>
+        <button class="context-menu-item" data-action="delete">
+            <span>🗑️</span> Remove
+        </button>
+    </div>
+    
+    <!-- Add Sidebar Item Modal -->
+    <div id="add-sidebar-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2 id="add-sidebar-title">Add Item</h2>
+                <button class="btn-close" id="close-sidebar-modal">&times;</button>
+            </div>
+            <div class="sidebar-items-list" id="available-sidebar-items">
+                <!-- Items will be populated by JS -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rename Modal -->
+    <div id="rename-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2>Rename</h2>
+                <button class="btn-close" id="close-rename-modal">&times;</button>
+            </div>
+            <form id="rename-form">
+                <input type="hidden" id="rename-item-id">
+                <input type="hidden" id="rename-item-type">
+                <div class="form-group">
+                    <label for="rename-input">Name</label>
+                    <input type="text" id="rename-input" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-rename">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
     
     <!-- Toast Container -->
     <div id="toast-container"></div>

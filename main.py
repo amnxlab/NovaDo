@@ -1,5 +1,5 @@
 """
-TaskFlow - FastAPI Backend Server
+NovaDo - FastAPI Backend Server
 Main application entry point
 """
 import os
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="TaskFlow API",
+    title="NovaDo API",
     description="Smart Task Management API with AI and Google Calendar Integration",
     version="1.0.0",
     lifespan=lifespan
@@ -68,7 +68,7 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "ok",
-        "message": "TaskFlow API is running"
+        "message": "NovaDo API is running"
     }
 
 
@@ -97,7 +97,7 @@ async def serve_spa(full_path: str):
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    print(f"\n  TaskFlow is running!")
+    print(f"\n  NovaDo is running!")
     print(f"  Open http://localhost:{port} in your browser\n")
     uvicorn.run(
         "main:app",

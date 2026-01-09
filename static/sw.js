@@ -1,5 +1,5 @@
 /**
- * TaskFlow Service Worker
+ * NovaDo Service Worker
  * Handles push notifications and background tasks
  */
 
@@ -22,7 +22,7 @@ self.addEventListener('push', (event) => {
     console.log('Push notification received:', event);
     
     let data = {
-        title: 'TaskFlow',
+        title: 'NovaDo',
         body: 'You have a notification',
         icon: '/favicon.ico',
         badge: '/favicon.ico',
@@ -46,7 +46,7 @@ self.addEventListener('push', (event) => {
         data: data.data,
         vibrate: [100, 50, 100],
         actions: data.actions || [
-            { action: 'open', title: 'Open TaskFlow' },
+            { action: 'open', title: 'Open NovaDo' },
             { action: 'dismiss', title: 'Dismiss' }
         ],
         requireInteraction: data.requireInteraction || false
