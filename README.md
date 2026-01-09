@@ -1,161 +1,250 @@
-# TaskFlow - Smart Task Management
+# TaskFlow
 
-A modern task management application with AI-powered task creation, habit tracking, and calendar view. Built with Python (FastAPI) and pure HTML/CSS/JavaScript - **no Node.js required**.
+A smart task management application with AI integration and Google Calendar sync, built with FastAPI (Python) and vanilla JavaScript.
 
-## ✨ Features
+## Features
 
-- **Task Management** - Create, edit, delete, and organize tasks
-- **Smart Lists** - Inbox, Today, Next 7 Days, All, Completed
-- **Custom Lists** - Create your own lists with colors
-- **Habits Tracker** - Track daily/weekly habits with streaks
-- **Calendar View** - Visual task organization by date
-- **AI Smart Input** - Natural language task creation (OpenAI/DeepSeek)
-- **Dark/Light Theme** - Beautiful dark theme by default
-- **Search** - Find tasks quickly
-- **Priorities & Tags** - Organize with priorities and tags
+- **Task Management**: Create, edit, delete, and organize tasks with priorities, due dates, and tags
+- **Smart Lists**: Automatic filtering for Inbox, Today, Next 7 Days, and Completed tasks
+- **Custom Lists**: Create your own lists with custom colors
+- **Habit Tracking**: Track daily habits with streak counting
+- **Calendar View**: Visualize tasks on a monthly calendar
+- **AI Integration**: Natural language task creation (requires OpenAI API key)
+- **Dark/Light Theme**: Toggle between themes
+- **Local Database**: Works offline with Mongita (file-based database)
 
-## 🚀 Quick Start
+## Prerequisites
 
-### Prerequisites
+- **Python 3.10+** (tested with Python 3.14)
+- **pip** (Python package manager)
 
-- **Python 3.8+** - [Download](https://www.python.org/downloads/)
-- **MongoDB** - [Download](https://www.mongodb.com/try/download/community) or use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (free)
+## Installation
 
-### One Command Start
+### 1. Clone the Repository
 
 ```bash
-python start.py
+git clone https://github.com/yourusername/Planner.git
+cd Planner
 ```
 
-Or on Windows, double-click `start.bat`
+### 2. Create Virtual Environment
 
-The script will:
-1. Check Python is installed
-2. Create virtual environment
-3. Install Python dependencies
-4. Create configuration files
-5. Start the server
-6. Open your browser
-
-### Access
-
-Open http://localhost:5000 in your browser
-
-## 📁 Project Structure
-
-```
-TaskFlow/
-├── app/                    # Python backend
-│   ├── routes/             # API endpoints
-│   ├── auth.py             # Authentication
-│   ├── database.py         # MongoDB connection
-│   └── models.py           # Data models
-├── static/                 # Frontend (pure HTML/CSS/JS)
-│   ├── css/style.css       # Styles
-│   ├── js/api.js           # API client
-│   ├── js/app.js           # Application logic
-│   └── index.html          # Main page
-├── app.py                  # FastAPI server
-├── requirements.txt        # Python dependencies
-├── start.py                # Start script
-└── env.example             # Environment template
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
 ```
 
-## ⚙️ Configuration
+**Windows (Command Prompt):**
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
+```
 
-Copy `env.example` to `.env` and configure:
+**macOS/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment (Optional)
+
+Create a `.env` file in the project root:
 
 ```env
+# Server settings
 PORT=5000
+
+# JWT Secret (change this in production!)
+JWT_SECRET=your-super-secret-key-change-this
+
+# MongoDB (optional - app uses local Mongita if not available)
 MONGODB_URI=mongodb://localhost:27017/taskflow
-JWT_SECRET=your-secret-key
+
+# Google OAuth (optional - for calendar sync)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
+
+# OpenAI (optional - for AI features)
+OPENAI_API_KEY=your-openai-api-key
 ```
 
-### MongoDB Atlas (Cloud)
+## Running the Application
 
-1. Create free account at [mongodb.com/atlas](https://www.mongodb.com/cloud/atlas)
-2. Create a cluster
-3. Get connection string
-4. Update `MONGODB_URI` in `.env`:
-   ```
-   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/taskflow
-   ```
-
-### AI Assistant (Optional)
-
-1. Go to Settings in the app
-2. Enter your API key:
-   - **OpenAI**: Get from [platform.openai.com](https://platform.openai.com/api-keys)
-   - **DeepSeek**: Get from [platform.deepseek.com](https://platform.deepseek.com)
-3. Use the Smart Input feature to create tasks with natural language
-
-## 🛠️ Manual Setup
+### Start the Server
 
 ```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-
-# Activate (Linux/Mac)
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start server
-python app.py
+python main.py
 ```
 
-## 📚 API Documentation
+Or using uvicorn directly:
 
-Interactive API docs available at http://localhost:5000/docs
+```bash
+uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+```
 
-### Main Endpoints
+### Access the Application
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/auth/register | Register new user |
-| POST | /api/auth/login | Login |
-| GET | /api/auth/me | Get current user |
-| GET | /api/tasks | Get all tasks |
-| POST | /api/tasks | Create task |
-| PUT | /api/tasks/{id} | Update task |
-| DELETE | /api/tasks/{id} | Delete task |
-| GET | /api/lists | Get all lists |
-| POST | /api/lists | Create list |
-| GET | /api/habits | Get all habits |
-| POST | /api/habits | Create habit |
-| POST | /api/habits/{id}/complete | Mark habit complete |
-| POST | /api/llm/parse | Parse natural language task |
+Open your browser and navigate to:
 
-## 🎨 Tech Stack
+```
+http://localhost:5000
+```
 
-**Backend:**
-- Python 3.8+
-- FastAPI
-- MongoDB with Motor (async)
-- JWT Authentication
-- OpenAI SDK
+## Usage
 
-**Frontend:**
-- Pure HTML5
-- CSS3 (CSS Variables, Flexbox, Grid)
-- Vanilla JavaScript (ES6+)
-- No frameworks, no build step
+### First Time Setup
 
-## 🔒 Security
+1. Open the application in your browser
+2. Click the **Register** tab
+3. Enter your name, email, and password
+4. Click **Register** to create your account
+5. You'll be automatically logged in
 
-- Password hashing with bcrypt
-- JWT token authentication
-- API key encryption
-- Input validation
+### Creating Tasks
 
-## 📝 License
+1. Click the **+ New Task** button
+2. Enter a title (required)
+3. Optionally add:
+   - Description
+   - Due date and time
+   - Priority (None, Low, Medium, High)
+   - List assignment
+   - Tags (comma-separated)
+4. Click **Save Task**
 
-MIT License
+### Managing Lists
 
----
+1. Click **+ New List** in the sidebar
+2. Enter a name and choose a color
+3. Click **Create List**
+4. Tasks can be assigned to your custom lists
 
-**Built with Python and ❤️**
+### Tracking Habits
+
+1. Click **Habits** in the sidebar
+2. Click **+ New Habit**
+3. Enter the habit name and frequency
+4. Click the day circles to mark habits as complete
+
+### AI Features (Optional)
+
+To enable AI-powered task creation:
+
+1. Go to **Settings**
+2. Under AI Configuration, select a provider (OpenAI)
+3. Enter your API key
+4. Click **Save**
+
+Now you can use natural language to create tasks!
+
+## Project Structure
+
+```
+Planner/
+├── main.py              # FastAPI application entry point
+├── requirements.txt     # Python dependencies
+├── .env                 # Environment configuration (create this)
+├── app/
+│   ├── auth.py          # Authentication utilities
+│   ├── database.py      # Database connection (MongoDB/Mongita)
+│   ├── models.py        # Pydantic models
+│   └── routes/          # API route handlers
+│       ├── auth.py      # Authentication routes
+│       ├── tasks.py     # Task CRUD routes
+│       ├── lists.py     # List management routes
+│       ├── habits.py    # Habit tracking routes
+│       ├── calendar.py  # Calendar integration
+│       ├── llm.py       # AI/LLM routes
+│       └── user.py      # User settings routes
+├── static/
+│   ├── index.html       # Main HTML page
+│   ├── css/
+│   │   └── styles.css   # Application styles
+│   └── js/
+│       ├── api.js       # API client
+│       └── app.js       # Frontend application logic
+├── data/                # Local database storage (auto-created)
+└── uploads/             # File uploads (auto-created)
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login
+- `GET /api/auth/me` - Get current user
+
+### Tasks
+- `GET /api/tasks/` - Get all tasks
+- `POST /api/tasks/` - Create task
+- `GET /api/tasks/{id}` - Get single task
+- `PUT /api/tasks/{id}` - Update task
+- `DELETE /api/tasks/{id}` - Delete task
+
+### Lists
+- `GET /api/lists/` - Get all lists
+- `POST /api/lists/` - Create list
+- `PUT /api/lists/{id}` - Update list
+- `DELETE /api/lists/{id}` - Delete list
+
+### Habits
+- `GET /api/habits/` - Get all habits
+- `POST /api/habits/` - Create habit
+- `POST /api/habits/{id}/complete` - Mark habit complete
+- `DELETE /api/habits/{id}` - Delete habit
+
+### Health Check
+- `GET /api/health` - Server health status
+
+## Troubleshooting
+
+### Port Already in Use
+
+If port 5000 is busy, use a different port:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 5001
+```
+
+### Database Issues
+
+The app automatically falls back to Mongita (local file-based database) if MongoDB is not available. Data is stored in the `data/` directory.
+
+To reset the database, delete the `data/` folder and restart the server.
+
+### Windows Encoding Errors
+
+If you see Unicode encoding errors on Windows, ensure your terminal supports UTF-8 or the issue has been resolved in the latest version.
+
+## Development
+
+### Running in Development Mode
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 5000
+```
+
+The `--reload` flag enables auto-reload when code changes.
+
+### API Documentation
+
+FastAPI provides automatic API documentation:
+
+- **Swagger UI**: http://localhost:5000/docs
+- **ReDoc**: http://localhost:5000/redoc
+
+## License
+
+MIT License - feel free to use this project for learning or building your own applications.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.

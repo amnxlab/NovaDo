@@ -203,13 +203,12 @@ async def connect_db():
         database = client[db_name]
         use_mongita = False
         logger.info("MongoDB connected successfully")
-        print("✅ MongoDB connected successfully")
+        print("[OK] MongoDB connected successfully")
         return
         
     except Exception as e:
         logger.warning(f"MongoDB connection failed: {e}")
-        print(f"⚠️ MongoDB not available: {e}")
-        print("📦 Falling back to Mongita (local file-based database)...")
+        print(f"[WARN] MongoDB not available, falling back to local database...")
     
     # Fallback to Mongita
     try:
@@ -224,12 +223,12 @@ async def connect_db():
         use_mongita = True
         
         logger.info("Mongita (local database) connected successfully")
-        print("✅ Mongita (local database) connected successfully")
-        print(f"   Data stored in: {data_dir}")
+        print("[OK] Mongita (local database) connected successfully")
+        print(f"     Data stored in: {data_dir}")
         
     except Exception as e:
         logger.error(f"Failed to connect to any database: {e}")
-        print(f"❌ Failed to connect to any database: {e}")
+        print(f"[ERROR] Failed to connect to any database: {e}")
         raise
 
 

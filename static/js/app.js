@@ -2,6 +2,9 @@
  * TaskFlow Application
  */
 
+// Reference to window.api (created in api.js, loaded before this script)
+const api = window.api;
+
 // State
 const state = {
     user: null,
@@ -46,8 +49,15 @@ const elements = {
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-    setupEventListeners();
-    await checkAuth();
+    try {
+        setupEventListeners();
+        await checkAuth();
+    } catch (error) {
+        console.error('Init error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Application initialization failed', 'error');
+        }
+    }
 }
 
 function setupEventListeners() {
@@ -132,7 +142,8 @@ async function checkAuth() {
     }
 
     try {
-        state.user = await api.getMe();
+        const meResponse = await api.getMe();
+        state.user = meResponse;
         showMainScreen();
         await loadData();
     } catch (error) {
@@ -148,8 +159,9 @@ async function handleLogin(e) {
 
     try {
         elements.loginError.textContent = '';
-        await api.login(email, password);
-        state.user = await api.getMe();
+        const loginResponse = await api.login(email, password);
+        // Use user from login response directly
+        state.user = loginResponse.user || loginResponse;
         showMainScreen();
         await loadData();
     } catch (error) {
@@ -165,8 +177,9 @@ async function handleRegister(e) {
 
     try {
         elements.registerError.textContent = '';
-        await api.register(name, email, password);
-        state.user = await api.getMe();
+        const registerResponse = await api.register(name, email, password);
+        // Use user from register response directly
+        state.user = registerResponse.user || registerResponse;
         showMainScreen();
         await loadData();
     } catch (error) {
@@ -508,11 +521,21 @@ async function handleTaskSubmit(e) {
     e.preventDefault();
     
     const taskId = document.getElementById('task-id').value;
+    let listId = document.getElementById('task-list').value || null;
+    
+    // If no list selected, find the user's Inbox list
+    if (!listId) {
+        const inboxList = state.lists.find(l => l.name === 'Inbox' || (l.isDefault && !l.isSmart));
+        if (inboxList) {
+            listId = inboxList._id || inboxList.id;
+        }
+    }
+    
     const taskData = {
         title: document.getElementById('task-title').value,
         description: document.getElementById('task-description').value,
         priority: parseInt(document.getElementById('task-priority').value),
-        list_id: document.getElementById('task-list').value || null,
+        list_id: listId,
         tags: document.getElementById('task-tags').value.split(',').map(t => t.trim()).filter(Boolean)
     };
 
@@ -991,4 +1014,3 @@ function showToast(message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
-

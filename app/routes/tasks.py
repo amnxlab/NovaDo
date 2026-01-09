@@ -110,9 +110,22 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
     """Create a new task"""
     db = get_database()
     
+    # Handle empty or missing list - find user's Inbox list
+    list_id = task_data.list
+    if not list_id or (isinstance(list_id, str) and list_id.strip() == ""):
+        # Find the user's Inbox list
+        inbox_list = await db.lists.find_one({
+            "user": ObjectId(current_user["_id"]),
+            "name": "Inbox",
+            "isDefault": True
+        })
+        if not inbox_list:
+            raise HTTPException(status_code=404, detail="Inbox list not found. Please contact support.")
+        list_id = str(inbox_list["_id"])
+    
     # Verify list belongs to user
     list_doc = await db.lists.find_one({
-        "_id": ObjectId(task_data.list),
+        "_id": ObjectId(list_id),
         "user": ObjectId(current_user["_id"])
     })
     
@@ -123,7 +136,7 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
         "title": task_data.title,
         "description": task_data.description or "",
         "user": ObjectId(current_user["_id"]),
-        "list": ObjectId(task_data.list),
+        "list": ObjectId(list_id),
         "dueDate": task_data.dueDate,
         "dueTime": task_data.dueTime,
         "priority": task_data.priority.value,

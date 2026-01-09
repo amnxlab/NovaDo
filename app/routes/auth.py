@@ -128,8 +128,6 @@ async def login(user_data: UserLogin):
 @router.get("/google")
 async def google_auth():
     """Initiate Google OAuth flow"""
-    # This would redirect to Google OAuth
-    # For now, return a message - full implementation would use google-auth-oauthlib
     google_client_id = os.getenv("GOOGLE_CLIENT_ID")
     redirect_uri = os.getenv("GOOGLE_CALLBACK_URL", "http://localhost:5000/api/auth/google/callback")
     
@@ -156,9 +154,6 @@ async def google_auth():
 @router.get("/google/callback")
 async def google_callback(code: str):
     """Handle Google OAuth callback"""
-    # This would process the OAuth callback
-    # Full implementation would exchange code for tokens
-    # For now, return a placeholder
     client_url = os.getenv("CLIENT_URL", "http://localhost:3000")
     return RedirectResponse(url=f"{client_url}/auth/callback?error=not_implemented")
 
@@ -215,4 +210,3 @@ async def disconnect_google(current_user: dict = Depends(get_current_user)):
     )
     
     return {"message": "Google account disconnected successfully"}
-

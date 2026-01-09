@@ -68,7 +68,7 @@ class Recurrence(BaseModel):
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
-    list: str
+    list: Optional[str] = None  # Optional for inbox tasks
     dueDate: Optional[datetime] = None
     dueTime: Optional[str] = None
     priority: Priority = Priority.NONE

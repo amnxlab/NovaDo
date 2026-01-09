@@ -56,6 +56,8 @@ class API {
         });
         if (data.access_token) {
             this.setToken(data.access_token);
+        } else if (data.token) {
+            this.setToken(data.token);
         }
         return data;
     }
@@ -67,12 +69,16 @@ class API {
         });
         if (data.access_token) {
             this.setToken(data.access_token);
+        } else if (data.token) {
+            this.setToken(data.token);
         }
         return data;
     }
 
     async getMe() {
-        return this.request('/auth/me');
+        const data = await this.request('/auth/me');
+        // Return user object directly for consistency
+        return data.user || data;
     }
 
     async updateProfile(data) {
@@ -89,25 +95,107 @@ class API {
     // Tasks
     async getTasks(params = {}) {
         const query = new URLSearchParams(params).toString();
-        return this.request(`/tasks${query ? '?' + query : ''}`);
+        const data = await this.request(`/tasks/${query ? '?' + query : ''}`);
+        // Backend returns {"tasks": [...]}, extract and normalize the array
+        const tasks = data.tasks || data;
+        if (Array.isArray(tasks)) {
+            return tasks.map(task => this._normalizeTask(task));
+        }
+        return tasks;
     }
 
     async getTask(id) {
-        return this.request(`/tasks/${id}`);
+        const data = await this.request(`/tasks/${id}`);
+        // Backend returns {"task": {...}}, extract and normalize
+        const taskObj = data.task || data;
+        return this._normalizeTask(taskObj);
     }
 
     async createTask(task) {
-        return this.request('/tasks', {
+        // Convert frontend field names to backend field names
+        const listId = task.list_id || task.list;
+        const backendTask = {
+            title: task.title,
+            description: task.description || "",
+            list: listId || null,  // Convert list_id to list, null if empty (backend will find Inbox)
+            dueDate: task.due_date ? new Date(task.due_date) : null,  // Convert due_date to dueDate
+            priority: this._convertPriorityToEnum(task.priority),  // Convert number to enum
+            tags: task.tags || []
+        };
+        const data = await this.request('/tasks/', {
             method: 'POST',
-            body: JSON.stringify(task)
+            body: JSON.stringify(backendTask)
         });
+        // Backend returns {"task": {...}}, extract and normalize
+        const taskObj = data.task || data;
+        return this._normalizeTask(taskObj);
     }
 
     async updateTask(id, task) {
-        return this.request(`/tasks/${id}`, {
+        // Convert frontend field names to backend field names
+        const backendTask = {};
+        if (task.title !== undefined) backendTask.title = task.title;
+        if (task.description !== undefined) backendTask.description = task.description;
+        if (task.list_id !== undefined) backendTask.list = task.list_id;  // Convert list_id to list
+        if (task.due_date !== undefined) backendTask.dueDate = task.due_date ? new Date(task.due_date) : null;
+        if (task.priority !== undefined) backendTask.priority = this._convertPriorityToEnum(task.priority);
+        if (task.tags !== undefined) backendTask.tags = task.tags;
+        if (task.completed !== undefined) backendTask.status = task.completed ? "completed" : "active";
+        const data = await this.request(`/tasks/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(task)
+            body: JSON.stringify(backendTask)
         });
+        // Backend returns {"task": {...}}, extract and normalize
+        const taskObj = data.task || data;
+        return this._normalizeTask(taskObj);
+    }
+
+    _convertPriorityToEnum(priority) {
+        // Frontend uses numbers (0=none, 1=low, 2=medium, 3=high)
+        // Backend expects enum strings
+        const priorityMap = {0: "none", 1: "low", 2: "medium", 3: "high"};
+        if (typeof priority === "number") {
+            return priorityMap[priority] || "none";
+        }
+        return priority || "none";
+    }
+
+    _normalizeTask(task) {
+        // Convert backend format to frontend format
+        if (!task) return task;
+        const normalized = {...task};
+        // Convert list object to list_id string
+        if (normalized.list) {
+            if (typeof normalized.list === 'object' && normalized.list._id) {
+                normalized.list_id = normalized.list._id;
+            } else if (typeof normalized.list === 'object' && normalized.list.id) {
+                normalized.list_id = normalized.list.id;
+            } else if (normalized.list) {
+                normalized.list_id = String(normalized.list);
+            }
+        } else {
+            normalized.list_id = null;
+        }
+        // Convert dueDate to due_date
+        if (normalized.dueDate) {
+            normalized.due_date = normalized.dueDate;
+        }
+        // Convert status to completed boolean
+        if (normalized.status !== undefined) {
+            normalized.completed = normalized.status === "completed";
+        } else if (normalized.completed === undefined) {
+            normalized.completed = false;
+        }
+        // Convert priority enum to number
+        if (normalized.priority) {
+            if (typeof normalized.priority === "string") {
+                const priorityMap = {"none": 0, "low": 1, "medium": 2, "high": 3};
+                normalized.priority = priorityMap[normalized.priority] || 0;
+            }
+        } else {
+            normalized.priority = 0;
+        }
+        return normalized;
     }
 
     async deleteTask(id) {
@@ -118,14 +206,18 @@ class API {
 
     // Lists
     async getLists() {
-        return this.request('/lists');
+        const data = await this.request('/lists/');
+        // Backend returns {"lists": [...]}, extract the array
+        return data.lists || data;
     }
 
     async createList(list) {
-        return this.request('/lists', {
+        const data = await this.request('/lists/', {
             method: 'POST',
             body: JSON.stringify(list)
         });
+        // Backend returns {"list": {...}}, extract the list object
+        return data.list || data;
     }
 
     async updateList(id, list) {
@@ -143,14 +235,18 @@ class API {
 
     // Habits
     async getHabits() {
-        return this.request('/habits');
+        const data = await this.request('/habits/');
+        // Backend returns {"habits": [...]}, extract the array
+        return data.habits || data;
     }
 
     async createHabit(habit) {
-        return this.request('/habits', {
+        const data = await this.request('/habits/', {
             method: 'POST',
             body: JSON.stringify(habit)
         });
+        // Backend returns {"habit": {...}}, extract the habit object
+        return data.habit || data;
     }
 
     async updateHabit(id, habit) {
@@ -208,4 +304,3 @@ class API {
 }
 
 window.api = new API();
-
