@@ -70,7 +70,7 @@ MONGODB_URI=mongodb://localhost:27017/taskflow
 # Google OAuth (optional - for calendar sync)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
+GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
 
 # OpenAI (optional - for AI features)
 OPENAI_API_KEY=your-openai-api-key
@@ -158,6 +158,35 @@ NovaDo includes an AI assistant that lets you create tasks using natural languag
 4. Click **Configure AI**
 
 **Recommended:** Start with **Google Gemini** - it's free and works great!
+
+### Google Calendar Integration
+
+Connect your Google Calendar to import events and keep everything in sync:
+
+1. **Set up Google OAuth Credentials:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the **Google Calendar API**
+   - Go to **Credentials** → **Create Credentials** → **OAuth 2.0 Client ID**
+   - Choose **Web application**
+   - Add authorized redirect URI: `http://localhost:5000/api/calendar/callback`
+   - Copy the **Client ID** and **Client Secret**
+
+2. **Add credentials to `.env` file:**
+   ```env
+   GOOGLE_CLIENT_ID=your-client-id-here
+   GOOGLE_CLIENT_SECRET=your-client-secret-here
+   GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
+   ```
+
+3. **Connect in the app:**
+   - Go to **Settings** → **Google Calendar**
+   - Click **Connect Google Calendar**
+   - Authorize the app in the popup window
+   - Once connected, you can:
+     - **Import Events**: Import events as tasks or keep them as calendar events
+     - **Sync**: Automatically sync new events from your Google Calendar
+     - **View**: See your Google Calendar events in the calendar view
 
 ## Project Structure
 

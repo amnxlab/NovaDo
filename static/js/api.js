@@ -360,6 +360,51 @@ class API {
     async getStats() {
         return this.request('/stats/');
     }
+    
+    // Google Calendar
+    async getCalendarConfig() {
+        return this.request('/calendar/config');
+    }
+    
+    async getCalendarStatus() {
+        return this.request('/calendar/status');
+    }
+    
+    async startGoogleAuth() {
+        return this.request('/calendar/auth');
+    }
+    
+    async disconnectGoogle() {
+        return this.request('/calendar/disconnect', {
+            method: 'POST'
+        });
+    }
+    
+    async listCalendars() {
+        return this.request('/calendar/calendars');
+    }
+    
+    async getCalendarEvents(calendarId = 'primary', daysBack = 30, daysForward = 90) {
+        return this.request(`/calendar/events?calendar_id=${calendarId}&days_back=${daysBack}&days_forward=${daysForward}`);
+    }
+    
+    async importCalendar(importAs, calendarId = 'primary', daysBack = 30, daysForward = 90) {
+        return this.request('/calendar/import', {
+            method: 'POST',
+            body: JSON.stringify({
+                import_as: importAs,
+                calendar_id: calendarId,
+                days_back: daysBack,
+                days_forward: daysForward
+            })
+        });
+    }
+    
+    async syncCalendar() {
+        return this.request('/calendar/sync', {
+            method: 'POST'
+        });
+    }
 }
 
 window.api = new API();

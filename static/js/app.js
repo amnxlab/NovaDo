@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', init);
 async function init() {
     try {
         setupEventListeners();
+        checkGoogleAuthCallback(); // Check for Google OAuth callback
         await checkAuth();
     } catch (error) {
         console.error('Init error:', error);
@@ -213,6 +214,19 @@ function setupEventListeners() {
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', () => setTheme(btn.dataset.theme));
     });
+    
+    // Google Calendar
+    document.getElementById('connect-google-btn')?.addEventListener('click', connectGoogleCalendar);
+    document.getElementById('disconnect-google-btn')?.addEventListener('click', disconnectGoogleCalendar);
+    document.getElementById('sync-calendar-btn')?.addEventListener('click', syncGoogleCalendar);
+    
+    // Load Google Calendar status when settings view is shown
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            setTimeout(loadGoogleCalendarStatus, 100);
+        });
+    }
     
     // Notifications
     document.getElementById('enable-notifications-btn').addEventListener('click', enableNotifications);
@@ -454,6 +468,7 @@ function showView(view) {
             elements.settingsView.classList.remove('hidden');
             elements.currentViewTitle.textContent = 'Settings';
             loadLLMConfig();
+            loadGoogleCalendarStatus(); // Load Google Calendar status
             break;
         default:
             elements.tasksView.classList.remove('hidden');
@@ -1789,6 +1804,116 @@ function setTheme(theme) {
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.theme === theme);
     });
+}
+
+// ============================================
+// GOOGLE CALENDAR INTEGRATION
+// ============================================
+
+async function loadGoogleCalendarStatus() {
+    try {
+        const config = await api.getCalendarConfig();
+        const status = await api.getCalendarStatus();
+        
+        // Show/hide status sections
+        const notConfigured = document.getElementById('gcal-not-configured');
+        const disconnected = document.getElementById('gcal-disconnected');
+        const connected = document.getElementById('gcal-connected');
+        
+        if (!config.configured) {
+            notConfigured?.classList.remove('hidden');
+            disconnected?.classList.add('hidden');
+            connected?.classList.add('hidden');
+            return;
+        }
+        
+        notConfigured?.classList.add('hidden');
+        
+        if (status.connected) {
+            disconnected?.classList.add('hidden');
+            connected?.classList.remove('hidden');
+            const emailEl = document.getElementById('gcal-email');
+            if (emailEl) emailEl.textContent = status.email || 'Connected';
+        } else {
+            disconnected?.classList.remove('hidden');
+            connected?.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Failed to load Google Calendar status:', error);
+    }
+}
+
+async function connectGoogleCalendar() {
+    try {
+        const response = await api.startGoogleAuth();
+        
+        if (response.authorization_url) {
+            // Redirect directly to Google OAuth (like Todoist does)
+            window.location.href = response.authorization_url;
+        }
+    } catch (error) {
+        console.error('Connect Google Calendar error:', error);
+        showToast(error.message || 'Failed to connect Google Calendar', 'error');
+    }
+}
+
+async function disconnectGoogleCalendar() {
+    if (!confirm('Are you sure you want to disconnect Google Calendar?')) {
+        return;
+    }
+    
+    try {
+        await api.disconnectGoogle();
+        loadGoogleCalendarStatus();
+        showToast('Google Calendar disconnected', 'success');
+    } catch (error) {
+        console.error('Disconnect error:', error);
+        showToast('Failed to disconnect', 'error');
+    }
+}
+
+// Import modal functions removed - auto-import on connect
+
+async function syncGoogleCalendar() {
+    try {
+        showToast('Syncing calendar...', 'info');
+        const response = await api.syncCalendar();
+        
+        if (response.count > 0) {
+            await loadData();
+            showToast(`Synced ${response.count} new events`, 'success');
+        } else {
+            showToast('No new events to sync', 'info');
+        }
+    } catch (error) {
+        console.error('Sync error:', error);
+        showToast(error.message || 'Failed to sync calendar', 'error');
+    }
+}
+
+// Check for Google auth callback in URL
+function checkGoogleAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authStatus = urlParams.get('google_auth');
+    const imported = urlParams.get('imported');
+    
+    if (authStatus === 'success') {
+        const importedCount = parseInt(imported) || 0;
+        if (importedCount > 0) {
+            showToast(`Google Calendar connected! Imported ${importedCount} events as tasks.`, 'success');
+            // Reload tasks to show imported events
+            loadData();
+        } else {
+            showToast('Google Calendar connected successfully!', 'success');
+        }
+        loadGoogleCalendarStatus();
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (authStatus === 'error') {
+        const message = urlParams.get('message') || 'Authentication failed';
+        showToast(`Google Calendar: ${message}`, 'error');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 }
 
 // AI Chat

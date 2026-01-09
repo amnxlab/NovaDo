@@ -311,7 +311,7 @@
                     
                     <div class="settings-section">
                         <h2>📅 Google Calendar</h2>
-                        <p class="settings-description">Connect your Google Calendar to import events and keep everything in sync.</p>
+                        <p class="settings-description">Connect your Google Calendar to automatically import events and keep everything in sync.</p>
                         <div id="google-calendar-settings">
                             <div id="gcal-not-configured" class="gcal-status hidden">
                                 <div class="status-badge warning">⚠️ Not Configured</div>
@@ -325,7 +325,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                             </div>
                             <div id="gcal-disconnected" class="gcal-status hidden">
                                 <div class="status-badge neutral">Not Connected</div>
-                                <p>Connect your Google Calendar to import events and sync your schedule.</p>
+                                <p>Click below to connect your Google Calendar. Your events will be automatically imported as tasks.</p>
                                 <button class="btn btn-primary" id="connect-google-btn">
                                     <span class="google-icon">G</span> Connect Google Calendar
                                 </button>
@@ -333,8 +333,8 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                             <div id="gcal-connected" class="gcal-status hidden">
                                 <div class="status-badge success">✓ Connected</div>
                                 <p>Connected as: <strong id="gcal-email"></strong></p>
+                                <p class="settings-description" style="margin-top: 0.5rem;">Your calendar events are automatically synced. New events will appear as tasks.</p>
                                 <div class="gcal-actions">
-                                    <button class="btn btn-primary" id="import-calendar-btn">📥 Import Events</button>
                                     <button class="btn btn-secondary" id="sync-calendar-btn">🔄 Sync Now</button>
                                     <button class="btn btn-outline danger" id="disconnect-google-btn">Disconnect</button>
                                 </div>
@@ -563,70 +563,6 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
         <span class="ai-fab-icon">🤖</span>
         <span class="ai-fab-pulse"></span>
     </button>
-    
-    <!-- Google Calendar Import Modal -->
-    <div id="gcal-import-modal" class="modal hidden">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>📅 Import from Google Calendar</h2>
-                <button class="btn-close" id="close-gcal-import">&times;</button>
-            </div>
-            <div class="gcal-import-content">
-                <div class="form-group">
-                    <label for="gcal-select">Select Calendar</label>
-                    <select id="gcal-select">
-                        <option value="primary">Primary Calendar</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Import As</label>
-                    <div class="import-type-options">
-                        <label class="import-option">
-                            <input type="radio" name="import-type" value="tasks" checked>
-                            <div class="import-option-card">
-                                <span class="import-icon">✓</span>
-                                <span class="import-label">Tasks</span>
-                                <span class="import-desc">Add to your task list with due dates</span>
-                            </div>
-                        </label>
-                        <label class="import-option">
-                            <input type="radio" name="import-type" value="events">
-                            <div class="import-option-card">
-                                <span class="import-icon">📅</span>
-                                <span class="import-label">Events</span>
-                                <span class="import-desc">Keep as calendar events only</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Time Range</label>
-                    <div class="time-range-options">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="days-back">Days Back</label>
-                                <input type="number" id="days-back" value="30" min="0" max="365">
-                            </div>
-                            <div class="form-group">
-                                <label for="days-forward">Days Forward</label>
-                                <input type="number" id="days-forward" value="90" min="0" max="365">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="gcal-preview" class="gcal-preview hidden">
-                    <h4>Preview (<span id="preview-count">0</span> events)</h4>
-                    <div id="gcal-preview-list" class="preview-list"></div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="preview-import-btn">👁️ Preview</button>
-                    <button type="button" class="btn btn-primary" id="confirm-import-btn">📥 Import</button>
-                </div>
-                <div id="import-status" class="import-status"></div>
-            </div>
-        </div>
-    </div>
     
     <!-- Context Menu for Sidebar Items -->
     <div id="context-menu" class="context-menu hidden">

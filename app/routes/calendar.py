@@ -177,7 +177,7 @@ async def google_auth_callback(
     state: str = Query(None),
     error: str = Query(None)
 ):
-    """Handle Google OAuth callback"""
+    """Handle Google OAuth callback - automatically import calendar after connection"""
     # Check for errors
     if error:
         return RedirectResponse(
@@ -227,10 +227,96 @@ async def google_auth_callback(
             }}
         )
         
-        return RedirectResponse(
-            url="/?google_auth=success",
-            status_code=302
-        )
+        # Automatically import calendar events as tasks
+        try:
+            calendar_service = build("calendar", "v3", credentials=credentials)
+            
+            # Get events from last 30 days and next 90 days
+            now = datetime.utcnow()
+            time_min = (now - timedelta(days=30)).isoformat() + "Z"
+            time_max = (now + timedelta(days=90)).isoformat() + "Z"
+            
+            events_result = calendar_service.events().list(
+                calendarId="primary",
+                timeMin=time_min,
+                timeMax=time_max,
+                singleEvents=True,
+                orderBy="startTime",
+                maxResults=500
+            ).execute()
+            
+            events = events_result.get("items", [])
+            imported_count = 0
+            
+            for event in events:
+                start = event.get("start", {})
+                end = event.get("end", {})
+                
+                is_all_day = "date" in start
+                
+                if is_all_day:
+                    start_dt = datetime.fromisoformat(start["date"])
+                    due_time = None
+                else:
+                    start_str = start.get("dateTime", "")
+                    if start_str:
+                        start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+                        due_time = start_dt.strftime("%H:%M")
+                    else:
+                        continue
+                
+                google_event_id = event.get("id")
+                
+                # Check if already imported
+                existing = db.tasks.find_one({
+                    "user": user_id,
+                    "googleEventId": google_event_id
+                })
+                
+                if existing:
+                    continue
+                
+                # Create as task
+                task_doc = {
+                    "title": event.get("summary", "Untitled"),
+                    "description": event.get("description", ""),
+                    "user": user_id,
+                    "list": None,
+                    "dueDate": start_dt,
+                    "dueTime": due_time,
+                    "priority": "none",
+                    "status": "scheduled",
+                    "tags": ["google-calendar"],
+                    "subtasks": [],
+                    "attachments": [],
+                    "order": 0,
+                    "createdByAI": False,
+                    "googleEventId": google_event_id,
+                    "googleCalendarId": "primary",
+                    "createdAt": datetime.now(),
+                    "updatedAt": datetime.now()
+                }
+                
+                db.tasks.insert_one(task_doc)
+                imported_count += 1
+            
+            # Update last sync time
+            db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"lastCalendarSync": datetime.utcnow()}}
+            )
+            
+            return RedirectResponse(
+                url=f"/?google_auth=success&imported={imported_count}",
+                status_code=302
+            )
+        except Exception as import_error:
+            print(f"Auto-import error (connection still saved): {import_error}")
+            # Still return success - connection is saved, import can be retried
+            return RedirectResponse(
+                url="/?google_auth=success&imported=0",
+                status_code=302
+            )
         
     except Exception as e:
         print(f"Google auth callback error: {e}")
