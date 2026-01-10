@@ -182,3 +182,140 @@ async def get_habit_stats(
         "averageCompletionRate": round(sum(h["completionRate"] for h in habit_stats) / max(len(habit_stats), 1), 1)
     }
 
+
+@router.get("/monthly", response_model=dict)
+async def get_monthly_stats(
+    current_user: dict = Depends(get_current_user)
+):
+    """Get monthly aggregated statistics"""
+    db = get_database()
+    user_id = current_user["_id"]
+    
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start = today.replace(day=1)
+    
+    # Get all tasks
+    tasks = await db.tasks.find({"user_id": user_id}).to_list(1000)
+    
+    # Filter tasks from this month
+    month_tasks = [t for t in tasks if t.get("createdAt") and datetime.fromisoformat(t.get("createdAt").replace("Z", "+00:00")) >= month_start]
+    
+    # Calculate total focus hours from Pomodoro sessions
+    focus_sessions = await db.focus_sessions.find({
+        "user": user_id,
+        "type": "pomo",
+        "startTime": {"$gte": month_start}
+    }).to_list(1000) if hasattr(db, 'focus_sessions') else []
+    
+    total_focus_minutes = sum(s.get("duration", 25) for s in focus_sessions)
+    total_focus_hours = round(total_focus_minutes / 60, 1)
+    
+    # Category breakdown (by tags/lists)
+    category_counts = defaultdict(int)
+    for task in month_tasks:
+        if task.get("tags"):
+            for tag in task.get("tags", []):
+                category_counts[tag] += 1
+        elif task.get("list_id"):
+            category_counts["List Tasks"] += 1
+        else:
+            category_counts["Inbox"] += 1
+    
+    # Goal achievement (placeholder - would need user goals)
+    completed_this_month = len([t for t in month_tasks if t.get("status") == "completed"])
+    goal_achievement = min(100, round((completed_this_month / max(len(month_tasks), 1)) * 100, 1))
+    
+    return {
+        "totalFocusHours": total_focus_hours,
+        "goalAchievement": goal_achievement,
+        "categoryBreakdown": dict(category_counts),
+        "completedTasks": completed_this_month,
+        "totalTasks": len(month_tasks)
+    }
+
+
+@router.get("/insights", response_model=dict)
+async def get_insights(
+    current_user: dict = Depends(get_current_user)
+):
+    """Get AI-generated insights (placeholder for future AI integration)"""
+    db = get_database()
+    user_id = current_user["_id"]
+    
+    # Get tasks for pattern analysis
+    tasks = await db.tasks.find({"user_id": user_id}).to_list(1000)
+    
+    # Analyze completion patterns by day of week
+    day_completions = defaultdict(int)
+    for task in tasks:
+        if task.get("status") == "completed" and task.get("completedAt"):
+            try:
+                completed_date = datetime.fromisoformat(task["completedAt"].replace("Z", "+00:00"))
+                day_name = completed_date.strftime("%A")
+                day_completions[day_name] += 1
+            except:
+                pass
+    
+    # Find most productive day
+    most_productive_day = max(day_completions.items(), key=lambda x: x[1]) if day_completions else ("Monday", 0)
+    
+    # Generate insights
+    insights = []
+    if most_productive_day[1] > 0:
+        insights.append(f"You're most productive on {most_productive_day[0]}s—schedule key tasks then!")
+    
+    # Placeholder for more insights
+    insights.append("Your focus peaks in the morning—plan important work during that time.")
+    insights.append("You complete more tasks when you start with a Pomodoro session.")
+    
+    return {
+        "insights": insights,
+        "patterns": {
+            "mostProductiveDay": most_productive_day[0],
+            "dayCompletions": dict(day_completions)
+        }
+    }
+
+
+@router.get("/gamification", response_model=dict)
+async def get_gamification_stats(
+    current_user: dict = Depends(get_current_user)
+):
+    """Get gamification data (level, badges, rewards)"""
+    db = get_database()
+    user_id = current_user["_id"]
+    
+    # Get all tasks
+    tasks = await db.tasks.find({"user_id": user_id}).to_list(1000)
+    
+    # Calculate XP and level
+    completed_tasks = len([t for t in tasks if t.get("status") == "completed"])
+    pomodoro_sessions = await db.focus_sessions.count_documents({
+        "user": user_id,
+        "type": "pomo"
+    }) if hasattr(db, 'focus_sessions') else 0
+    
+    # Calculate streak
+    streak = await calculate_streak(db, user_id)
+    
+    xp = completed_tasks * 10 + pomodoro_sessions * 5 + streak * 20
+    level = (xp // 100) + 1
+    
+    # Determine earned badges
+    badges = []
+    if completed_tasks > 0:
+        badges.append({"id": "first-task", "name": "First Task", "icon": "🎯", "earned": True})
+    if streak >= 7:
+        badges.append({"id": "streak-7", "name": "7 Day Streak", "icon": "🔥", "earned": True})
+    if pomodoro_sessions >= 50:
+        badges.append({"id": "pomodoro-master", "name": "Pomodoro Master", "icon": "🍅", "earned": True})
+    if completed_tasks >= 100:
+        badges.append({"id": "completionist", "name": "Completionist", "icon": "✅", "earned": True})
+    
+    return {
+        "level": level,
+        "xp": xp,
+        "xpToNextLevel": 100 - (xp % 100),
+        "badges": badges,
+        "streak": streak
+    }

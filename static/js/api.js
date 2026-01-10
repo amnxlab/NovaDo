@@ -381,6 +381,18 @@ class API {
         return this.request('/stats/');
     }
 
+    async getMonthlyStats() {
+        return this.request('/stats/monthly');
+    }
+
+    async getInsights() {
+        return this.request('/stats/insights');
+    }
+
+    async getGamificationStats() {
+        return this.request('/stats/gamification');
+    }
+
     // Google Calendar
     async getCalendarConfig() {
         return this.request(`/calendar/config?t=${Date.now()}`);

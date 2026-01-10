@@ -23,7 +23,8 @@ const defaultSmartLists = [
     { id: 'today', icon: 'sun', label: 'Today', countId: 'today-count' },
     { id: 'week', icon: 'calendar-days', label: 'Next 7 Days', countId: 'week-count' },
     { id: 'all', icon: 'list-todo', label: 'All Tasks', countId: 'all-count' },
-    { id: 'completed', icon: 'circle-check', label: 'Completed', countId: 'completed-count' }
+    { id: 'completed', icon: 'circle-check', label: 'Completed', countId: 'completed-count' },
+    { id: 'wont-do', icon: 'x-circle', label: "Won't Do", countId: 'wont-do-count' }
 ];
 
 const defaultTools = [
@@ -417,7 +418,17 @@ function loadSavedAvatar() {
 function updateSidebarAvatar(avatarSrc) {
     const sidebarAvatar = document.querySelector('.user-avatar');
     if (sidebarAvatar && avatarSrc) {
-        sidebarAvatar.innerHTML = `<img src="${avatarSrc}" alt="User" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        // Remove emoji if present
+        sidebarAvatar.textContent = '';
+        // Create and add image
+        const img = document.createElement('img');
+        img.src = avatarSrc;
+        img.alt = 'User';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.objectPosition = 'center top'; // Focus on face
+        sidebarAvatar.appendChild(img);
     }
 }
 
@@ -495,6 +506,13 @@ function showMainScreen() {
     elements.userName.textContent = state.user?.name || 'User';
     document.getElementById('settings-name').value = state.user?.name || '';
     document.getElementById('settings-email').value = state.user?.email || '';
+    // Load user avatar if available
+    if (state.user?.avatar) {
+        updateSidebarAvatar(state.user.avatar);
+    } else {
+        // Try loading from localStorage
+        loadSavedAvatar();
+    }
 }
 
 // Data Loading
@@ -716,7 +734,11 @@ function showView(view) {
             elements.statsView.classList.remove('hidden');
             elements.currentViewTitle.textContent = 'Statistics';
             document.querySelector('[data-view="stats"]')?.classList.add('active');
-            loadStats();
+            if (window.statsModule) {
+                window.statsModule.init();
+            } else {
+                loadStats();
+            }
             break;
         case 'settings':
             elements.settingsView.classList.remove('hidden');
@@ -742,7 +764,8 @@ function selectSmartList(listId) {
         today: 'Today',
         week: 'Next 7 Days',
         all: 'All Tasks',
-        completed: 'Completed'
+        completed: 'Completed',
+        'wont-do': "Won't Do"
     };
 
     elements.currentViewTitle.textContent = titles[listId] || listId;
@@ -809,6 +832,9 @@ function renderTasks() {
         case 'completed':
             tasks = tasks.filter(t => t.completed);
             break;
+        case 'wont-do':
+            tasks = tasks.filter(t => t.status === 'skipped');
+            break;
         case 'custom':
             tasks = tasks.filter(t => t.list_id === state.currentList);
             break;
@@ -851,6 +877,35 @@ function renderTasks() {
     addDraggableToTasks();
 }
 
+// Get status icon based on status and theme
+function getStatusIcon(status, theme = 'light') {
+    const icons = {
+        'scheduled': '📅',
+        'in_progress': '⏳',
+        'completed': '✅',
+        'skipped': '❌'
+    };
+    return icons[status] || icons['scheduled'];
+}
+
+// Get event card styles based on event and theme
+function getEventCardStyles(event, theme) {
+    const isShort = event.duration && event.duration < 30; // minutes
+    const currentTheme = theme || document.documentElement.dataset.theme || 'light';
+    const isDark = currentTheme.includes('dark') || currentTheme === 'dark';
+    
+    if (event.googleCalendarColor) {
+        // Keep Google Calendar colors but add theme-aware opacity
+        return `background: ${event.googleCalendarColor};`;
+    }
+    
+    if (isDark) {
+        return `background: linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%); border-left: 3px solid var(--accent-primary);`;
+    } else {
+        return `background: linear-gradient(135deg, #F2F2F7 0%, #FFFFFF 100%); border-left: 3px solid var(--accent-primary);`;
+    }
+}
+
 function createTaskElement(task) {
     const div = document.createElement('div');
     const status = task.status || 'scheduled';
@@ -865,8 +920,9 @@ function createTaskElement(task) {
     // Status badge
     const statusConfig = {
         'scheduled': { icon: '📅', label: 'Scheduled', class: 'scheduled' },
-        'in_progress': { icon: '▶️', label: 'In Progress', class: 'in-progress' },
-        'completed': { icon: '✓', label: 'Completed', class: 'completed' }
+        'in_progress': { icon: '⏳', label: 'In Progress', class: 'in-progress' },
+        'completed': { icon: '✅', label: 'Completed', class: 'completed' },
+        'skipped': { icon: '❌', label: 'Skipped', class: 'skipped' }
     };
     const statusInfo = statusConfig[status] || statusConfig['scheduled'];
     const statusBadgeHTML = `<span class="task-status-badge ${statusInfo.class}" title="${statusInfo.label}">${statusInfo.icon}</span>`;
@@ -889,10 +945,15 @@ function createTaskElement(task) {
             </div>
         </div>
         <div class="task-actions">
-            <button class="btn-icon status-btn" onclick="cycleTaskStatus('${task._id || task.id}', event)" title="Change status">
-                ${status === 'scheduled' ? '▶️' : status === 'in_progress' ? '⏸️' : '↩️'}
-            </button>
-            <button class="btn-icon" onclick="deleteTask('${task._id || task.id}', event)" title="Delete">🗑️</button>
+            ${state.currentView === 'wont-do' ? `
+                <button class="btn-icon restore-btn" onclick="restoreTask('${task._id || task.id}', event)" title="Restore to Scheduled">↩️</button>
+                <button class="btn-icon delete-btn" onclick="deleteTask('${task._id || task.id}', event)" title="Permanently Delete">🗑️</button>
+            ` : `
+                <button class="btn-icon status-btn" onclick="cycleTaskStatus('${task._id || task.id}', event)" title="Change status">
+                    ${status === 'scheduled' ? '▶️' : status === 'in_progress' ? '⏸️' : status === 'completed' ? '↩️' : '↩️'}
+                </button>
+                <button class="btn-icon" onclick="deleteTask('${task._id || task.id}', event)" title="Delete">🗑️</button>
+            `}
         </div>
     `;
 
@@ -956,21 +1017,22 @@ async function completeTask(id, e) {
     }
 }
 
-// Cycle through status: scheduled -> in_progress -> completed -> scheduled
+// Cycle through status: scheduled -> in_progress -> completed -> skipped -> scheduled
 async function cycleTaskStatus(id, e) {
     e.stopPropagation();
     const taskIndex = state.tasks.findIndex(t => (t._id || t.id) === id);
     if (taskIndex === -1) return;
 
     const task = state.tasks[taskIndex];
-    const statusCycle = ['scheduled', 'in_progress', 'completed'];
+    const statusCycle = ['scheduled', 'in_progress', 'completed', 'skipped'];
     const currentIndex = statusCycle.indexOf(task.status || 'scheduled');
     const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
 
     const statusLabels = {
         'scheduled': 'Scheduled',
         'in_progress': 'In Progress',
-        'completed': 'Completed'
+        'completed': 'Completed',
+        'skipped': 'Skipped'
     };
 
     try {
@@ -986,16 +1048,35 @@ async function cycleTaskStatus(id, e) {
     }
 }
 
+async function restoreTask(id, e) {
+    e.stopPropagation();
+    try {
+        const updatedTask = await api.updateTask(id, { status: 'scheduled' });
+        const taskIndex = state.tasks.findIndex(t => (t._id || t.id) === id);
+        if (taskIndex !== -1) {
+            state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask };
+        }
+        renderTasks();
+        renderCalendar();
+        updateCounts();
+        showToast('Task restored to Scheduled');
+    } catch (error) {
+        console.error('Restore task error:', error);
+        showToast('Failed to restore task', 'error');
+    }
+}
+
 async function deleteTask(id, e) {
     e.stopPropagation();
-    if (!confirm('Delete this task?')) return;
+    const isPermanent = state.currentView === 'wont-do';
+    if (!confirm(isPermanent ? 'Permanently delete this task? This cannot be undone.' : 'Delete this task?')) return;
 
     try {
         await api.deleteTask(id);
         state.tasks = state.tasks.filter(t => (t._id || t.id) !== id);
         renderTasks();
         updateCounts();
-        showToast('Task deleted');
+        showToast(isPermanent ? 'Task permanently deleted' : 'Task deleted');
     } catch (error) {
         showToast('Failed to delete task', 'error');
     }
@@ -1062,7 +1143,7 @@ function openDayAgenda(date, tasks) {
                                     ${(task.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
                                 </div>
                             </div>
-                            <div class="agenda-status ${task.status === 'completed' ? 'completed' : ''}">${task.status === 'completed' ? '✓' : '○'}</div>
+                            <div class="agenda-status ${task.status === 'completed' ? 'completed' : ''}">${getStatusIcon(task.status || 'scheduled')}</div>
                         </div>
                     `;
     }).join('')}
@@ -2040,9 +2121,9 @@ function renderMonthView() {
                 <span class="day-number">${day}</span>
                 ${dayTasks.slice(0, 3).map(t => {
             const taskStatus = t.status || 'scheduled';
-            const statusIcon = taskStatus === 'completed' ? '✓' : taskStatus === 'in_progress' ? '▶' : '';
+            const statusIcon = getStatusIcon(taskStatus);
             return `<div class="calendar-task status-${taskStatus}" data-task-id="${t._id || t.id}" draggable="true" onclick="toggleCalendarTask('${t._id || t.id}', event)">
-                        ${statusIcon ? `<span class="cal-task-status">${statusIcon}</span>` : ''}
+                        <span class="cal-task-status">${statusIcon}</span>
                         <span class="cal-task-title">${escapeHTML(t.title)}</span>
                     </div>`;
         }).join('')}
@@ -2125,9 +2206,20 @@ function renderDayView() {
                     }
                 }
             }
+            const statusIcon = getStatusIcon(t.status || 'scheduled');
+            const duration = t.googleEventId ? 60 : 30;
+            const eventStyles = getEventCardStyles({ ...t, duration, googleCalendarColor: t.googleCalendarColor }, document.documentElement.dataset.theme);
+            const bgStyle = t.googleCalendarColor ? `background: ${t.googleCalendarColor};` : eventStyles;
             return `
-                        <div class="calendar-task status-${t.status || 'scheduled'}" data-task-id="${t._id || t.id}" onclick="openTaskModal('${t._id || t.id}')">
+                        <div class="calendar-task status-${t.status || 'scheduled'} ${duration < 30 && duration > 0 ? 'short-duration' : ''}" 
+                             data-task-id="${t._id || t.id}" 
+                             data-task-title="${escapeHTML(t.title)}"
+                             data-task-description="${escapeHTML(t.description || '')}"
+                             data-task-time="${timeDisplay}"
+                             style="${bgStyle}"
+                             onclick="openTaskModal('${t._id || t.id}')">
                             ${timeDisplay ? `<span class="task-time">${timeDisplay}</span>` : ''}
+                            <span class="cal-task-status">${statusIcon}</span>
                             ${escapeHTML(t.title)}
                         </div>
                     `;
@@ -2146,6 +2238,7 @@ function renderDayView() {
         </div>
         <div class="day-view-hours">${hours.join('')}</div>
     `;
+    setTimeout(attachEventTooltips, 100);
 }
 
 // Format time from "HH:MM" (24hr) to "H:MM AM/PM" (12hr) for display
@@ -2290,22 +2383,26 @@ function renderWeekView() {
             const top = (task.startMinutes / (24 * 60)) * 100;
             const height = Math.max(((task.endMinutes - task.startMinutes) / (24 * 60)) * 100, 2); // Min 2% height
 
+            const duration = task.googleEventId ? 60 : 30;
+            const eventStyles = getEventCardStyles({ ...task, duration, googleCalendarColor: task.googleCalendarColor }, document.documentElement.dataset.theme);
             const bgColor = task.googleCalendarColor || '';
-            const style = `
+            const baseStyle = `
                 position: absolute;
                 top: ${top}%;
                 left: ${left}%;
                 width: calc(${width}% - 2px);
                 height: ${height}%;
                 min-height: 20px;
-                ${bgColor ? `background: ${bgColor};` : ''}
             `.replace(/\s+/g, ' ');
+            const style = bgColor ? `${baseStyle} background: ${bgColor};` : `${baseStyle} ${eventStyles}`;
 
+            const statusIcon = getStatusIcon(task.status || 'scheduled');
             bodyHtml += `
                 <div class="week-task-positioned status-${task.status || 'scheduled'}" 
                      data-task-id="${task._id || task.id}" 
                      style="${style}"
                      onclick="openTaskModal('${task._id || task.id}')">
+                    <span class="week-task-status">${statusIcon}</span>
                     <span class="week-task-time">${task.displayTime ? formatTimeDisplay(task.displayTime) : ''}</span>
                     <span class="week-task-title">${escapeHTML(task.title)}</span>
                 </div>
@@ -2319,6 +2416,7 @@ function renderWeekView() {
         <div class="week-view-header">${headerHtml}</div>
         <div class="week-view-body">${bodyHtml}</div>
     `;
+    setTimeout(attachEventTooltips, 100);
 }
 
 function renderAgendaView() {
@@ -2416,7 +2514,6 @@ function renderAgendaView() {
                     ${dayTasks.map(t => {
             const time = t.dueTime || t.due_time;
             const isGoogle = !!t.googleEventId;
-            const bgColor = t.googleCalendarColor || '';
             const timeStart = formatTime(time);
             const timeEnd = time ? getEndTime(time, isGoogle) : '';
             const timeRange = time ? `${timeStart} - ${timeEnd}` : '';
@@ -2425,6 +2522,11 @@ function renderAgendaView() {
             const priorityColor = t.priority === 'high' ? '#ff5630' :
                 t.priority === 'medium' ? '#ffab00' :
                     t.priority === 'low' ? '#36b37e' : '';
+            
+            // Calculate duration for short event detection
+            const duration = time ? (isGoogle ? 60 : 30) : 0;
+            const eventStyles = getEventCardStyles({ ...t, duration, googleCalendarColor: t.googleCalendarColor }, document.documentElement.dataset.theme);
+            const finalStyle = t.googleCalendarColor ? eventStyles : (priorityColor && !t.googleCalendarColor ? `border-left: 3px solid ${priorityColor}; ${eventStyles}` : eventStyles);
 
             return `
                             <div class="ticktick-agenda-row">
@@ -2432,9 +2534,12 @@ function renderAgendaView() {
                                     <span class="time-text">${time ? timeStart : 'All Day'}</span>
                                     ${isGoogle ? '<span class="calendar-icon">📅</span>' : ''}
                                 </div>
-                                <div class="ticktick-event-card ${isCompleted ? 'completed' : ''}"
-                                     style="${bgColor ? `background: ${bgColor};` : ''} ${priorityColor && !bgColor ? `border-left: 3px solid ${priorityColor};` : ''}"
+                                <div class="ticktick-event-card ${isCompleted ? 'completed' : ''} ${duration < 30 && duration > 0 ? 'short-duration' : ''}"
+                                     style="${finalStyle}"
                                      data-task-id="${t._id || t.id}"
+                                     data-task-title="${escapeHTML(t.title)}"
+                                     data-task-description="${escapeHTML(t.description || '')}"
+                                     data-task-time="${timeRange}"
                                      onclick="openTaskModal('${t._id || t.id}')">
                                     ${time && isGoogle ? `<div class="event-time-range">${timeRange}</div>` : ''}
                                     <div class="event-title">${escapeHTML(t.title)}</div>
@@ -2448,6 +2553,7 @@ function renderAgendaView() {
     });
 
     elements.calendarAgendaView.innerHTML = `<div class="ticktick-agenda-container">${html}</div>`;
+    setTimeout(attachEventTooltips, 100);
 }
 
 // Helper functions for calendar
@@ -2541,6 +2647,13 @@ async function handleProfileSubmit(e) {
         });
         state.user = { ...state.user, ...updated };
         elements.userName.textContent = state.user.name;
+        // Load user avatar if available
+        if (state.user.avatar) {
+            updateSidebarAvatar(state.user.avatar);
+        } else {
+            // Try loading from localStorage
+            loadSavedAvatar();
+        }
         showToast('Profile updated');
     } catch (error) {
         showToast('Failed to update profile', 'error');
@@ -2869,6 +2982,10 @@ function updateCounts() {
     }).length;
     document.getElementById('all-count').textContent = incomplete.length;
     document.getElementById('completed-count').textContent = state.tasks.filter(t => t.completed).length;
+    const wontDoCountEl = document.getElementById('wont-do-count');
+    if (wontDoCountEl) {
+        wontDoCountEl.textContent = state.tasks.filter(t => t.status === 'skipped').length;
+    }
 }
 
 function handleSearch() {
@@ -4119,6 +4236,66 @@ function toggleSidebar() {
 }
 
 // Call this after tasks are loaded
+// Event tooltip functionality
+function showEventTooltip(event, element) {
+    const title = element.dataset.taskTitle || '';
+    const description = element.dataset.taskDescription || '';
+    const time = element.dataset.taskTime || '';
+    
+    if (!title && !description) return;
+    
+    // Remove existing tooltip
+    const existingTooltip = document.querySelector('.event-tooltip');
+    if (existingTooltip) existingTooltip.remove();
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'event-tooltip';
+    tooltip.innerHTML = `
+        ${time ? `<div class="tooltip-time">${time}</div>` : ''}
+        <div class="tooltip-title">${escapeHTML(title)}</div>
+        ${description ? `<div class="tooltip-description">${escapeHTML(description)}</div>` : ''}
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = element.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.bottom + 8;
+    
+    // Adjust if tooltip goes off screen
+    if (left < 8) left = 8;
+    if (left + tooltipRect.width > window.innerWidth - 8) {
+        left = window.innerWidth - tooltipRect.width - 8;
+    }
+    if (top + tooltipRect.height > window.innerHeight - 8) {
+        top = rect.top - tooltipRect.height - 8;
+    }
+    
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.classList.add('visible');
+    
+    // Remove tooltip on mouse leave or click
+    const removeTooltip = () => {
+        tooltip.classList.remove('visible');
+        setTimeout(() => tooltip.remove(), 200);
+    };
+    
+    element.addEventListener('mouseleave', removeTooltip, { once: true });
+    element.addEventListener('click', removeTooltip, { once: true });
+}
+
+// Attach tooltip listeners to event cards
+function attachEventTooltips() {
+    document.querySelectorAll('.calendar-task.short-duration, .ticktick-event-card.short-duration').forEach(card => {
+        card.addEventListener('mouseenter', (e) => {
+            showEventTooltip(e, card);
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize notification manager
     if (window.notificationManager && window.notificationManager.isSupported) {
