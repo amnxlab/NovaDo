@@ -611,24 +611,134 @@ async function loadAIInsights() {
     }
 }
 
-// Helper: Render insight widgets
+// Helper: Render insight widgets with drag-and-drop support
 function renderInsightWidgets() {
     const container = document.getElementById('insights-widget-grid');
     if (!container) return;
 
-    container.innerHTML = `
-        <div class="insight-widget">
-            <h4>Habit Tracker</h4>
-            <canvas id="habit-tracker-chart"></canvas>
-        </div>
-        <div class="insight-widget">
-            <h4>Pomodoro Stats</h4>
-            <div class="pomo-stats-widget">
-                <div class="pomo-stat">Today: ${statsState.data?.pomodoros || 0}</div>
-                <div class="pomo-stat">Total: ${statsState.data?.pomodoros || 0}</div>
-            </div>
-        </div>
-    `;
+    // Load saved widget configuration
+    const savedConfig = localStorage.getItem('insightWidgetConfig');
+    let widgetConfig = savedConfig ? JSON.parse(savedConfig) : [
+        { id: 'habit-tracker', title: 'Habit Tracker', type: 'chart', enabled: true },
+        { id: 'pomodoro-stats', title: 'Pomodoro Stats', type: 'stats', enabled: true },
+        { id: 'focus-analysis', title: 'Focus Time Analysis', type: 'analysis', enabled: true }
+    ];
+
+    container.innerHTML = '';
+    
+    widgetConfig.filter(w => w.enabled).forEach(widget => {
+        const widgetEl = document.createElement('div');
+        widgetEl.className = 'insight-widget';
+        widgetEl.draggable = true;
+        widgetEl.dataset.widgetId = widget.id;
+        
+        // Widget header with drag handle
+        const header = document.createElement('div');
+        header.className = 'widget-header';
+        header.innerHTML = `
+            <span class="drag-handle">⋮⋮</span>
+            <h4>${widget.title}</h4>
+            <button class="widget-config-btn" onclick="configureWidget('${widget.id}')">⚙️</button>
+        `;
+        widgetEl.appendChild(header);
+        
+        // Widget content
+        const content = document.createElement('div');
+        content.className = 'widget-content';
+        
+        switch(widget.type) {
+            case 'chart':
+                content.innerHTML = '<canvas id="habit-tracker-chart"></canvas>';
+                break;
+            case 'stats':
+                content.innerHTML = `
+                    <div class="pomo-stats-widget">
+                        <div class="pomo-stat">Today: ${statsState.data?.pomodoros || 0}</div>
+                        <div class="pomo-stat">Total: ${statsState.data?.totalPomodoros || 0}</div>
+                    </div>
+                `;
+                break;
+            case 'analysis':
+                content.innerHTML = `
+                    <div class="focus-analysis-widget">
+                        <div class="focus-stat">Peak Hours: 9-11 AM</div>
+                        <div class="focus-stat">Avg Session: 25min</div>
+                    </div>
+                `;
+                break;
+        }
+        
+        widgetEl.appendChild(content);
+        container.appendChild(widgetEl);
+        
+        // Add drag event listeners
+        widgetEl.addEventListener('dragstart', handleWidgetDragStart);
+        widgetEl.addEventListener('dragover', handleWidgetDragOver);
+        widgetEl.addEventListener('drop', handleWidgetDrop);
+        widgetEl.addEventListener('dragend', handleWidgetDragEnd);
+    });
+}
+
+// Widget drag and drop handlers
+function handleWidgetDragStart(e) {
+    e.dataTransfer.setData('text/plain', e.target.dataset.widgetId);
+    e.target.classList.add('dragging');
+}
+
+function handleWidgetDragOver(e) {
+    e.preventDefault();
+    const draggingElement = document.querySelector('.dragging');
+    const afterElement = getDragAfterElement(e.currentTarget.parentNode, e.clientY);
+    
+    if (afterElement == null) {
+        e.currentTarget.parentNode.appendChild(draggingElement);
+    } else {
+        e.currentTarget.parentNode.insertBefore(draggingElement, afterElement);
+    }
+}
+
+function handleWidgetDrop(e) {
+    e.preventDefault();
+    saveWidgetConfiguration();
+}
+
+function handleWidgetDragEnd(e) {
+    e.target.classList.remove('dragging');
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.insight-widget:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Save widget configuration to localStorage
+function saveWidgetConfiguration() {
+    const container = document.getElementById('insights-widget-grid');
+    if (!container) return;
+    
+    const widgets = [...container.querySelectorAll('.insight-widget')];
+    const config = widgets.map((widget, index) => ({
+        id: widget.dataset.widgetId,
+        order: index,
+        enabled: true
+    }));
+    
+    localStorage.setItem('insightWidgetConfig', JSON.stringify(config));
+}
+
+// Configure widget (placeholder for future enhancement)
+function configureWidget(widgetId) {
+    showToast(`Configure ${widgetId} widget`, 'info');
 }
 
 // Helper: Load pattern insights

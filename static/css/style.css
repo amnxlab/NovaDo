@@ -820,14 +820,21 @@ textarea {
     color: var(--text-muted);
 }
 
-/* Task Status States */
+/* Task Status States - Enhanced for ADHD-friendly visual feedback */
 .task-item.status-in_progress,
 .task-item.status-in-progress {
     background: var(--warning-light);
+    border-left: 3px solid var(--warning);
 }
 
 .task-item.status-completed {
-    background: var(--bg-tertiary);
+    background: var(--success-light);
+    border-left: 3px solid var(--success);
+}
+
+.task-item.status-skipped {
+    background: var(--error-light);
+    border-left: 3px solid var(--error);
 }
 
 /* Task Header */
@@ -838,40 +845,50 @@ textarea {
     flex-wrap: wrap;
 }
 
-/* Status Badge - subtle and minimal */
+/* Status Badge - Enhanced with better theme adaptation */
 .task-status-badge {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     padding: 0.125rem 0.375rem;
     border-radius: 3px;
     font-weight: 500;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
 }
 
 .task-status-badge.scheduled {
-    display: none;
+    display: none; /* Hide scheduled status as it's the default */
 }
 
 .task-status-badge.in-progress {
     display: inline-flex;
     background: var(--warning-light);
-    color: #b36b00;
+    color: var(--warning);
+    border-color: var(--warning);
 }
 
 .task-status-badge.completed {
     display: inline-flex;
     background: var(--success-light);
     color: var(--success);
+    border-color: var(--success);
 }
 
 .task-status-badge.skipped {
     display: inline-flex;
     background: var(--error-light);
     color: var(--error);
+    border-color: var(--error);
 }
 
-/* Animated in-progress spinner */
+/* Animated in-progress spinner - Enhanced */
+.status-spinner {
+    animation: spinner-rotate 1s linear infinite;
+    color: var(--warning);
+}
+
 @keyframes spinner-rotate {
     from {
         transform: rotate(0deg);
@@ -894,15 +911,58 @@ textarea {
     display: inline-block;
 }
 
-/* Theme-adaptive status colors */
+/* Theme-adaptive status colors - Enhanced for better visibility */
 [data-theme="dark"] .task-status-badge.completed {
     background: rgba(34, 197, 94, 0.2);
     color: #4ADE80;
+    border-color: #4ADE80;
 }
 
 [data-theme="dark"] .task-status-badge.skipped {
     background: rgba(239, 68, 68, 0.2);
     color: #F87171;
+    border-color: #F87171;
+}
+
+[data-theme="dark"] .task-status-badge.in-progress {
+    background: rgba(251, 191, 36, 0.2);
+    color: #FCD34D;
+    border-color: #FCD34D;
+}
+
+[data-theme="dark"] .task-item.status-completed {
+    background: rgba(34, 197, 94, 0.1);
+    border-left-color: #4ADE80;
+}
+
+[data-theme="dark"] .task-item.status-skipped {
+    background: rgba(239, 68, 68, 0.1);
+    border-left-color: #F87171;
+}
+
+[data-theme="dark"] .task-item.status-in_progress,
+[data-theme="dark"] .task-item.status-in-progress {
+    background: rgba(251, 191, 36, 0.1);
+    border-left-color: #FCD34D;
+}
+
+/* Hacker theme status colors */
+[data-theme="hacker"] .task-status-badge.completed {
+    background: rgba(0, 255, 0, 0.2);
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+[data-theme="hacker"] .task-status-badge.skipped {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+    border-color: #ff0000;
+}
+
+[data-theme="hacker"] .task-status-badge.in-progress {
+    background: rgba(255, 255, 0, 0.2);
+    color: #ffff00;
+    border-color: #ffff00;
 }
 
 .task-checkbox {
@@ -1351,6 +1411,12 @@ textarea {
     min-height: 60px;
     border-bottom: 1px solid var(--border-light);
     padding: 0.5rem;
+    transition: background-color var(--transition-fast);
+}
+
+.day-hour-slot.drag-over {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
 }
 
 .hour-label {
@@ -1367,7 +1433,207 @@ textarea {
     gap: 0.25rem;
 }
 
-/* Week View */
+/* Day View Task Styling - Match Monthly View Colors Exactly */
+.hour-tasks .calendar-task {
+    /* Use the same base styling as calendar-task-item for consistency */
+    background: var(--event-card-bg) !important;
+    border: 1px solid var(--event-card-border) !important;
+    border-radius: 8px;
+    box-shadow: var(--event-card-shadow);
+    color: var(--event-card-text) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none !important;
+}
+
+/* Remove underlines from day view tasks */
+.hour-tasks .calendar-task,
+.hour-tasks .calendar-task *,
+.hour-tasks .calendar-task .cal-task-title,
+.hour-tasks .calendar-task .cal-task-time,
+.hour-tasks .calendar-task .cal-task-status {
+    text-decoration: none !important;
+}
+
+/* Day View Task Status Colors - Match Monthly View Exactly */
+.hour-tasks .calendar-task.status-completed {
+    background: var(--event-success-bg) !important;
+    border-color: var(--event-success-border) !important;
+    color: var(--event-success-text) !important;
+}
+
+.hour-tasks .calendar-task.status-completed .cal-task-time,
+.hour-tasks .calendar-task.status-completed .cal-task-title,
+.hour-tasks .calendar-task.status-completed .cal-task-status {
+    color: var(--event-success-text) !important;
+    text-decoration: none !important;
+    opacity: 0.8;
+}
+
+.hour-tasks .calendar-task.status-in-progress,
+.hour-tasks .calendar-task.status-in_progress {
+    background: var(--event-warning-bg) !important;
+    border-color: var(--event-warning-border) !important;
+    color: var(--event-warning-text) !important;
+}
+
+.hour-tasks .calendar-task.status-in-progress .cal-task-time,
+.hour-tasks .calendar-task.status-in-progress .cal-task-title,
+.hour-tasks .calendar-task.status-in-progress .cal-task-status,
+.hour-tasks .calendar-task.status-in_progress .cal-task-time,
+.hour-tasks .calendar-task.status-in_progress .cal-task-title,
+.hour-tasks .calendar-task.status-in_progress .cal-task-status {
+    color: var(--event-warning-text) !important;
+    text-decoration: none !important;
+}
+
+.hour-tasks .calendar-task.status-skipped {
+    background: var(--event-error-bg) !important;
+    border-color: var(--event-error-border) !important;
+    color: var(--event-error-text) !important;
+    opacity: 0.8;
+}
+
+.hour-tasks .calendar-task.status-skipped .cal-task-time,
+.hour-tasks .calendar-task.status-skipped .cal-task-title,
+.hour-tasks .calendar-task.status-skipped .cal-task-status {
+    color: var(--event-error-text) !important;
+    text-decoration: none !important;
+}
+
+.hour-tasks .calendar-task.status-scheduled,
+.hour-tasks .calendar-task:not([class*="status-"]) {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+}
+
+.hour-tasks .calendar-task.status-scheduled .cal-task-time,
+.hour-tasks .calendar-task.status-scheduled .cal-task-title,
+.hour-tasks .calendar-task.status-scheduled .cal-task-status,
+.hour-tasks .calendar-task:not([class*="status-"]) .cal-task-time,
+.hour-tasks .calendar-task:not([class*="status-"]) .cal-task-title,
+.hour-tasks .calendar-task:not([class*="status-"]) .cal-task-status {
+    color: var(--event-card-text) !important;
+    text-decoration: none !important;
+}
+
+/* Day View Task Time Display - Match Monthly View */
+.hour-tasks .calendar-task .cal-task-time {
+    color: var(--event-card-time) !important;
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+    text-decoration: none !important;
+}
+
+/* Day View Task Title Display - Match Monthly View */
+.hour-tasks .calendar-task .cal-task-title {
+    color: var(--event-card-text) !important;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    letter-spacing: -0.01em;
+    text-decoration: none !important;
+}
+
+/* Day View Task Status Icon */
+.hour-tasks .calendar-task .cal-task-status {
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+    display: inline-block;
+    text-decoration: none !important;
+}
+
+/* Day View Task Hover Effects - Match Monthly View */
+.hour-tasks .calendar-task:hover {
+    background: var(--event-card-hover) !important;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--event-accent-border) !important;
+    z-index: 10;
+}
+
+/* Google Calendar Events in Day View - Match Monthly View */
+.hour-tasks .calendar-task[style*="background:"] {
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.hour-tasks .calendar-task[style*="background:"] .cal-task-time,
+.hour-tasks .calendar-task[style*="background:"] .cal-task-title,
+.hour-tasks .calendar-task[style*="background:"] .cal-task-status {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    text-decoration: none !important;
+}
+
+.hour-tasks .calendar-task[style*="background:"] .cal-task-time {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-weight: 700 !important;
+}
+
+/* Day View Theme-Specific Enhancements - Match Monthly View */
+[data-theme="dark"] .hour-tasks .calendar-task:not([style*="background:"]) {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+    box-shadow: var(--event-card-shadow);
+}
+
+[data-theme="hacker"] .hour-tasks .calendar-task:not([style*="background:"]) {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+    box-shadow: var(--event-card-shadow);
+    font-family: 'Courier New', 'SF Mono', monospace;
+}
+
+[data-theme="hacker"] .hour-tasks .calendar-task .cal-task-title {
+    text-shadow: 0 0 5px currentColor;
+}
+
+[data-theme="hacker"] .hour-tasks .calendar-task:hover {
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+}
+
+/* Day View Short Duration Events - Match Monthly View */
+.hour-tasks .calendar-task.short-duration {
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+    border-width: 2px;
+}
+
+.hour-tasks .calendar-task.short-duration .cal-task-time {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    padding: 1px 4px;
+}
 .calendar-week-view {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -1441,6 +1707,11 @@ textarea {
 .week-day-col {
     border-right: 1px solid var(--border-light);
     position: relative;
+    transition: background-color var(--transition-fast);
+}
+
+.week-day-col.drag-over {
+    background: var(--accent-light);
 }
 
 .week-day-col:last-child {
@@ -1511,8 +1782,11 @@ textarea {
 }
 
 .week-task-positioned[style*="background:"] .week-task-time,
-.week-task-positioned[style*="background:"] .week-task-title {
-    color: #fff;
+.week-task-positioned[style*="background:"] .week-task-title,
+.week-task-positioned.has-colored-bg .week-task-time,
+.week-task-positioned.has-colored-bg .week-task-title {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Completed status */
@@ -1556,6 +1830,11 @@ textarea {
 
 .ticktick-agenda-day.today {
     background: var(--bg-secondary);
+}
+
+.ticktick-agenda-day.drag-over {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
 }
 
 .ticktick-agenda-date {
@@ -1622,27 +1901,149 @@ textarea {
 
 .ticktick-event-card {
     flex: 1;
-    padding: 0.625rem 0.875rem;
-    background: var(--accent-light);
-    border-radius: var(--border-radius);
+    padding: 12px 16px;
+    background: var(--event-card-bg) !important;
+    border: 1px solid var(--event-card-border) !important;
+    border-radius: 10px;
+    box-shadow: var(--event-card-shadow);
+    color: var(--event-card-text) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin-bottom: 8px;
     cursor: pointer;
-    transition: all var(--transition-fast);
-    border-left: 3px solid var(--accent-primary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-decoration: none !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Remove underlines from agenda view tasks */
+.ticktick-event-card,
+.ticktick-event-card *,
+.ticktick-event-card .event-title,
+.ticktick-event-card .event-time-range {
+    text-decoration: none !important;
+}
+
+/* Agenda View Task Status Colors - Match Monthly View Exactly */
+.ticktick-event-card.status-completed {
+    background: var(--event-success-bg) !important;
+    border-color: var(--event-success-border) !important;
+    color: var(--event-success-text) !important;
+}
+
+.ticktick-event-card.status-completed .event-time-range,
+.ticktick-event-card.status-completed .event-title {
+    color: var(--event-success-text) !important;
+    text-decoration: none !important;
+    opacity: 0.8;
+}
+
+.ticktick-event-card.status-in-progress,
+.ticktick-event-card.status-in_progress {
+    background: var(--event-warning-bg) !important;
+    border-color: var(--event-warning-border) !important;
+    color: var(--event-warning-text) !important;
+}
+
+.ticktick-event-card.status-in-progress .event-time-range,
+.ticktick-event-card.status-in-progress .event-title,
+.ticktick-event-card.status-in_progress .event-time-range,
+.ticktick-event-card.status-in_progress .event-title {
+    color: var(--event-warning-text) !important;
+    text-decoration: none !important;
+}
+
+.ticktick-event-card.status-skipped {
+    background: var(--event-error-bg) !important;
+    border-color: var(--event-error-border) !important;
+    color: var(--event-error-text) !important;
+    opacity: 0.8;
+}
+
+.ticktick-event-card.status-skipped .event-time-range,
+.ticktick-event-card.status-skipped .event-title {
+    color: var(--event-error-text) !important;
+    text-decoration: none !important;
+}
+
+.ticktick-event-card.status-scheduled,
+.ticktick-event-card:not([class*="status-"]) {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+}
+
+.ticktick-event-card.status-scheduled .event-time-range,
+.ticktick-event-card.status-scheduled .event-title,
+.ticktick-event-card:not([class*="status-"]) .event-time-range,
+.ticktick-event-card:not([class*="status-"]) .event-title {
+    color: var(--event-card-text) !important;
+    text-decoration: none !important;
 }
 
 .ticktick-event-card:hover {
-    transform: translateX(2px);
-    box-shadow: var(--shadow-sm);
+    background: var(--event-card-hover) !important;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--event-accent-border) !important;
+    z-index: 10;
 }
 
 .ticktick-event-card[style*="background:"] {
-    border-left: none;
-    border-radius: var(--border-radius);
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.ticktick-event-card[style*="background:"] .event-time-range,
+.ticktick-event-card[style*="background:"] .event-title {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    text-decoration: none !important;
+}
+
+/* Agenda View Time and Title Styling - Match Monthly View */
+.ticktick-event-card .event-time-range {
+    color: var(--event-card-time) !important;
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    width: fit-content;
+    letter-spacing: 0.5px;
+    text-decoration: none !important;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.ticktick-event-card .event-title {
+    color: var(--event-card-text) !important;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    letter-spacing: -0.01em;
+    text-decoration: none !important;
 }
 
 .ticktick-event-card .event-time-range {
     font-size: 0.6875rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-secondary);
     margin-bottom: 0.25rem;
     text-decoration: underline;
 }
@@ -1653,8 +2054,63 @@ textarea {
     color: var(--text-primary);
 }
 
-.ticktick-event-card[style*="background:"] .event-title {
-    color: #fff;
+/* Agenda View Theme-Specific Enhancements - Match Monthly View */
+[data-theme="dark"] .ticktick-event-card:not([style*="background:"]) {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+    box-shadow: var(--event-card-shadow);
+}
+
+[data-theme="hacker"] .ticktick-event-card:not([style*="background:"]) {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+    box-shadow: var(--event-card-shadow);
+    font-family: 'Courier New', 'SF Mono', monospace;
+}
+
+[data-theme="hacker"] .ticktick-event-card .event-title {
+    text-shadow: 0 0 5px currentColor;
+}
+
+[data-theme="hacker"] .ticktick-event-card:hover {
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+}
+
+/* Agenda View Short Duration Events - Match Monthly View */
+.ticktick-event-card.short-duration {
+    min-height: 44px;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+    border-width: 2px;
+}
+
+.ticktick-event-card.short-duration .event-time-range {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    padding: 1px 4px;
+}
+
+/* Google Calendar colored events - use contrast-aware text */
+.ticktick-event-card[style*="background:"] .event-title,
+.ticktick-event-card[style*="background:"] .event-time-range {
+    color: var(--text-on-colored-bg, var(--text-primary));
+    filter: brightness(0) invert(1);
+    mix-blend-mode: difference;
+}
+
+/* Fallback for better contrast on colored backgrounds */
+.ticktick-event-card.has-colored-bg {
+    position: relative;
+}
+
+.ticktick-event-card.has-colored-bg .event-title,
+.ticktick-event-card.has-colored-bg .event-time-range {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: var(--text-on-colored-bg, #ffffff);
 }
 
 .ticktick-event-card.completed {
@@ -1880,6 +2336,21 @@ textarea {
     text-overflow: ellipsis;
     cursor: pointer;
     transition: background var(--transition-fast);
+}
+
+/* Google Calendar colored tasks in month view */
+.calendar-task.has-colored-bg,
+.calendar-task[style*="background:"] {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-task.has-colored-bg .cal-task-title,
+.calendar-task.has-colored-bg .cal-task-status,
+.calendar-task[style*="background:"] .cal-task-title,
+.calendar-task[style*="background:"] .cal-task-status {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .calendar-task:hover {
@@ -2979,9 +3450,10 @@ textarea {
 }
 
 /* ============================================
-   Drag and Drop
+   Enhanced Drag and Drop - All Calendar Views
    ============================================ */
 
+/* Task List Drag and Drop */
 .task-item.dragging {
     opacity: 0.8;
     transform: scale(1.05) rotate(2deg);
@@ -3004,6 +3476,151 @@ textarea {
 
 .tasks-list.drag-active .task-item:not(.dragging) {
     opacity: 0.7;
+}
+
+/* Enhanced Calendar Drag and Drop Styles */
+.calendar-task-item.dragging,
+.calendar-task.dragging {
+    opacity: 0.6;
+    transform: scale(1.05) rotate(3deg);
+    box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
+    cursor: grabbing;
+    z-index: 1000;
+    border: 2px solid var(--accent-primary);
+    background: var(--accent-light) !important;
+}
+
+.calendar-day.drag-over {
+    background: var(--accent-light) !important;
+    border: 2px dashed var(--accent-primary);
+    transform: scale(1.02);
+    transition: all var(--transition-fast);
+}
+
+/* Week View Drag Styles */
+.week-task-positioned.dragging {
+    opacity: 0.7;
+    transform: scale(1.08) rotate(2deg);
+    box-shadow: 0 12px 25px rgba(99, 102, 241, 0.35);
+    cursor: grabbing;
+    z-index: 1000;
+    border: 2px solid var(--accent-primary);
+}
+
+.week-day-col.drag-over {
+    background: var(--accent-light) !important;
+    border: 2px dashed var(--accent-primary);
+    position: relative;
+}
+
+.week-day-col.drag-over::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 40%, var(--accent-primary) 50%, transparent 60%);
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+/* Day View Drag Styles */
+.day-hour-slot.drag-over {
+    background: var(--accent-light) !important;
+    border: 2px dashed var(--accent-primary);
+    border-radius: var(--border-radius);
+    position: relative;
+}
+
+.day-hour-slot.drag-over::before {
+    content: 'Drop here';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.75rem;
+    color: var(--accent-primary);
+    font-weight: 600;
+    pointer-events: none;
+}
+
+/* Agenda View Drag Styles */
+.ticktick-agenda-day.drag-over {
+    background: var(--accent-light) !important;
+    border: 2px dashed var(--accent-primary);
+    border-radius: var(--border-radius);
+}
+
+.ticktick-event-card.dragging {
+    opacity: 0.7;
+    transform: scale(1.05) rotate(1deg);
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+    cursor: grabbing;
+    z-index: 1000;
+    border: 2px solid var(--accent-primary);
+}
+
+/* Enhanced Drop Indicators */
+.drag-drop-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    opacity: 0;
+    transform: scaleX(0);
+    transition: all var(--transition-fast);
+}
+
+.drag-over .drag-drop-indicator {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+/* Drag Ghost Image Styling */
+.drag-ghost {
+    background: var(--bg-primary);
+    border: 2px solid var(--accent-primary);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    box-shadow: var(--shadow-lg);
+    opacity: 0.9;
+    transform: rotate(5deg);
+}
+
+/* Theme-specific drag enhancements */
+[data-theme="dark"] .calendar-day.drag-over,
+[data-theme="dark"] .week-day-col.drag-over,
+[data-theme="dark"] .day-hour-slot.drag-over,
+[data-theme="dark"] .ticktick-agenda-day.drag-over {
+    background: rgba(99, 102, 241, 0.2) !important;
+    border-color: var(--accent-secondary);
+}
+
+[data-theme="hacker"] .calendar-day.drag-over,
+[data-theme="hacker"] .week-day-col.drag-over,
+[data-theme="hacker"] .day-hour-slot.drag-over,
+[data-theme="hacker"] .ticktick-agenda-day.drag-over {
+    background: rgba(0, 255, 0, 0.15) !important;
+    border-color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+/* Drag feedback animations */
+@keyframes dragPulse {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    }
+    50% { 
+        box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+    }
+}
+
+.drag-over {
+    animation: dragPulse 1.5s infinite;
 }
 
 /* ============================================
@@ -4031,76 +4648,349 @@ textarea {
 
 
 /* ============================================
-   CALENDAR VIEW
+   ENHANCED CALENDAR CONTAINERS & TYPOGRAPHY
    ============================================ */
 
+/* Calendar Grid - Modern Glass Effect */
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     grid-auto-rows: 1fr;
     gap: 1px;
-    background-color: var(--border-color);
+    background: linear-gradient(135deg, var(--border-color) 0%, var(--bg-tertiary) 100%);
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
+    border-radius: 12px;
     overflow: hidden;
     height: calc(100vh - 180px);
-    /* Adjust based on header */
     min-height: 500px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
+/* Calendar Header Cells - Enhanced Typography */
 .calendar-header-cell {
-    background-color: var(--bg-secondary);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
     color: var(--text-secondary);
-    padding: 0.75rem 0.5rem;
+    padding: 16px 8px;
     text-align: center;
-    font-weight: 600;
-    font-size: 0.85rem;
+    font-weight: 700;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--border-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
 }
 
+/* Calendar Day Cells - Modern Design */
 .calendar-day {
-    background-color: var(--bg-primary);
-    min-height: 80px;
-    padding: 0.25rem;
+    background: var(--bg-primary);
+    min-height: 100px;
+    padding: 8px;
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
 }
 
 .calendar-day:hover {
-    background-color: var(--bg-hover);
+    background: linear-gradient(135deg, var(--bg-hover) 0%, var(--bg-secondary) 100%);
+    border-color: var(--accent-primary);
+    transform: scale(1.01);
 }
 
 .calendar-day.prev-month {
-    background-color: var(--bg-tertiary);
-    opacity: 0.6;
+    background: var(--bg-tertiary);
+    opacity: 0.5;
 }
 
 .calendar-day.today {
-    background-color: var(--accent-light);
+    background: linear-gradient(135deg, var(--accent-light) 0%, rgba(59, 130, 246, 0.1) 100%);
+    border: 2px solid var(--accent-primary);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
 }
 
+/* Calendar Date Numbers - Enhanced Visibility */
 .calendar-date-num {
     text-align: right;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: var(--text-secondary);
-    margin-bottom: 2px;
-    padding: 2px 4px;
-    font-weight: 500;
+    margin-bottom: 4px;
+    padding: 4px 6px;
+    font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    border-radius: 6px;
+    width: fit-content;
+    margin-left: auto;
 }
 
 .calendar-day.today .calendar-date-num {
+    background: var(--accent-primary);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Week View Container - Glass Morphism */
+.calendar-week-view {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Week View Headers */
+.week-view-header {
+    display: grid;
+    grid-template-columns: 80px repeat(7, 1fr);
+    border-bottom: 2px solid var(--border-color);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.week-day-header {
+    padding: 16px 8px;
+    text-align: center;
+    border-right: 1px solid var(--border-light);
+    transition: all 0.2s ease;
+}
+
+.week-day-header:hover {
+    background: var(--bg-hover);
+}
+
+.week-day-name {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.week-day-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+}
+
+.week-day-header.today .week-day-num {
+    background: var(--accent-primary);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Day View Container - Premium Design */
+.calendar-day-view {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.day-view-header {
+    padding: 24px;
+    border-bottom: 2px solid var(--border-color);
+    text-align: center;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.day-view-date {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--accent-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.day-view-weekday {
+    font-size: 1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+/* Agenda View Container - Clean & Modern */
+.calendar-agenda-view {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    flex: 1;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* TickTick-style Agenda Enhancements */
+.ticktick-agenda-container {
+    padding: 16px;
+}
+
+.ticktick-agenda-day {
+    display: flex;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border-light);
+    transition: all 0.2s ease;
+}
+
+.ticktick-agenda-day:last-child {
+    border-bottom: none;
+}
+
+.ticktick-agenda-day.today {
+    background: linear-gradient(135deg, var(--accent-light) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-radius: 12px;
+    padding: 20px 16px;
+    margin: 0 -16px;
+}
+
+/* Agenda Date Column - Enhanced Typography */
+.ticktick-agenda-date {
+    width: 120px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 4px;
+}
+
+.ticktick-agenda-date .day-num {
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--text-primary);
+    line-height: 1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+}
+
+.ticktick-agenda-date .day-num.today {
     color: var(--accent-primary);
     font-weight: 700;
 }
 
+.ticktick-agenda-date .day-name {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* Agenda Events Column */
+.ticktick-agenda-events {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 16px;
+}
+
+/* Time Column in Agenda */
+.ticktick-time-col {
+    width: 80px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.ticktick-time-col .time-text {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+}
+
+.ticktick-time-col .calendar-icon {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* Theme-Specific Container Enhancements */
+[data-theme="dark"] .calendar-grid,
+[data-theme="dark"] .calendar-week-view,
+[data-theme="dark"] .calendar-day-view,
+[data-theme="dark"] .calendar-agenda-view {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="hacker"] .calendar-grid,
+[data-theme="hacker"] .calendar-week-view,
+[data-theme="hacker"] .calendar-day-view,
+[data-theme="hacker"] .calendar-agenda-view {
+    border: 1px solid var(--event-card-border);
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.2), inset 0 0 30px rgba(0, 255, 65, 0.05);
+}
+
+[data-theme="hacker"] .calendar-header-cell,
+[data-theme="hacker"] .week-day-header,
+[data-theme="hacker"] .day-view-header {
+    font-family: 'Courier New', 'SF Mono', monospace;
+    text-shadow: 0 0 5px currentColor;
+}
+
+/* Mobile Responsive Enhancements */
+@media (max-width: 768px) {
+    .calendar-grid {
+        height: calc(100vh - 200px);
+        min-height: 400px;
+        border-radius: 8px;
+    }
+    
+    .calendar-day {
+        min-height: 80px;
+        padding: 6px;
+    }
+    
+    .calendar-date-num {
+        font-size: 0.8125rem;
+        padding: 2px 4px;
+    }
+    
+    .day-view-date {
+        font-size: 2.5rem;
+    }
+    
+    .ticktick-agenda-date {
+        width: 80px;
+    }
+    
+    .ticktick-agenda-date .day-num {
+        font-size: 2rem;
+    }
+}
+
+/* Theme-Responsive Event Cards - Enhanced for ADHD UI (Requirements 3.1-3.6) */
 .calendar-task-item {
     font-size: 0.75rem;
     padding: 2px 6px;
     border-radius: 4px;
-    background-color: var(--bg-secondary);
+    background: var(--event-card-bg, var(--bg-secondary));
     color: var(--text-primary);
     cursor: pointer;
     white-space: nowrap;
@@ -4109,32 +4999,763 @@ textarea {
     border-left: 3px solid transparent;
     transition: var(--transition-fast);
     margin-bottom: 1px;
+    min-height: 40px; /* Minimum height for short events (Requirements 3.3) */
+    display: flex;
+    align-items: center;
+    position: relative;
 }
 
-.calendar-task-item:hover {
-    filter: brightness(0.95);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-xs);
+/* ============================================
+   UNIFIED EVENT CARD THEME SYSTEM
+   ============================================ */
+
+/* Base Event Card Class - All calendar cards inherit from this */
+.event-card-base {
+    /* Layout & Structure */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    min-height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    
+    /* Typography */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    text-decoration: none;
+    
+    /* Animations */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Theme Colors - Inherited by all cards */
+    background: var(--event-card-bg);
+    border: 1px solid var(--event-card-border);
+    box-shadow: var(--event-card-shadow);
+    color: var(--event-card-text);
+}
+
+/* Remove all text decorations from event cards */
+.event-card-base,
+.event-card-base * {
+    text-decoration: none !important;
+}
+
+/* Event Card Hover Effects */
+.event-card-base:hover {
+    background: var(--event-card-hover);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--event-accent-border);
     z-index: 10;
 }
 
-.calendar-task-item.priority-high {
-    border-left-color: var(--priority-high);
-    background-color: rgba(255, 86, 48, 0.1);
+/* Event Card Time Display */
+.event-card-base .event-time,
+.event-card-base .cal-task-time,
+.event-card-base .week-task-time,
+.event-card-base .event-time-range,
+.event-card-base .agenda-task-time {
+    color: var(--event-card-time);
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+    text-decoration: none;
 }
 
-.calendar-task-item.priority-medium {
-    border-left-color: var(--priority-medium);
-    background-color: rgba(255, 171, 0, 0.1);
+/* Event Card Title Display */
+.event-card-base .event-title,
+.event-card-base .cal-task-title,
+.event-card-base .week-task-title,
+.event-card-base .agenda-task-title {
+    color: var(--event-card-text);
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    letter-spacing: -0.01em;
+    text-decoration: none;
 }
 
-.calendar-task-item.priority-low {
-    border-left-color: var(--priority-low);
-    background-color: rgba(54, 179, 126, 0.1);
+/* Event Card Status Icon */
+.event-card-base .cal-task-status,
+.event-card-base .week-task-status,
+.event-card-base .event-status {
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+    display: inline-block;
+    text-decoration: none;
 }
 
-.calendar-task-item.task-default {
-    border-left-color: var(--text-muted);
+/* ============================================
+   STATUS-BASED EVENT CARD CLASSES
+   ============================================ */
+
+/* Completed Event Cards */
+.event-card-completed {
+    background: var(--event-success-bg) !important;
+    border-color: var(--event-success-border) !important;
+    color: var(--event-success-text) !important;
+}
+
+.event-card-completed .event-time,
+.event-card-completed .cal-task-time,
+.event-card-completed .week-task-time,
+.event-card-completed .event-time-range,
+.event-card-completed .event-title,
+.event-card-completed .cal-task-title,
+.event-card-completed .week-task-title,
+.event-card-completed .cal-task-status,
+.event-card-completed .week-task-status {
+    color: var(--event-success-text) !important;
+    text-decoration: none !important;
+}
+
+.event-card-completed .event-time,
+.event-card-completed .cal-task-time,
+.event-card-completed .week-task-time,
+.event-card-completed .event-time-range {
+    opacity: 0.8;
+}
+
+/* In-Progress Event Cards */
+.event-card-in-progress {
+    background: var(--event-warning-bg) !important;
+    border-color: var(--event-warning-border) !important;
+    color: var(--event-warning-text) !important;
+}
+
+.event-card-in-progress .event-time,
+.event-card-in-progress .cal-task-time,
+.event-card-in-progress .week-task-time,
+.event-card-in-progress .event-time-range,
+.event-card-in-progress .event-title,
+.event-card-in-progress .cal-task-title,
+.event-card-in-progress .week-task-title,
+.event-card-in-progress .cal-task-status,
+.event-card-in-progress .week-task-status {
+    color: var(--event-warning-text) !important;
+    text-decoration: none !important;
+}
+
+/* Skipped Event Cards */
+.event-card-skipped {
+    background: var(--event-error-bg) !important;
+    border-color: var(--event-error-border) !important;
+    color: var(--event-error-text) !important;
+    opacity: 0.8;
+}
+
+.event-card-skipped .event-time,
+.event-card-skipped .cal-task-time,
+.event-card-skipped .week-task-time,
+.event-card-skipped .event-time-range,
+.event-card-skipped .event-title,
+.event-card-skipped .cal-task-title,
+.event-card-skipped .week-task-title,
+.event-card-skipped .cal-task-status,
+.event-card-skipped .week-task-status {
+    color: var(--event-error-text) !important;
+    text-decoration: none !important;
+}
+
+/* Scheduled Event Cards (Default) */
+.event-card-scheduled {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+}
+
+.event-card-scheduled .event-time,
+.event-card-scheduled .cal-task-time,
+.event-card-scheduled .week-task-time,
+.event-card-scheduled .event-time-range,
+.event-card-scheduled .event-title,
+.event-card-scheduled .cal-task-title,
+.event-card-scheduled .week-task-title,
+.event-card-scheduled .cal-task-status,
+.event-card-scheduled .week-task-status {
+    color: var(--event-card-text) !important;
+    text-decoration: none !important;
+}
+
+/* ============================================
+   GOOGLE CALENDAR EVENT CARDS
+   ============================================ */
+
+/* Google Calendar Events - Preserve Original Colors */
+.event-card-google {
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.event-card-google .event-time,
+.event-card-google .cal-task-time,
+.event-card-google .week-task-time,
+.event-card-google .event-time-range {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-weight: 700 !important;
+}
+
+.event-card-google .event-title,
+.event-card-google .cal-task-title,
+.event-card-google .week-task-title,
+.event-card-google .cal-task-status,
+.event-card-google .week-task-status {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+}
+
+/* ============================================
+   VIEW-SPECIFIC EVENT CARD VARIATIONS
+   ============================================ */
+
+/* Month View Cards - Compact */
+.event-card-month {
+    padding: 4px 8px;
+    min-height: 24px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.event-card-month .event-time,
+.event-card-month .cal-task-time {
+    font-size: 0.6875rem;
+    padding: 1px 3px;
+}
+
+/* Week View Cards - Positioned */
+.event-card-week {
+    border-radius: 6px;
+    margin: 1px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Day View Cards - Full Size */
+.event-card-day {
+    padding: 12px 16px;
+    min-height: 44px;
+    border-radius: 8px;
+}
+
+/* Agenda View Cards - List Style */
+.event-card-agenda {
+    padding: 12px 16px;
+    min-height: 48px;
+    border-radius: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.event-card-agenda .event-time-range {
+    margin-bottom: 4px;
+    display: block;
+    width: fit-content;
+}
+
+.event-card-agenda .event-title {
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    white-space: normal;
+}
+
+/* Short Duration Events */
+.event-card-short {
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+    border-width: 2px;
+}
+
+.event-card-short .event-time,
+.event-card-short .cal-task-time,
+.event-card-short .week-task-time,
+.event-card-short .event-time-range {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    padding: 1px 4px;
+}
+
+/* ============================================
+   THEME-SPECIFIC ENHANCEMENTS
+   ============================================ */
+
+/* Dark Theme Enhancements */
+[data-theme="dark"] .event-card-base:not(.event-card-google) {
+    background: var(--event-card-bg);
+    border-color: var(--event-card-border);
+    color: var(--event-card-text);
+    box-shadow: var(--event-card-shadow);
+}
+
+/* Hacker Theme Enhancements */
+[data-theme="hacker"] .event-card-base:not(.event-card-google) {
+    background: var(--event-card-bg);
+    border-color: var(--event-card-border);
+    color: var(--event-card-text);
+    box-shadow: var(--event-card-shadow);
+    font-family: 'Courier New', 'SF Mono', monospace;
+}
+
+[data-theme="hacker"] .event-card-base .event-title,
+[data-theme="hacker"] .event-card-base .cal-task-title,
+[data-theme="hacker"] .event-card-base .week-task-title {
+    text-shadow: 0 0 5px currentColor;
+}
+
+[data-theme="hacker"] .event-card-base:hover {
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+}
+
+/* ============================================
+   APPLY UNIFIED CLASSES TO ALL CALENDAR VIEWS
+   ============================================ */
+
+/* Month View - Remove hardcoded styles, inherit from base classes */
+.calendar-task-item {
+    /* All styling now inherited from .event-card-base and status classes */
+}
+
+/* Week View - Remove hardcoded styles, inherit from base classes */
+.week-task-positioned {
+    /* All styling now inherited from .event-card-base and status classes */
+}
+
+/* Day View - Remove hardcoded styles, inherit from base classes */
+.hour-tasks .calendar-task {
+    /* All styling now inherited from .event-card-base and status classes */
+}
+
+/* Agenda View - Remove hardcoded styles, inherit from base classes */
+.ticktick-event-card {
+    /* All styling now inherited from .event-card-base and status classes */
+}
+
+/* ============================================
+   MODERN EVENT CARDS - ALL CALENDAR VIEWS
+   ============================================ */
+
+/* Base Event Card Styling - Enhanced */
+.calendar-task-item,
+.calendar-task,
+.week-task-positioned,
+.ticktick-event-card,
+.agenda-task {
+    background: var(--event-card-bg);
+    border: 1px solid var(--event-card-border);
+    border-radius: 8px;
+    box-shadow: var(--event-card-shadow);
+    color: var(--event-card-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Force theme colors to override any conflicting styles */
+.calendar-task-item:not([style*="background:"]),
+.calendar-task:not([style*="background:"]),
+.week-task-positioned:not([style*="background:"]),
+.ticktick-event-card:not([style*="background:"]) {
+    background: var(--event-card-bg) !important;
+    color: var(--event-card-text) !important;
+    border-color: var(--event-card-border) !important;
+}
+
+/* Enhanced Hover Effects */
+.calendar-task-item:hover,
+.calendar-task:hover,
+.week-task-positioned:hover,
+.ticktick-event-card:hover,
+.agenda-task:hover {
+    background: var(--event-card-hover);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--event-accent-border);
+    z-index: 10;
+}
+
+/* Time Display - Bold and Clear with Theme Colors */
+.calendar-task-item .event-time,
+.calendar-task .cal-task-time,
+.week-task-positioned .week-task-time,
+.ticktick-event-card .event-time-range,
+.agenda-task-time {
+    color: var(--event-card-time) !important;
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+
+/* Title Display - Modern Typography with Theme Colors */
+.calendar-task-item .event-title,
+.calendar-task .cal-task-title,
+.week-task-positioned .week-task-title,
+.ticktick-event-card .event-title,
+.agenda-task-title {
+    color: var(--event-card-text) !important;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    letter-spacing: -0.01em;
+}
+
+/* Status-Based Styling - Enhanced for All Views */
+.calendar-task-item.status-completed,
+.calendar-task.status-completed,
+.week-task-positioned.status-completed,
+.ticktick-event-card.status-completed,
+.agenda-task.completed {
+    background: var(--event-success-bg) !important;
+    border-color: var(--event-success-border) !important;
+    color: var(--event-success-text) !important;
+}
+
+.calendar-task-item.status-completed .event-time,
+.calendar-task.status-completed .cal-task-time,
+.week-task-positioned.status-completed .week-task-time,
+.ticktick-event-card.status-completed .event-time-range,
+.agenda-task.completed .agenda-task-time {
+    color: var(--event-success-text) !important;
+    opacity: 0.8;
+}
+
+.calendar-task-item.status-completed .event-title,
+.calendar-task.status-completed .cal-task-title,
+.week-task-positioned.status-completed .week-task-title,
+.ticktick-event-card.status-completed .event-title,
+.agenda-task.completed .agenda-task-title {
+    color: var(--event-success-text) !important;
+}
+
+.calendar-task-item.status-in-progress,
+.calendar-task-item.status-in_progress,
+.calendar-task.status-in-progress,
+.calendar-task.status-in_progress,
+.week-task-positioned.status-in-progress,
+.week-task-positioned.status-in_progress,
+.ticktick-event-card.status-in-progress,
+.ticktick-event-card.status-in_progress {
+    background: var(--event-warning-bg) !important;
+    border-color: var(--event-warning-border) !important;
+    color: var(--event-warning-text) !important;
+}
+
+.calendar-task-item.status-in-progress .event-time,
+.calendar-task-item.status-in_progress .event-time,
+.calendar-task.status-in-progress .cal-task-time,
+.calendar-task.status-in_progress .cal-task-time,
+.week-task-positioned.status-in-progress .week-task-time,
+.week-task-positioned.status-in_progress .week-task-time,
+.ticktick-event-card.status-in-progress .event-time-range,
+.ticktick-event-card.status-in_progress .event-time-range {
+    color: var(--event-warning-text) !important;
+}
+
+.calendar-task-item.status-in-progress .event-title,
+.calendar-task-item.status-in_progress .event-title,
+.calendar-task.status-in-progress .cal-task-title,
+.calendar-task.status-in_progress .cal-task-title,
+.week-task-positioned.status-in-progress .week-task-title,
+.week-task-positioned.status-in_progress .week-task-title,
+.ticktick-event-card.status-in-progress .event-title,
+.ticktick-event-card.status-in_progress .event-title {
+    color: var(--event-warning-text) !important;
+}
+
+.calendar-task-item.status-skipped,
+.calendar-task.status-skipped,
+.week-task-positioned.status-skipped,
+.ticktick-event-card.status-skipped {
+    background: var(--event-error-bg) !important;
+    border-color: var(--event-error-border) !important;
+    color: var(--event-error-text) !important;
+    opacity: 0.8;
+}
+
+.calendar-task-item.status-skipped .event-time,
+.calendar-task.status-skipped .cal-task-time,
+.week-task-positioned.status-skipped .week-task-time,
+.ticktick-event-card.status-skipped .event-time-range {
+    color: var(--event-error-text) !important;
+}
+
+.calendar-task-item.status-skipped .event-title,
+.calendar-task.status-skipped .cal-task-title,
+.week-task-positioned.status-skipped .week-task-title,
+.ticktick-event-card.status-skipped .event-title {
+    color: var(--event-error-text) !important;
+}
+
+/* Default/Scheduled Status - Use Primary Colors */
+.calendar-task-item.status-scheduled,
+.calendar-task.status-scheduled,
+.week-task-positioned.status-scheduled,
+.ticktick-event-card.status-scheduled,
+.calendar-task-item:not([class*="status-"]),
+.calendar-task:not([class*="status-"]),
+.week-task-positioned:not([class*="status-"]),
+.ticktick-event-card:not([class*="status-"]) {
+    background: var(--event-card-bg) !important;
+    border-color: var(--event-card-border) !important;
+    color: var(--event-card-text) !important;
+}
+
+.calendar-task-item.status-scheduled .event-time,
+.calendar-task.status-scheduled .cal-task-time,
+.week-task-positioned.status-scheduled .week-task-time,
+.ticktick-event-card.status-scheduled .event-time-range,
+.calendar-task-item:not([class*="status-"]) .event-time,
+.calendar-task:not([class*="status-"]) .cal-task-time,
+.week-task-positioned:not([class*="status-"]) .week-task-time,
+.ticktick-event-card:not([class*="status-"]) .event-time-range {
+    color: var(--event-card-time) !important;
+}
+
+.calendar-task-item.status-scheduled .event-title,
+.calendar-task.status-scheduled .cal-task-title,
+.week-task-positioned.status-scheduled .week-task-title,
+.ticktick-event-card.status-scheduled .event-title,
+.calendar-task-item:not([class*="status-"]) .event-title,
+.calendar-task:not([class*="status-"]) .cal-task-title,
+.week-task-positioned:not([class*="status-"]) .week-task-title,
+.ticktick-event-card:not([class*="status-"]) .event-title {
+    color: var(--event-card-text) !important;
+}
+
+/* Priority Styling */
+.calendar-task-item.priority-high,
+.calendar-task.priority-high,
+.week-task-positioned.priority-high,
+.ticktick-event-card.priority-high {
+    background: var(--event-error-bg);
+    border-color: var(--event-error-border);
+    color: var(--event-error-text);
+    border-left: 4px solid var(--event-error-border);
+}
+
+.calendar-task-item.priority-medium,
+.calendar-task.priority-medium,
+.week-task-positioned.priority-medium,
+.ticktick-event-card.priority-medium {
+    background: var(--event-warning-bg);
+    border-color: var(--event-warning-border);
+    color: var(--event-warning-text);
+    border-left: 4px solid var(--event-warning-border);
+}
+
+.calendar-task-item.priority-low,
+.calendar-task.priority-low,
+.week-task-positioned.priority-low,
+.ticktick-event-card.priority-low {
+    background: var(--event-success-bg);
+    border-color: var(--event-success-border);
+    color: var(--event-success-text);
+    border-left: 4px solid var(--event-success-border);
+}
+
+/* Google Calendar Events - Enhanced with Theme Integration */
+.calendar-task-item[style*="background:"],
+.calendar-task[style*="background:"],
+.week-task-positioned[style*="background:"],
+.ticktick-event-card[style*="background:"] {
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.calendar-task-item[style*="background:"] .event-time,
+.calendar-task[style*="background:"] .cal-task-time,
+.week-task-positioned[style*="background:"] .week-task-time,
+.ticktick-event-card[style*="background:"] .event-time-range {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-weight: 700 !important;
+}
+
+.calendar-task-item[style*="background:"] .event-title,
+.calendar-task[style*="background:"] .cal-task-title,
+.week-task-positioned[style*="background:"] .week-task-title,
+.ticktick-event-card[style*="background:"] .event-title {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    font-weight: 600 !important;
+}
+
+/* Short Duration Events - Enhanced Visibility */
+.calendar-task-item.short-duration,
+.calendar-task.short-duration,
+.week-task-positioned.short-duration,
+.ticktick-event-card.short-duration {
+    min-height: 44px;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+    border-width: 2px;
+}
+
+.calendar-task-item.short-duration .event-time,
+.calendar-task.short-duration .cal-task-time,
+.week-task-positioned.short-duration .week-task-time,
+.ticktick-event-card.short-duration .event-time-range {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    padding: 1px 4px;
+}
+
+/* Week View Specific Enhancements */
+.week-task-positioned {
+    border-radius: 6px;
+    margin: 1px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Agenda View Specific Enhancements */
+.ticktick-event-card {
+    border-radius: 10px;
+    margin-bottom: 8px;
+    padding: 12px 16px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.ticktick-event-card .event-time-range {
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+    display: block;
+    width: fit-content;
+}
+
+.ticktick-event-card .event-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+/* Day View Specific Enhancements */
+.day-task-positioned {
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 4px solid var(--event-accent-border);
+}
+
+/* Month View Specific Enhancements */
+.calendar-task-item {
+    border-radius: 4px;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    min-height: 24px;
+}
+
+.calendar-task-item .event-time {
+    font-size: 0.6875rem;
+    padding: 1px 3px;
+}
+
+/* Enhanced Focus States for Accessibility */
+.calendar-task-item:focus,
+.calendar-task:focus,
+.week-task-positioned:focus,
+.ticktick-event-card:focus,
+.agenda-task:focus {
+    outline: 3px solid var(--event-accent-border);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+}
+
+/* Theme-Specific Enhancements */
+[data-theme="dark"] .calendar-task-item,
+[data-theme="dark"] .calendar-task,
+[data-theme="dark"] .week-task-positioned,
+[data-theme="dark"] .ticktick-event-card,
+[data-theme="dark"] .agenda-task {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+[data-theme="hacker"] .calendar-task-item,
+[data-theme="hacker"] .calendar-task,
+[data-theme="hacker"] .week-task-positioned,
+[data-theme="hacker"] .ticktick-event-card,
+[data-theme="hacker"] .agenda-task {
+    font-family: 'Courier New', 'SF Mono', monospace;
+    text-shadow: 0 0 5px currentColor;
+    border: 1px solid var(--event-card-border);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2), inset 0 0 10px rgba(0, 255, 65, 0.1);
+}
+
+[data-theme="hacker"] .calendar-task-item:hover,
+[data-theme="hacker"] .calendar-task:hover,
+[data-theme="hacker"] .week-task-positioned:hover,
+[data-theme="hacker"] .ticktick-event-card:hover,
+[data-theme="hacker"] .agenda-task:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.4), inset 0 0 15px rgba(0, 255, 65, 0.2);
+    text-shadow: 0 0 8px currentColor;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .calendar-task-item,
+    .calendar-task,
+    .week-task-positioned,
+    .ticktick-event-card,
+    .agenda-task {
+        min-height: 48px;
+        padding: 8px 12px;
+        font-size: 0.9375rem;
+    }
+    
+    .calendar-task-item .event-time,
+    .calendar-task .cal-task-time,
+    .week-task-positioned .week-task-time,
+    .ticktick-event-card .event-time-range,
+    .agenda-task-time {
+        font-size: 0.8125rem;
+        padding: 3px 6px;
+    }
 }
 
 .calendar-more {
@@ -5235,4 +6856,578 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
 .icon-btn:hover svg,
 .icon-btn.active svg {
     stroke: var(--accent-primary);
+}
+
+/* ============================================
+   Enhanced Sidebar Drag and Drop
+   ============================================ */
+
+.nav-item.dragging {
+    opacity: 0.6;
+    transform: scale(1.05) rotate(2deg);
+    background: var(--accent-light);
+    border: 1px solid var(--accent-primary);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    cursor: grabbing;
+    z-index: 1000;
+}
+
+.nav-item.drag-over {
+    background: var(--accent-light);
+    border-top: 2px solid var(--accent-primary);
+    margin-top: 0.5rem;
+    transform: translateX(4px);
+    transition: all var(--transition-fast);
+}
+
+/* Enhanced drag feedback for different themes */
+[data-theme="dark"] .nav-item.dragging {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: var(--accent-secondary);
+}
+
+[data-theme="hacker"] .nav-item.dragging {
+    background: rgba(0, 255, 0, 0.15);
+    border-color: #00ff00;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+/* ============================================
+   Enhanced Event Tooltips for Short Duration Events
+   ============================================ */
+
+.event-tooltip {
+    position: absolute;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 0.75rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 300px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all var(--transition-fast);
+}
+
+.event-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.event-tooltip .tooltip-time {
+    font-weight: 700;
+    color: var(--accent-primary);
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.event-tooltip .tooltip-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.event-tooltip .tooltip-description {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Theme-specific tooltip styling */
+[data-theme="dark"] .event-tooltip {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="hacker"] .event-tooltip {
+    background: #0d1117;
+    border-color: #30363d;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+/* ============================================
+   Enhanced Calendar Navigation and Controls
+   ============================================ */
+
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.calendar-nav h2 {
+    min-width: 180px;
+    text-align: center;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.calendar-nav .btn-icon {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.calendar-nav .btn-icon:hover {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+    transform: scale(1.05);
+}
+
+#today-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+}
+
+#today-btn:hover {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+.calendar-view-modes {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    padding: 0.25rem;
+    gap: 0.125rem;
+    border: 1px solid var(--border-color);
+}
+
+.view-mode-btn {
+    padding: 0.375rem 0.875rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.view-mode-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.view-mode-btn.active {
+    background: var(--accent-primary);
+    color: white;
+    box-shadow: var(--shadow-xs);
+    transform: scale(1.02);
+}
+
+/* ============================================
+   Enhanced Mobile Responsiveness for Drag and Drop
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Reduce drag effects on mobile for better performance */
+    .calendar-task-item.dragging,
+    .calendar-task.dragging,
+    .week-task-positioned.dragging,
+    .ticktick-event-card.dragging {
+        transform: scale(1.02);
+        box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    }
+    
+    .calendar-day.drag-over,
+    .week-day-col.drag-over,
+    .day-hour-slot.drag-over,
+    .ticktick-agenda-day.drag-over {
+        transform: none;
+        border-width: 1px;
+    }
+    
+    /* Simplify drag indicators on mobile */
+    .drag-over {
+        animation: none;
+    }
+    
+    /* Larger touch targets for mobile drag */
+    .calendar-task-item,
+    .calendar-task,
+    .week-task-positioned,
+    .ticktick-event-card {
+        min-height: 44px;
+        padding: 6px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Further simplify on very small screens */
+    .calendar-task-item.dragging,
+    .calendar-task.dragging {
+        transform: none;
+        opacity: 0.8;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .event-tooltip {
+        max-width: 250px;
+        font-size: 0.75rem;
+    }
+}
+
+/* ============================================
+   Accessibility Enhancements for Drag and Drop
+   ============================================ */
+
+/* Focus indicators for keyboard navigation */
+.calendar-task-item:focus,
+.calendar-task:focus,
+.week-task-positioned:focus,
+.ticktick-event-card:focus {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .calendar-day.drag-over,
+    .week-day-col.drag-over,
+    .day-hour-slot.drag-over,
+    .ticktick-agenda-day.drag-over {
+        border-width: 3px;
+        border-style: solid;
+    }
+    
+    .calendar-task-item.dragging,
+    .calendar-task.dragging,
+    .week-task-positioned.dragging,
+    .ticktick-event-card.dragging {
+        border-width: 2px;
+        border-style: solid;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .calendar-task-item.dragging,
+    .calendar-task.dragging,
+    .week-task-positioned.dragging,
+    .ticktick-event-card.dragging {
+        transform: none;
+        animation: none;
+    }
+    
+    .drag-over {
+        animation: none;
+    }
+    
+    .calendar-day.drag-over,
+    .week-day-col.drag-over,
+    .day-hour-slot.drag-over,
+    .ticktick-agenda-day.drag-over {
+        transform: none;
+        transition: none;
+    }
+}
+/* ============================================
+   MODERN TYPOGRAPHY & VISUAL ENHANCEMENTS
+   ============================================ */
+
+/* Enhanced Font Loading for Better Performance */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+}
+
+/* Global Typography Improvements */
+.calendar-task-item *,
+.calendar-task *,
+.week-task-positioned *,
+.ticktick-event-card *,
+.agenda-task * {
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enhanced Status Icons with Better Visibility */
+.cal-task-status,
+.week-task-status,
+.agenda-task-status {
+    font-size: 0.875rem;
+    margin-right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Micro-interactions for Better UX */
+.calendar-task-item,
+.calendar-task,
+.week-task-positioned,
+.ticktick-event-card,
+.agenda-task {
+    will-change: transform, box-shadow;
+}
+
+.calendar-task-item:active,
+.calendar-task:active,
+.week-task-positioned:active,
+.ticktick-event-card:active,
+.agenda-task:active {
+    transform: translateY(1px) scale(0.98);
+    transition: all 0.1s ease;
+}
+
+/* Enhanced Gradient Overlays for Depth */
+.calendar-task-item::before,
+.calendar-task::before,
+.week-task-positioned::before,
+.ticktick-event-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%, rgba(0, 0, 0, 0.05) 100%);
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.calendar-task-item:hover::before,
+.calendar-task:hover::before,
+.week-task-positioned:hover::before,
+.ticktick-event-card:hover::before {
+    opacity: 1;
+}
+
+/* Enhanced Loading States */
+.calendar-task-item.loading,
+.calendar-task.loading,
+.week-task-positioned.loading,
+.ticktick-event-card.loading {
+    background: linear-gradient(90deg, var(--event-card-bg) 25%, var(--bg-hover) 50%, var(--event-card-bg) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Enhanced Truncation with Fade Effect */
+.calendar-task-item .event-title,
+.calendar-task .cal-task-title,
+.week-task-positioned .week-task-title,
+.ticktick-event-card .event-title {
+    position: relative;
+}
+
+.calendar-task-item .event-title::after,
+.calendar-task .cal-task-title::after,
+.week-task-positioned .week-task-title::after,
+.ticktick-event-card .event-title::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(to right, transparent, var(--event-card-bg));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.calendar-task-item:hover .event-title::after,
+.calendar-task:hover .cal-task-title::after,
+.week-task-positioned:hover .week-task-title::after,
+.ticktick-event-card:hover .event-title::after {
+    opacity: 0;
+}
+
+/* Enhanced Theme Transitions */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Print Styles for Calendar Views */
+@media print {
+    .calendar-task-item,
+    .calendar-task,
+    .week-task-positioned,
+    .ticktick-event-card,
+    .agenda-task {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    
+    .calendar-task-item .event-time,
+    .calendar-task .cal-task-time,
+    .week-task-positioned .week-task-time,
+    .ticktick-event-card .event-time-range,
+    .agenda-task-time {
+        background: #f0f0f0 !important;
+        color: #333 !important;
+    }
+}
+
+/* High Performance Mode (for older devices) */
+@media (prefers-reduced-motion: reduce) {
+    .calendar-task-item,
+    .calendar-task,
+    .week-task-positioned,
+    .ticktick-event-card,
+    .agenda-task {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+    
+    .calendar-task-item::before,
+    .calendar-task::before,
+    .week-task-positioned::before,
+    .ticktick-event-card::before {
+        display: none;
+    }
+}
+
+/* Enhanced Focus Indicators for Better Accessibility */
+.calendar-task-item:focus-visible,
+.calendar-task:focus-visible,
+.week-task-positioned:focus-visible,
+.ticktick-event-card:focus-visible,
+.agenda-task:focus-visible {
+    outline: 3px solid var(--accent-primary);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.2);
+    z-index: 100;
+}
+
+/* Enhanced Color Contrast for Accessibility */
+@media (prefers-contrast: high) {
+    .calendar-task-item,
+    .calendar-task,
+    .week-task-positioned,
+    .ticktick-event-card,
+    .agenda-task {
+        border-width: 2px;
+        font-weight: 600;
+    }
+    
+    .calendar-task-item .event-time,
+    .calendar-task .cal-task-time,
+    .week-task-positioned .week-task-time,
+    .ticktick-event-card .event-time-range,
+    .agenda-task-time {
+        font-weight: 800;
+        background: rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Dark Mode Specific Enhancements */
+[data-theme="dark"] .calendar-task-item .event-time,
+[data-theme="dark"] .calendar-task .cal-task-time,
+[data-theme="dark"] .week-task-positioned .week-task-time,
+[data-theme="dark"] .ticktick-event-card .event-time-range,
+[data-theme="dark"] .agenda-task-time {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Hacker Theme Specific Enhancements */
+[data-theme="hacker"] .calendar-task-item .event-time,
+[data-theme="hacker"] .calendar-task .cal-task-time,
+[data-theme="hacker"] .week-task-positioned .week-task-time,
+[data-theme="hacker"] .ticktick-event-card .event-time-range,
+[data-theme="hacker"] .agenda-task-time {
+    background: rgba(0, 255, 65, 0.2);
+    border: 1px solid rgba(0, 255, 65, 0.3);
+    box-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+}
+
+[data-theme="hacker"] .calendar-task-item:hover,
+[data-theme="hacker"] .calendar-task:hover,
+[data-theme="hacker"] .week-task-positioned:hover,
+[data-theme="hacker"] .ticktick-event-card:hover,
+[data-theme="hacker"] .agenda-task:hover {
+    animation: hackerGlow 0.5s ease-in-out;
+}
+
+@keyframes hackerGlow {
+    0%, 100% { 
+        box-shadow: 0 0 10px rgba(0, 255, 65, 0.2), inset 0 0 10px rgba(0, 255, 65, 0.1);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(0, 255, 65, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.2);
+    }
+}
+
+/* Performance Optimization for Large Calendars */
+.calendar-container {
+    contain: layout style paint;
+}
+
+.calendar-task-item,
+.calendar-task,
+.week-task-positioned,
+.ticktick-event-card,
+.agenda-task {
+    contain: layout style;
+}
+
+/* Enhanced Responsive Typography */
+@media (max-width: 480px) {
+    .calendar-task-item .event-title,
+    .calendar-task .cal-task-title,
+    .week-task-positioned .week-task-title,
+    .ticktick-event-card .event-title,
+    .agenda-task-title {
+        font-size: 0.8125rem;
+        line-height: 1.2;
+    }
+    
+    .calendar-task-item .event-time,
+    .calendar-task .cal-task-time,
+    .week-task-positioned .week-task-time,
+    .ticktick-event-card .event-time-range,
+    .agenda-task-time {
+        font-size: 0.6875rem;
+        padding: 2px 4px;
+    }
 }

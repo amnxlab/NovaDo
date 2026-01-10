@@ -621,21 +621,77 @@ function renderCalendar() {
 
         displayTasks.forEach(task => {
             const taskEl = document.createElement('div');
-            taskEl.className = 'calendar-task-item';
-            taskEl.textContent = task.title;
-            taskEl.title = task.title;
-
-            // Check for Google Calendar color
-            if (task.googleCalendarColor) {
-                taskEl.style.backgroundColor = task.googleCalendarColor;
-                taskEl.style.color = '#fff';
-                taskEl.style.borderLeft = 'none';
+            
+            // Calculate event duration for short-duration optimization (Requirements 3.3)
+            let duration = 0;
+            if (task.dueDate && task.startTime) {
+                const start = new Date(task.startTime);
+                const end = new Date(task.dueDate);
+                duration = (end - start) / (1000 * 60); // duration in minutes
+            }
+            
+            // Get enhanced styling with theme integration
+            const styleConfig = getEnhancedEventCardStyles({
+                ...task,
+                duration,
+                googleCalendarColor: task.googleCalendarColor
+            }, document.documentElement.dataset.theme, 'month');
+            
+            // Apply unified CSS classes for theme colors
+            const cssClasses = [
+                'calendar-task-item',
+                styleConfig.classes
+            ].filter(Boolean).join(' ');
+            
+            // Apply styles
+            taskEl.className = cssClasses;
+            if (styleConfig.style) {
+                taskEl.style.cssText = styleConfig.style; // Only Google Calendar colors
+            }
+            
+            // Create structured content with time and title (Requirements 3.6)
+            const eventContent = document.createElement('div');
+            eventContent.style.display = 'flex';
+            eventContent.style.alignItems = 'center';
+            eventContent.style.width = '100%';
+            
+            // Add time if available (bold timestamps - Requirements 3.6)
+            if (task.dueDate || task.dueTime || task.due_time) {
+                const timeEl = document.createElement('span');
+                timeEl.className = 'event-time';
+                
+                // Fix time translation for prayer calendar and other synced events
+                let timeToDisplay = '';
+                if (task.dueTime || task.due_time) {
+                    const fixedTime = fixTimeTranslation(task.dueTime || task.due_time, !!task.googleEventId);
+                    timeToDisplay = formatTimeDisplay(fixedTime);
+                } else if (task.dueDate) {
+                    const taskDate = new Date(task.dueDate);
+                    if (taskDate.getHours() !== 0 || taskDate.getMinutes() !== 0) {
+                        const timeStr = `${taskDate.getHours().toString().padStart(2, '0')}:${taskDate.getMinutes().toString().padStart(2, '0')}`;
+                        timeToDisplay = formatTimeDisplay(timeStr);
+                    }
+                }
+                
+                if (timeToDisplay) {
+                    timeEl.textContent = timeToDisplay;
+                    eventContent.appendChild(timeEl);
+                }
+            }
+            
+            // Add title with truncation support (Requirements 3.4)
+            const titleEl = document.createElement('span');
+            titleEl.className = 'event-title';
+            titleEl.textContent = task.title;
+            eventContent.appendChild(titleEl);
+            
+            taskEl.appendChild(eventContent);
+            
+            // Enhanced tooltip for long titles (Requirements 3.4)
+            if (task.title.length > 25) {
+                taskEl.title = `${task.title}${task.description ? '\n' + task.description : ''}`;
             } else {
-                // Priority colors
-                if (task.priority === '3') taskEl.classList.add('priority-high');
-                else if (task.priority === '2') taskEl.classList.add('priority-medium');
-                else if (task.priority === '1') taskEl.classList.add('priority-low');
-                else taskEl.classList.add('task-default');
+                taskEl.title = task.title;
             }
 
             // Make task clickable
@@ -644,12 +700,15 @@ function renderCalendar() {
                 openTaskModal(task._id);
             };
 
-            // Add drag attributes
+            // Enhanced drag attributes with better UX
             taskEl.draggable = true;
             taskEl.dataset.taskId = task._id;
-            taskEl.ondragstart = (e) => {
-                if (typeof handleCalendarTaskDragStart === 'function') handleCalendarTaskDragStart(e);
-            };
+            taskEl.dataset.originalDate = task.dueDate;
+            taskEl.dataset.originalTime = task.dueTime || task.due_time || '';
+            
+            // Add drag event listeners
+            taskEl.addEventListener('dragstart', handleCalendarTaskDragStart);
+            taskEl.addEventListener('dragend', handleCalendarTaskDragEnd);
 
             cell.appendChild(taskEl);
         });
@@ -878,12 +937,23 @@ function renderTasks() {
 }
 
 // Get status icon based on status and theme
-function getStatusIcon(status, theme = 'light') {
+// Updated for ADHD-friendly visual feedback (Requirements 1.1-1.4)
+function getStatusIcon(status, theme = 'light', animated = false) {
+    // For in-progress status, optionally return animated SVG spinner
+    if (status === 'in_progress' && animated) {
+        return `<svg class="status-spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" opacity="0.25"/>
+                    <path d="M12 2 A10 10 0 0 1 22 12" stroke-linecap="round">
+                        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                    </path>
+                </svg>`;
+    }
+    
     const icons = {
-        'scheduled': '📅',
-        'in_progress': '⏳',
-        'completed': '✅',
-        'skipped': '❌'
+        'scheduled': '📅',      // Scheduled - calendar emoji (unchanged)
+        'in_progress': '⏳',    // In Progress - hourglass/loading indicator
+        'completed': '✅',      // Complete - check mark for positive reinforcement
+        'skipped': '❌'         // Skipped - cross/false emoji for clear negative feedback
     };
     return icons[status] || icons['scheduled'];
 }
@@ -917,15 +987,18 @@ function createTaskElement(task) {
     const priorityHTML = task.priority ? `<span class="task-priority" data-priority="${task.priority}"></span>` : '';
     const tagsHTML = (task.tags || []).map(tag => `<span class="task-tag">${tag}</span>`).join('');
 
-    // Status badge
+    // Status badge with ADHD-friendly emojis and ARIA labels (Requirements 1.1-1.6)
     const statusConfig = {
-        'scheduled': { icon: '📅', label: 'Scheduled', class: 'scheduled' },
-        'in_progress': { icon: '⏳', label: 'In Progress', class: 'in-progress' },
-        'completed': { icon: '✅', label: 'Completed', class: 'completed' },
-        'skipped': { icon: '❌', label: 'Skipped', class: 'skipped' }
+        'scheduled': { icon: '📅', label: 'Scheduled', class: 'scheduled', ariaLabel: 'Task is scheduled' },
+        'in_progress': { icon: '⏳', label: 'In Progress', class: 'in-progress', ariaLabel: 'Task is in progress' },
+        'completed': { icon: '✅', label: 'Completed', class: 'completed', ariaLabel: 'Task is completed' },
+        'skipped': { icon: '❌', label: 'Skipped', class: 'skipped', ariaLabel: 'Task was skipped' }
     };
     const statusInfo = statusConfig[status] || statusConfig['scheduled'];
-    const statusBadgeHTML = `<span class="task-status-badge ${statusInfo.class}" title="${statusInfo.label}">${statusInfo.icon}</span>`;
+    const statusBadgeHTML = `<span class="task-status-badge ${statusInfo.class}" 
+                                   title="${statusInfo.label}" 
+                                   aria-label="${statusInfo.ariaLabel}" 
+                                   role="status">${statusInfo.icon}</span>`;
 
     div.innerHTML = `
         <div class="task-checkbox ${status === 'completed' ? 'checked' : ''}" onclick="completeTask('${task._id || task.id}', event)" title="Mark as completed">
@@ -1007,9 +1080,10 @@ async function completeTask(id, e) {
     try {
         const updatedTask = await api.updateTask(id, { status: newStatus });
         state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask };
-        renderTasks();
-        renderCalendar();
-        updateCounts();
+        
+        // Cross-view synchronization (Requirements 1.6)
+        updateAllViews();
+        
         showToast(newStatus === 'completed' ? 'Task completed!' : 'Task reopened');
     } catch (error) {
         console.error('Complete task error:', error);
@@ -1038,13 +1112,31 @@ async function cycleTaskStatus(id, e) {
     try {
         const updatedTask = await api.updateTask(id, { status: nextStatus });
         state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask };
-        renderTasks();
-        renderCalendar();
-        updateCounts();
+        
+        // Cross-view synchronization (Requirements 1.6)
+        updateAllViews();
+        
         showToast(`Task: ${statusLabels[nextStatus]}`);
     } catch (error) {
         console.error('Cycle task status error:', error);
         showToast('Failed to update task', 'error');
+    }
+}
+
+// Cross-view synchronization helper function
+function updateAllViews() {
+    renderTasks();
+    renderCalendar();
+    updateCounts();
+    
+    // Update any other views that might be showing tasks
+    if (state.currentView === 'habits') {
+        renderHabits();
+    }
+    
+    // Update stats if stats view is active
+    if (state.currentView === 'stats' && window.statsModule) {
+        window.statsModule.refresh();
     }
 }
 
@@ -1056,9 +1148,10 @@ async function restoreTask(id, e) {
         if (taskIndex !== -1) {
             state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask };
         }
-        renderTasks();
-        renderCalendar();
-        updateCounts();
+        
+        // Cross-view synchronization (Requirements 1.6)
+        updateAllViews();
+        
         showToast('Task restored to Scheduled');
     } catch (error) {
         console.error('Restore task error:', error);
@@ -2208,19 +2301,33 @@ function renderDayView() {
             }
             const statusIcon = getStatusIcon(t.status || 'scheduled');
             const duration = t.googleEventId ? 60 : 30;
-            const eventStyles = getEventCardStyles({ ...t, duration, googleCalendarColor: t.googleCalendarColor }, document.documentElement.dataset.theme);
-            const bgStyle = t.googleCalendarColor ? `background: ${t.googleCalendarColor};` : eventStyles;
+            
+            // Get enhanced styling with theme integration
+            const styleConfig = getEnhancedEventCardStyles({
+                ...t,
+                duration,
+                googleCalendarColor: t.googleCalendarColor
+            }, document.documentElement.dataset.theme, 'day');
+            
+            // Apply unified CSS classes for theme colors
+            const cssClasses = [
+                'calendar-task',
+                styleConfig.classes
+            ].filter(Boolean).join(' ');
+            
+            const inlineStyle = styleConfig.style; // Only Google Calendar colors
+            
             return `
-                        <div class="calendar-task status-${t.status || 'scheduled'} ${duration < 30 && duration > 0 ? 'short-duration' : ''}" 
+                        <div class="${cssClasses}" 
                              data-task-id="${t._id || t.id}" 
                              data-task-title="${escapeHTML(t.title)}"
                              data-task-description="${escapeHTML(t.description || '')}"
                              data-task-time="${timeDisplay}"
-                             style="${bgStyle}"
+                             ${inlineStyle ? `style="${inlineStyle}"` : ''}
                              onclick="openTaskModal('${t._id || t.id}')">
-                            ${timeDisplay ? `<span class="task-time">${timeDisplay}</span>` : ''}
+                            ${timeDisplay ? `<span class="cal-task-time">${timeDisplay}</span>` : ''}
                             <span class="cal-task-status">${statusIcon}</span>
-                            ${escapeHTML(t.title)}
+                            <span class="cal-task-title">${escapeHTML(t.title)}</span>
                         </div>
                     `;
         }).join('')}
@@ -2238,7 +2345,10 @@ function renderDayView() {
         </div>
         <div class="day-view-hours">${hours.join('')}</div>
     `;
-    setTimeout(attachEventTooltips, 100);
+    setTimeout(() => {
+        attachEventTooltips();
+        initDayViewDragDrop();
+    }, 100);
 }
 
 // Format time from "HH:MM" (24hr) to "H:MM AM/PM" (12hr) for display
@@ -2383,10 +2493,20 @@ function renderWeekView() {
             const top = (task.startMinutes / (24 * 60)) * 100;
             const height = Math.max(((task.endMinutes - task.startMinutes) / (24 * 60)) * 100, 2); // Min 2% height
 
-            const duration = task.googleEventId ? 60 : 30;
-            const eventStyles = getEventCardStyles({ ...task, duration, googleCalendarColor: task.googleCalendarColor }, document.documentElement.dataset.theme);
-            const bgColor = task.googleCalendarColor || '';
-            const baseStyle = `
+            // Get enhanced styling with theme integration
+            const styleConfig = getEnhancedEventCardStyles({
+                ...task,
+                duration: task.endMinutes - task.startMinutes,
+                googleCalendarColor: task.googleCalendarColor
+            }, document.documentElement.dataset.theme, 'week');
+            
+            // Apply unified CSS classes for theme colors
+            const cssClasses = [
+                'week-task-positioned',
+                styleConfig.classes
+            ].filter(Boolean).join(' ');
+            
+            const positionStyle = `
                 position: absolute;
                 top: ${top}%;
                 left: ${left}%;
@@ -2394,16 +2514,28 @@ function renderWeekView() {
                 height: ${height}%;
                 min-height: 20px;
             `.replace(/\s+/g, ' ');
-            const style = bgColor ? `${baseStyle} background: ${bgColor};` : `${baseStyle} ${eventStyles}`;
-
+            
+            const finalStyle = positionStyle + (styleConfig.style || ''); // Add Google Calendar colors if any
+            
             const statusIcon = getStatusIcon(task.status || 'scheduled');
+            
+            // Fix time display for prayer calendar and other synced events
+            let timeDisplay = '';
+            if (task.displayTime) {
+                const fixedTime = fixTimeTranslation(task.displayTime, !!task.googleEventId);
+                timeDisplay = formatTimeDisplay(fixedTime);
+            }
+            
             bodyHtml += `
-                <div class="week-task-positioned status-${task.status || 'scheduled'}" 
+                <div class="${cssClasses}" 
                      data-task-id="${task._id || task.id}" 
-                     style="${style}"
+                     data-original-date="${task.dueDate}"
+                     data-original-time="${task.dueTime || task.due_time || ''}"
+                     style="${finalStyle}"
+                     draggable="true"
                      onclick="openTaskModal('${task._id || task.id}')">
                     <span class="week-task-status">${statusIcon}</span>
-                    <span class="week-task-time">${task.displayTime ? formatTimeDisplay(task.displayTime) : ''}</span>
+                    <span class="week-task-time">${timeDisplay}</span>
                     <span class="week-task-title">${escapeHTML(task.title)}</span>
                 </div>
             `;
@@ -2416,7 +2548,12 @@ function renderWeekView() {
         <div class="week-view-header">${headerHtml}</div>
         <div class="week-view-body">${bodyHtml}</div>
     `;
-    setTimeout(attachEventTooltips, 100);
+    
+    // Initialize drag and drop for week view
+    setTimeout(() => {
+        attachEventTooltips();
+        initWeekViewDragDrop();
+    }, 100);
 }
 
 function renderAgendaView() {
@@ -2493,6 +2630,7 @@ function renderAgendaView() {
         const dayNum = date.getDate();
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const isToday = isSameDay(date, today);
+        const dateStr = formatDateLocal(date); // Format: YYYY-MM-DD
 
         // Sort tasks: All Day first, then by time
         const dayTasks = grouped[dateKey].sort((a, b) => {
@@ -2505,7 +2643,7 @@ function renderAgendaView() {
         });
 
         html += `
-            <div class="ticktick-agenda-day ${isToday ? 'today' : ''}">
+            <div class="ticktick-agenda-day ${isToday ? 'today' : ''}" data-date="${dateStr}">
                 <div class="ticktick-agenda-date">
                     <span class="day-num ${isToday ? 'today' : ''}">${dayNum}</span>
                     <span class="day-name">${dayName}</span>
@@ -2525,21 +2663,36 @@ function renderAgendaView() {
             
             // Calculate duration for short event detection
             const duration = time ? (isGoogle ? 60 : 30) : 0;
-            const eventStyles = getEventCardStyles({ ...t, duration, googleCalendarColor: t.googleCalendarColor }, document.documentElement.dataset.theme);
-            const finalStyle = t.googleCalendarColor ? eventStyles : (priorityColor && !t.googleCalendarColor ? `border-left: 3px solid ${priorityColor}; ${eventStyles}` : eventStyles);
+            
+            // Apply enhanced theme-responsive styling
+            const eventStyles = getEnhancedEventCardStyles({ 
+                ...t, 
+                duration, 
+                googleCalendarColor: t.googleCalendarColor 
+            }, document.documentElement.dataset.theme, 'agenda');
+            
+            // Apply unified CSS classes for theme colors
+            const cssClasses = [
+                'ticktick-event-card',
+                eventStyles.classes,
+                isCompleted ? 'completed' : ''
+            ].filter(Boolean).join(' ');
+            
+            const inlineStyle = eventStyles.style || ''; // Only Google Calendar colors
 
             return `
                             <div class="ticktick-agenda-row">
                                 <div class="ticktick-time-col">
-                                    <span class="time-text">${time ? timeStart : 'All Day'}</span>
+                                    <span class="time-text" style="color: var(--text-primary);">${time ? formatTimeDisplay(fixTimeTranslation(time, isGoogle)) : 'All Day'}</span>
                                     ${isGoogle ? '<span class="calendar-icon">📅</span>' : ''}
                                 </div>
-                                <div class="ticktick-event-card ${isCompleted ? 'completed' : ''} ${duration < 30 && duration > 0 ? 'short-duration' : ''}"
-                                     style="${finalStyle}"
+                                <div class="${cssClasses}"
+                                     ${inlineStyle ? `style="${inlineStyle}"` : ''}
                                      data-task-id="${t._id || t.id}"
                                      data-task-title="${escapeHTML(t.title)}"
                                      data-task-description="${escapeHTML(t.description || '')}"
                                      data-task-time="${timeRange}"
+                                     draggable="true"
                                      onclick="openTaskModal('${t._id || t.id}')">
                                     ${time && isGoogle ? `<div class="event-time-range">${timeRange}</div>` : ''}
                                     <div class="event-title">${escapeHTML(t.title)}</div>
@@ -2553,7 +2706,12 @@ function renderAgendaView() {
     });
 
     elements.calendarAgendaView.innerHTML = `<div class="ticktick-agenda-container">${html}</div>`;
-    setTimeout(attachEventTooltips, 100);
+    
+    // Initialize drag and drop for agenda view
+    setTimeout(() => {
+        attachEventTooltips();
+        initAgendaViewDragDrop();
+    }, 100);
 }
 
 // Helper functions for calendar
@@ -3867,19 +4025,437 @@ async function handleCalendarDayDrop(e) {
         const [year, month, day] = newDateStr.split('-').map(Number);
         const localDate = new Date(year, month - 1, day, 12, 0, 0); // Set to noon to avoid timezone issues
 
-        // Update task due date
-        await api.updateTask(taskId, { dueDate: localDate.toISOString() });
+        // Preserve existing time if task has one
+        let newTime = null;
+        if (task.dueTime || task.due_time) {
+            newTime = task.dueTime || task.due_time;
+            // Apply time to the new date
+            const [h, m] = newTime.split(':').map(Number);
+            localDate.setHours(h, m, 0, 0);
+        }
 
-        // Update local state
-        task.dueDate = localDate.toISOString();
-
-        // Re-render calendar
-        renderCalendar();
+        // Update task
+        await updateTaskDateTime(taskId, localDate, newTime);
+        
         showToast('Task moved successfully', 'success');
     } catch (error) {
         console.error('Failed to move task:', error);
         showToast('Failed to move task', 'error');
     }
+}
+
+// ============================================
+// WEEK VIEW DRAG AND DROP
+// ============================================
+
+function initWeekViewDragDrop() {
+    const weekTasks = document.querySelectorAll('.week-task-positioned');
+    const dayCols = document.querySelectorAll('.week-day-col');
+
+    // Make tasks draggable
+    weekTasks.forEach(task => {
+        task.draggable = true;
+        task.addEventListener('dragstart', handleWeekViewTaskDragStart);
+        task.addEventListener('dragend', handleWeekViewTaskDragEnd);
+    });
+
+    // Make day columns droppable
+    dayCols.forEach(col => {
+        col.addEventListener('dragover', handleWeekViewColDragOver);
+        col.addEventListener('drop', handleWeekViewColDrop);
+        col.addEventListener('dragleave', handleWeekViewColDragLeave);
+    });
+}
+
+function handleWeekViewTaskDragStart(e) {
+    e.stopPropagation();
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+    e.dataTransfer.setData('application/view', 'week');
+}
+
+function handleWeekViewTaskDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.week-day-col.drag-over').forEach(col => {
+        col.classList.remove('drag-over');
+    });
+}
+
+function handleWeekViewColDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleWeekViewColDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+}
+
+async function handleWeekViewColDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+
+    const taskId = e.dataTransfer.getData('text/plain');
+    const dateStr = e.currentTarget.dataset.date; // Format: YYYY-MM-DD
+    
+    if (!taskId || !dateStr) return;
+
+    // Calculate time from Y position within the day column
+    const colRect = e.currentTarget.getBoundingClientRect();
+    const dropY = e.clientY - colRect.top;
+    const colHeight = colRect.height;
+    const positionRatio = Math.max(0, Math.min(1, dropY / colHeight));
+    
+    // Convert to hours and minutes (24 hours in a day)
+    const totalMinutes = Math.round(positionRatio * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    // Round minutes to nearest 15 for better UX
+    const roundedMinutes = Math.round(minutes / 15) * 15;
+    const finalHours = roundedMinutes >= 60 ? hours + 1 : hours;
+    const finalMinutes = roundedMinutes >= 60 ? 0 : roundedMinutes;
+    
+    try {
+        // Parse date
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const newDate = new Date(year, month - 1, day, finalHours, finalMinutes, 0, 0);
+        
+        // Format time as HH:MM
+        const newTime = `${finalHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
+
+        // Update task
+        await updateTaskDateTime(taskId, newDate, newTime);
+        
+        showToast(`Task moved to ${formatTimeDisplay(newTime)}`, 'success');
+    } catch (error) {
+        console.error('Failed to move task in week view:', error);
+        showToast('Failed to move task', 'error');
+    }
+}
+
+// ============================================
+// DAY VIEW DRAG AND DROP
+// ============================================
+
+function initDayViewDragDrop() {
+    const dayTasks = document.querySelectorAll('.day-task-positioned');
+    const hourSlots = document.querySelectorAll('.day-hour-slot');
+
+    // Make tasks draggable
+    dayTasks.forEach(task => {
+        task.draggable = true;
+        task.addEventListener('dragstart', handleDayViewTaskDragStart);
+        task.addEventListener('dragend', handleDayViewTaskDragEnd);
+    });
+
+    // Make hour slots droppable
+    hourSlots.forEach(slot => {
+        slot.addEventListener('dragover', handleDayViewSlotDragOver);
+        slot.addEventListener('drop', handleDayViewSlotDrop);
+        slot.addEventListener('dragleave', handleDayViewSlotDragLeave);
+    });
+}
+
+function handleDayViewTaskDragStart(e) {
+    e.stopPropagation();
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+    e.dataTransfer.setData('application/view', 'day');
+}
+
+function handleDayViewTaskDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.day-hour-slot.drag-over').forEach(slot => {
+        slot.classList.remove('drag-over');
+    });
+}
+
+function handleDayViewSlotDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleDayViewSlotDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+}
+
+async function handleDayViewSlotDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+
+    const taskId = e.dataTransfer.getData('text/plain');
+    const hourStr = e.currentTarget.dataset.hour; // Format: "09" or "14"
+    
+    if (!taskId || !hourStr) return;
+
+    try {
+        // Calculate minutes from Y position within the hour slot
+        const slotRect = e.currentTarget.getBoundingClientRect();
+        const dropY = e.clientY - slotRect.top;
+        const slotHeight = slotRect.height;
+        const positionRatio = Math.max(0, Math.min(1, dropY / slotHeight));
+        
+        // Convert to minutes within the hour (0-59)
+        const minutes = Math.round(positionRatio * 60);
+        const roundedMinutes = Math.round(minutes / 15) * 15; // Round to nearest 15 minutes
+        const finalMinutes = roundedMinutes >= 60 ? 0 : roundedMinutes;
+        const finalHour = roundedMinutes >= 60 ? parseInt(hourStr) + 1 : parseInt(hourStr);
+        
+        // Create new date with the selected time
+        const newDate = new Date(state.calendarDate);
+        newDate.setHours(finalHour, finalMinutes, 0, 0);
+        
+        // Format time as HH:MM
+        const newTime = `${finalHour.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
+
+        // Update task
+        await updateTaskDateTime(taskId, newDate, newTime);
+        
+        showToast(`Task moved to ${formatTimeDisplay(newTime)}`, 'success');
+    } catch (error) {
+        console.error('Failed to move task in day view:', error);
+        showToast('Failed to move task', 'error');
+    }
+}
+
+// ============================================
+// AGENDA VIEW DRAG AND DROP
+// ============================================
+
+function initAgendaViewDragDrop() {
+    const agendaTasks = document.querySelectorAll('.ticktick-event-card');
+    const agendaDays = document.querySelectorAll('.ticktick-agenda-day');
+
+    // Make tasks draggable
+    agendaTasks.forEach(task => {
+        task.draggable = true;
+        task.addEventListener('dragstart', handleAgendaViewTaskDragStart);
+        task.addEventListener('dragend', handleAgendaViewTaskDragEnd);
+    });
+
+    // Make agenda days droppable
+    agendaDays.forEach(day => {
+        day.addEventListener('dragover', handleAgendaViewDayDragOver);
+        day.addEventListener('drop', handleAgendaViewDayDrop);
+        day.addEventListener('dragleave', handleAgendaViewDayDragLeave);
+    });
+}
+
+function handleAgendaViewTaskDragStart(e) {
+    e.stopPropagation();
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+    e.dataTransfer.setData('application/view', 'agenda');
+}
+
+function handleAgendaViewTaskDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.ticktick-agenda-day.drag-over').forEach(day => {
+        day.classList.remove('drag-over');
+    });
+}
+
+function handleAgendaViewDayDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleAgendaViewDayDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+}
+
+async function handleAgendaViewDayDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+
+    const taskId = e.dataTransfer.getData('text/plain');
+    const dateStr = e.currentTarget.dataset.date; // Format: YYYY-MM-DD
+    
+    if (!taskId || !dateStr) return;
+
+    try {
+        // Parse date from data attribute
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const newDate = new Date(year, month - 1, day, 12, 0, 0, 0); // Set to noon to avoid timezone issues
+        
+        const task = state.tasks.find(t => (t._id || t.id) === taskId);
+        if (!task) return;
+
+        // Preserve existing time if task has one
+        const existingTime = task.dueTime || task.due_time || null;
+        
+        // Update task
+        await updateTaskDateTime(taskId, newDate, existingTime);
+        
+        showToast('Task moved successfully', 'success');
+    } catch (error) {
+        console.error('Failed to move task in agenda view:', error);
+        showToast('Failed to move task', 'error');
+    }
+}
+
+// ============================================
+// UNIFIED TASK DATE/TIME UPDATE FUNCTION
+// ============================================
+
+async function updateTaskDateTime(taskId, newDate, newTime = null) {
+    try {
+        const task = state.tasks.find(t => (t._id || t.id) === taskId);
+        if (!task) return;
+
+        // If newTime is provided, use it; otherwise preserve existing time
+        const timeToUse = newTime !== null ? newTime : (task.dueTime || task.due_time || null);
+        
+        // If time exists, apply it to the date
+        if (timeToUse) {
+            const [h, m] = timeToUse.split(':').map(Number);
+            newDate.setHours(h, m, 0, 0);
+        } else {
+            // No time, set to noon to avoid timezone issues
+            newDate.setHours(12, 0, 0, 0);
+        }
+
+        // Prepare update object
+        const updateData = { dueDate: newDate.toISOString() };
+        if (timeToUse !== null) {
+            updateData.dueTime = timeToUse;
+        }
+
+        // Update via API
+        await api.updateTask(taskId, updateData);
+
+        // Update local state
+        const taskIndex = state.tasks.findIndex(t => (t._id || t.id) === taskId);
+        if (taskIndex !== -1) {
+            state.tasks[taskIndex] = {
+                ...state.tasks[taskIndex],
+                dueDate: newDate.toISOString(),
+                dueTime: timeToUse,
+                due_time: timeToUse
+            };
+        }
+
+        // Re-render all calendar views
+        updateAllViews();
+    } catch (error) {
+        console.error('Failed to update task date/time:', error);
+        throw error;
+    }
+}
+
+// ============================================
+// ENHANCED TIME FORMATTING FOR PRAYER CALENDAR
+// ============================================
+
+// Fix time translation issues for synced events (especially prayer calendar)
+function fixTimeTranslation(timeStr, isGoogleEvent = false) {
+    if (!timeStr) return null;
+    
+    // Handle different time formats from Google Calendar
+    if (typeof timeStr === 'string') {
+        // Handle ISO date strings from Google Calendar
+        if (timeStr.includes('T') || timeStr.includes('Z')) {
+            const date = new Date(timeStr);
+            if (!isNaN(date.getTime())) {
+                return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            }
+        }
+        
+        // Handle HH:MM format
+        if (timeStr.match(/^\d{1,2}:\d{2}$/)) {
+            return timeStr;
+        }
+        
+        // Handle H:MM format (single digit hour)
+        if (timeStr.match(/^\d:\d{2}$/)) {
+            return `0${timeStr}`;
+        }
+    }
+    
+    return timeStr;
+}
+
+// Enhanced time display formatting with proper 12-hour conversion
+function formatTimeDisplay(timeStr) {
+    if (!timeStr) return '';
+    
+    // Fix time translation first
+    const fixedTime = fixTimeTranslation(timeStr);
+    if (!fixedTime) return '';
+    
+    const [hours, mins] = fixedTime.split(':').map(Number);
+    if (isNaN(hours) || isNaN(mins)) return '';
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    
+    return `${displayHour}:${mins.toString().padStart(2, '0')} ${period}`;
+}
+
+// Enhanced event card styling with proper theme integration
+function getEnhancedEventCardStyles(event, theme, view = 'month') {
+    const currentTheme = theme || document.documentElement.dataset.theme || 'light';
+    const isShort = event.duration && event.duration < 30; // minutes
+    
+    // Base unified classes - all cards inherit from event-card-base
+    let unifiedClasses = ['event-card-base'];
+    
+    // Add view-specific classes
+    if (view === 'week') {
+        unifiedClasses.push('event-card-week');
+    } else if (view === 'agenda') {
+        unifiedClasses.push('event-card-agenda');
+    } else if (view === 'day') {
+        unifiedClasses.push('event-card-day');
+    } else {
+        unifiedClasses.push('event-card-month');
+    }
+    
+    // Short duration events get special class
+    if (isShort) {
+        unifiedClasses.push('event-card-short');
+    }
+    
+    // Add status-based unified classes
+    const status = event.status || 'scheduled';
+    unifiedClasses.push(`event-card-${status}`);
+    
+    // Add priority-based classes
+    if (event.priority) {
+        const priorityLevel = event.priority === 3 ? 'high' : event.priority === 2 ? 'medium' : 'low';
+        unifiedClasses.push(`priority-${priorityLevel}`);
+    }
+    
+    // Google Calendar events get special class and preserve original colors
+    let inlineStyles = '';
+    if (event.googleCalendarColor) {
+        unifiedClasses.push('event-card-google');
+        const googleColor = event.googleCalendarColor;
+        inlineStyles = `background: ${googleColor} !important;`;
+    }
+    
+    return {
+        style: inlineStyles, // Only for Google Calendar colors
+        classes: unifiedClasses.join(' ') // Unified classes for all theming
+    };
 }
 
 // ============================================

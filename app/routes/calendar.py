@@ -658,22 +658,29 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                         else:
                             start_str = start.get("dateTime", "")
                             if start_str:
-                                # Parse the datetime - it may include timezone offset
-                                start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                                
-                                # Extract time from the original string which is in local timezone
-                                # The Google API returns time in the calendar's timezone
-                                # Format: 2026-01-09T14:30:00-07:00
-                                if 'T' in start_str:
-                                    time_part = start_str.split('T')[1]
-                                    # Get just the HH:MM part
-                                    due_time = time_part[:5]
+                                # Parse the datetime with timezone awareness
+                                # Google Calendar returns times in the calendar's timezone
+                                # Format examples: "2026-01-09T14:30:00-07:00" or "2026-01-09T14:30:00Z"
+                                if start_str.endswith('Z'):
+                                    # UTC timezone
+                                    start_dt_utc = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+                                    # Convert to local timezone (server timezone)
+                                    start_dt = start_dt_utc.astimezone()
+                                elif '+' in start_str or (start_str.count('-') > 2 and 'T' in start_str):
+                                    # Has timezone offset (e.g., -07:00 or +05:30)
+                                    start_dt_tz = datetime.fromisoformat(start_str)
+                                    # Convert to local timezone
+                                    start_dt = start_dt_tz.astimezone()
                                 else:
-                                    due_time = start_dt.strftime("%H:%M")
-                                    
-                                # Store the date part only (local date)
-                                date_part = start_str.split('T')[0]
-                                start_dt = datetime.fromisoformat(date_part)
+                                    # No timezone info, assume local timezone
+                                    start_dt = datetime.fromisoformat(start_str)
+                                
+                                # Extract time from the converted datetime (now in local timezone)
+                                # This ensures prayer times and other events show correct local time
+                                due_time = start_dt.strftime("%H:%M")
+                                
+                                # Store date part only (local date, midnight)
+                                start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
                             else:
                                 continue
                         
