@@ -183,6 +183,7 @@ class CalendarImportResponse(BaseModel):
 class PreferencesUpdate(BaseModel):
     theme: Optional[str] = None
     language: Optional[str] = None
+    timezone: Optional[str] = None  # IANA timezone (e.g., "America/Denver")
     notifications: Optional[Dict[str, Any]] = None
     pomodoroSettings: Optional[Dict[str, Any]] = None
 

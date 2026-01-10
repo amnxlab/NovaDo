@@ -444,6 +444,18 @@ class API {
             body: JSON.stringify({ calendar_ids: calendarIds })
         });
     }
+
+    // User Preferences
+    async getPreferences() {
+        return this.request('/user/preferences');
+    }
+
+    async updatePreferences(preferences) {
+        return this.request('/user/preferences', {
+            method: 'PUT',
+            body: JSON.stringify(preferences)
+        });
+    }
 }
 
 window.api = new API();

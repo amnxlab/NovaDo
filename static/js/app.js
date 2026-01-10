@@ -22,7 +22,11 @@ const defaultSmartLists = [
     { id: 'inbox', icon: 'inbox', label: 'Inbox', countId: 'inbox-count' },
     { id: 'today', icon: 'sun', label: 'Today', countId: 'today-count' },
     { id: 'week', icon: 'calendar-days', label: 'Next 7 Days', countId: 'week-count' },
-    { id: 'all', icon: 'list-todo', label: 'All Tasks', countId: 'all-count' },
+    { id: 'all', icon: 'list-todo', label: 'All Tasks', countId: 'all-count' }
+];
+
+// Task Status items (separate section at bottom)
+const taskStatusItems = [
     { id: 'completed', icon: 'circle-check', label: 'Completed', countId: 'completed-count' },
     { id: 'wont-do', icon: 'x-circle', label: "Won't Do", countId: 'wont-do-count' }
 ];
@@ -35,22 +39,49 @@ const defaultTools = [
     { id: 'stats', icon: 'bar-chart-3', label: 'Statistics', view: 'stats' }
 ];
 
-// Get sidebar config from localStorage or use defaults
+// Sidebar config version - increment when schema changes
+const SIDEBAR_CONFIG_VERSION = 2; // v2: moved completed/wont-do to Task Status section
+
 // Get sidebar config from localStorage or use defaults
 function getSidebarConfig() {
     const saved = localStorage.getItem('sidebarConfig');
+    const savedVersion = localStorage.getItem('sidebarConfigVersion');
+
+    // Force reset if version changed (schema migration)
+    if (savedVersion !== String(SIDEBAR_CONFIG_VERSION)) {
+        localStorage.removeItem('sidebarConfig');
+        localStorage.setItem('sidebarConfigVersion', String(SIDEBAR_CONFIG_VERSION));
+        // Return fresh defaults
+        return {
+            smartLists: defaultSmartLists.map(l => ({ ...l, visible: true, customLabel: null })),
+            tools: defaultTools.map(t => ({ ...t, visible: true, customLabel: null }))
+        };
+    }
+
     if (saved) {
         const config = JSON.parse(saved);
 
-        // Merge with defaults to ensure new lists (like wont-do) appear
-        // Filter out any defaults that are already present in saved config
-        const newDefaults = defaultSmartLists.filter(def =>
+        // Merge with defaults to ensure new lists appear
+        const newDefaultLists = defaultSmartLists.filter(def =>
             !config.smartLists.some(savedItem => savedItem.id === def.id)
         ).map(l => ({ ...l, visible: true, customLabel: null }));
 
-        if (newDefaults.length > 0) {
-            config.smartLists = [...config.smartLists, ...newDefaults];
-            saveSidebarConfig(config); // Save the merged config
+        if (newDefaultLists.length > 0) {
+            config.smartLists = [...config.smartLists, ...newDefaultLists];
+        }
+
+        // Also merge new default tools (like Task Matrix) for existing users
+        const newDefaultTools = defaultTools.filter(def =>
+            !config.tools.some(savedItem => savedItem.id === def.id)
+        ).map(t => ({ ...t, visible: true, customLabel: null }));
+
+        if (newDefaultTools.length > 0) {
+            config.tools = [...config.tools, ...newDefaultTools];
+        }
+
+        // Save if any new items were added
+        if (newDefaultLists.length > 0 || newDefaultTools.length > 0) {
+            saveSidebarConfig(config);
         }
 
         return config;
@@ -371,6 +402,86 @@ function setupEventListeners() {
 
     // Load saved avatar
     loadSavedAvatar();
+
+    // Timezone selector - only register event handlers here (loadTimezone called in loadData after auth)
+    const timezoneSelect = document.getElementById('timezone-select');
+    if (timezoneSelect) {
+        timezoneSelect.addEventListener('change', async (e) => {
+            const timezone = e.target.value;
+            try {
+                await api.updatePreferences({ timezone });
+                const status = document.getElementById('timezone-save-status');
+                if (status) {
+                    status.textContent = '✓ Timezone saved. Re-sync calendar for changes to take effect.';
+                    status.style.color = 'var(--success)';
+                    setTimeout(() => status.textContent = '', 3000);
+                }
+            } catch (error) {
+                console.error('Failed to save timezone:', error);
+                showToast('Failed to save timezone', 'error');
+            }
+        });
+    }
+
+    // Auto-detect timezone button
+    const detectTimezoneBtn = document.getElementById('detect-timezone-btn');
+    if (detectTimezoneBtn) {
+        detectTimezoneBtn.addEventListener('click', async () => {
+            const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const select = document.getElementById('timezone-select');
+
+            // Try to find matching option
+            const option = Array.from(select.options).find(opt => opt.value === browserTimezone);
+            if (option) {
+                select.value = browserTimezone;
+                select.dispatchEvent(new Event('change'));
+            } else {
+                // Add the detected timezone as an option if not in list
+                const newOption = document.createElement('option');
+                newOption.value = browserTimezone;
+                newOption.textContent = browserTimezone + ' (detected)';
+                select.appendChild(newOption);
+                select.value = browserTimezone;
+                select.dispatchEvent(new Event('change'));
+            }
+            showToast(`Detected timezone: ${browserTimezone}`, 'success');
+        });
+    }
+}
+
+// Load user's timezone preference
+async function loadTimezone() {
+    try {
+        const { preferences } = await api.getPreferences();
+        const timezone = preferences?.timezone;
+        const select = document.getElementById('timezone-select');
+
+        if (timezone && select) {
+            // Check if timezone exists in options
+            const option = Array.from(select.options).find(opt => opt.value === timezone);
+            if (option) {
+                select.value = timezone;
+            } else {
+                // Add it as an option
+                const newOption = document.createElement('option');
+                newOption.value = timezone;
+                newOption.textContent = timezone;
+                select.appendChild(newOption);
+                select.value = timezone;
+            }
+        } else if (!timezone && select) {
+            // Auto-detect on first load if no timezone set
+            const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const option = Array.from(select.options).find(opt => opt.value === browserTimezone);
+            if (option) {
+                select.value = browserTimezone;
+                // Auto-save detected timezone
+                await api.updatePreferences({ timezone: browserTimezone });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load timezone:', error);
+    }
 }
 
 // Handle avatar upload
@@ -547,6 +658,7 @@ async function loadData() {
         // Render sidebar first (from local config)
         renderSmartLists();
         renderTools();
+        renderTaskStatus();
 
         const [tasks, lists, habits] = await Promise.all([
             api.getTasks(),
@@ -561,6 +673,9 @@ async function loadData() {
         renderLists();
         renderTasks();
         updateCounts();
+
+        // Load timezone settings now that user is authenticated
+        loadTimezone();
     } catch (error) {
         showToast('Failed to load data', 'error');
     }
@@ -793,7 +908,7 @@ function showView(view) {
     elements.settingsView.classList.add('hidden');
     elements.pomodoroView.classList.add('hidden');
     elements.statsView.classList.add('hidden');
-    
+
     // Hide matrix view
     const matrixView = document.getElementById('matrix-view');
     if (matrixView) matrixView.classList.add('hidden');
@@ -1546,6 +1661,34 @@ function renderTools() {
         li.oncontextmenu = (e) => showContextMenu(e, 'tool', item.id);
 
         toolsListEl.appendChild(li);
+    });
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// Render Task Status section (Completed, Won't Do)
+function renderTaskStatus() {
+    const taskStatusListEl = document.getElementById('task-status-list');
+    if (!taskStatusListEl) return;
+
+    taskStatusListEl.innerHTML = '';
+
+    taskStatusItems.forEach(item => {
+        const li = document.createElement('li');
+        li.className = `nav-item${state.currentList === item.id ? ' active' : ''}`;
+        li.dataset.list = item.id;
+        li.dataset.itemType = 'task-status';
+
+        // Use Lucide icon element
+        li.innerHTML = `
+            <span class="nav-icon"><i data-lucide="${item.icon}"></i></span>
+            <span class="nav-label">${escapeHTML(item.label)}</span>
+            <span class="nav-count" id="${item.countId}">0</span>
+        `;
+
+        li.onclick = () => selectSmartList(item.id);
+        taskStatusListEl.appendChild(li);
     });
 
     // Initialize Lucide icons

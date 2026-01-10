@@ -29,6 +29,8 @@ async def update_preferences(
         update_data["preferences.theme"] = preferences.theme
     if preferences.language is not None:
         update_data["preferences.language"] = preferences.language
+    if preferences.timezone is not None:
+        update_data["preferences.timezone"] = preferences.timezone
     if preferences.notifications is not None:
         update_data["preferences.notifications"] = preferences.notifications
     if preferences.pomodoroSettings is not None:

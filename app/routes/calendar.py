@@ -11,6 +11,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 import os
 import json
+import pytz
 from dotenv import load_dotenv
 import logging
 
@@ -661,26 +662,37 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                                 # Parse the datetime with timezone awareness
                                 # Google Calendar returns times in the calendar's timezone
                                 # Format examples: "2026-01-09T14:30:00-07:00" or "2026-01-09T14:30:00Z"
+                                
+                                # Get user's configured timezone (default to UTC if not set)
+                                user_preferences = current_user.get("preferences", {})
+                                user_tz_str = user_preferences.get("timezone", "UTC")
+                                try:
+                                    user_tz = pytz.timezone(user_tz_str)
+                                except pytz.UnknownTimeZoneError:
+                                    logger.warning(f"[SYNC] Unknown timezone '{user_tz_str}', falling back to UTC")
+                                    user_tz = pytz.UTC
+                                
+                                # Parse the datetime from Google Calendar
                                 if start_str.endswith('Z'):
                                     # UTC timezone
                                     start_dt_utc = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                                    # Convert to local timezone (server timezone)
-                                    start_dt = start_dt_utc.astimezone()
                                 elif '+' in start_str or (start_str.count('-') > 2 and 'T' in start_str):
                                     # Has timezone offset (e.g., -07:00 or +05:30)
-                                    start_dt_tz = datetime.fromisoformat(start_str)
-                                    # Convert to local timezone
-                                    start_dt = start_dt_tz.astimezone()
+                                    start_dt_utc = datetime.fromisoformat(start_str)
                                 else:
-                                    # No timezone info, assume local timezone
-                                    start_dt = datetime.fromisoformat(start_str)
+                                    # No timezone info, assume UTC
+                                    start_dt_utc = datetime.fromisoformat(start_str).replace(tzinfo=pytz.UTC)
                                 
-                                # Extract time from the converted datetime (now in local timezone)
-                                # This ensures prayer times and other events show correct local time
-                                due_time = start_dt.strftime("%H:%M")
+                                # Convert to USER's timezone (not server timezone)
+                                start_dt_user = start_dt_utc.astimezone(user_tz)
+                                logger.debug(f"[SYNC] Converted {start_str} -> {start_dt_user} (user tz: {user_tz_str})")
                                 
-                                # Store date part only (local date, midnight)
-                                start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+                                # Extract time from the converted datetime (now in user's timezone)
+                                # This ensures events show correct time in user's timezone
+                                due_time = start_dt_user.strftime("%H:%M")
+                                
+                                # Store date part only (user's local date, midnight)
+                                start_dt = start_dt_user.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
                             else:
                                 continue
                         

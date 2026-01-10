@@ -119,6 +119,11 @@
                         </h3>
                         <ul id="tools-list"></ul>
                     </div>
+
+                    <div class="nav-section" data-section="task-status">
+                        <h3>Task Status</h3>
+                        <ul id="task-status-list"></ul>
+                    </div>
                 </nav>
 
                 <div class="sidebar-footer">
@@ -706,6 +711,51 @@
                                     </div>
                                 </div>
                             </div>
+                        </section>
+
+                        <!-- Timezone Section -->
+                        <section class="settings-card">
+                            <div class="settings-card-header">
+                                <i data-lucide="clock"></i>
+                                <h2>Timezone</h2>
+                            </div>
+                            <p class="settings-description">Select your timezone for accurate calendar event times.</p>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label for="timezone-select">Your Timezone</label>
+                                    <p class="setting-hint">Google Calendar events will be displayed in this timezone
+                                    </p>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="timezone-select" class="form-select">
+                                        <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                        <option value="America/New_York">Eastern Time (US)</option>
+                                        <option value="America/Chicago">Central Time (US)</option>
+                                        <option value="America/Denver">Mountain Time (US)</option>
+                                        <option value="America/Los_Angeles">Pacific Time (US)</option>
+                                        <option value="America/Anchorage">Alaska Time</option>
+                                        <option value="Pacific/Honolulu">Hawaii Time</option>
+                                        <option value="Europe/London">London (GMT/BST)</option>
+                                        <option value="Europe/Paris">Paris (CET/CEST)</option>
+                                        <option value="Europe/Berlin">Berlin (CET/CEST)</option>
+                                        <option value="Europe/Moscow">Moscow (MSK)</option>
+                                        <option value="Asia/Dubai">Dubai (GST)</option>
+                                        <option value="Asia/Kolkata">India (IST)</option>
+                                        <option value="Asia/Singapore">Singapore (SGT)</option>
+                                        <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                        <option value="Asia/Shanghai">Shanghai (CST)</option>
+                                        <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                                        <option value="Pacific/Auckland">Auckland (NZST/NZDT)</option>
+                                        <option value="Africa/Cairo">Cairo (EET)</option>
+                                        <option value="Africa/Johannesburg">Johannesburg (SAST)</option>
+                                    </select>
+                                    <button class="btn btn-secondary btn-small" id="detect-timezone-btn"
+                                        title="Detect from browser">
+                                        <i data-lucide="locate"></i> Auto-detect
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="settings-note" id="timezone-save-status"></p>
                         </section>
 
                         <!-- Notifications Section -->
