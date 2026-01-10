@@ -8463,3 +8463,305 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
         font-size: 1.5rem;
     }
 }
+
+/* ============================================
+   ENHANCED INSIGHTS HUB STYLES
+   ============================================ */
+
+/* Executive Summary Card */
+.executive-summary-card {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.executive-summary-content .summary-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+}
+
+.takeaways-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.takeaway-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius);
+    background: var(--bg-secondary);
+    transition: var(--transition-fast);
+}
+
+.takeaway-item:hover {
+    background: var(--bg-hover);
+}
+
+.takeaway-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.takeaway-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.takeaway-positive {
+    border-left: 3px solid var(--success);
+}
+
+.takeaway-warning {
+    border-left: 3px solid var(--warning);
+}
+
+.takeaway-insight {
+    border-left: 3px solid var(--accent-primary);
+}
+
+.takeaway-neutral {
+    border-left: 3px solid var(--text-muted);
+}
+
+.focus-suggestions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.focus-suggestions h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.focus-suggestions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.focus-task {
+    padding: 0.5rem 0.75rem;
+    background: var(--accent-light);
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--accent-primary);
+}
+
+/* Insights Grid */
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.insight-chart-card {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.insight-chart-card .chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+}
+
+.insight-chart-card .chart-container {
+    height: 220px;
+    position: relative;
+}
+
+/* Hourly Heatmap */
+.hourly-heatmap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.heatmap-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.heatmap-hours {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 2px;
+}
+
+.hour-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.hour-cell:hover {
+    transform: scale(1.2);
+    z-index: 1;
+}
+
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.legend-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.legend-gradient {
+    width: 80px;
+    height: 10px;
+    border-radius: 3px;
+    background: linear-gradient(to right,
+            hsla(240, 70%, 60%, 0.2),
+            hsla(240, 70%, 60%, 0.5),
+            hsla(270, 70%, 60%, 0.8),
+            hsla(270, 70%, 60%, 1));
+}
+
+/* Insights Container */
+.insights-container {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Enhanced Widget Grid */
+.insights-widget-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.insight-widget {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    border: 1px solid var(--border-color);
+    transition: var(--transition-fast);
+}
+
+.insight-widget:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.insight-widget.urgent {
+    border-left: 4px solid var(--error);
+}
+
+.insight-widget.high {
+    border-left: 4px solid var(--warning);
+}
+
+.insight-widget.medium {
+    border-left: 4px solid var(--accent-primary);
+}
+
+.insight-widget.low {
+    border-left: 4px solid var(--text-muted);
+}
+
+.widget-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.widget-content h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.widget-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* AI Pattern Insights */
+.ai-pattern-insights {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.ai-pattern-insights h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .executive-summary-card,
+[data-theme="dark"] .insight-chart-card,
+[data-theme="dark"] .insight-widget,
+[data-theme="dark"] .ai-pattern-insights {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-task {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="dark"] .hour-cell {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .heatmap-hours {
+        grid-template-columns: repeat(12, 1fr);
+    }
+
+    .insights-widget-grid {
+        grid-template-columns: 1fr;
+    }
+}

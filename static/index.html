@@ -7,6 +7,7 @@
     <title>NovaDo - Smart Task Management</title>
     <link rel="stylesheet" href="css/themes.css?v=1">
     <link rel="stylesheet" href="css/style.css?v=9">
+    <link rel="stylesheet" href="css/taskMatrix.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -461,9 +462,34 @@
                         <div id="stats-insights-view" class="stats-view-content" role="tabpanel"
                             aria-labelledby="stats-insights-tab">
                             <div class="insights-container">
+                                <!-- Executive Summary -->
+                                <div class="executive-summary-card" id="executive-summary">
+                                    <p>Loading insights...</p>
+                                </div>
+
+                                <!-- Insights Grid - Charts and Widgets -->
+                                <div class="insights-grid">
+                                    <!-- Productivity Radar -->
+                                    <div class="insight-chart-card">
+                                        <h3 class="chart-title">Productivity Overview</h3>
+                                        <div class="chart-container">
+                                            <canvas id="productivity-radar-chart"></canvas>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hourly Heatmap -->
+                                    <div class="insight-chart-card">
+                                        <h3 class="chart-title">Peak Hours</h3>
+                                        <div id="hourly-heatmap-container"></div>
+                                    </div>
+                                </div>
+
+                                <!-- AI Recommendations Grid -->
                                 <div class="insights-widget-grid" id="insights-widget-grid">
                                     <!-- Widgets will be dynamically added here -->
                                 </div>
+
+                                <!-- Pattern Insights -->
                                 <div class="ai-pattern-insights">
                                     <h3>Pattern Insights</h3>
                                     <div id="pattern-insights-content">
@@ -726,6 +752,13 @@
                             </div>
                         </section>
                     </div>
+                </div>
+
+                <!-- Task Matrix View -->
+                <div id="matrix-view" class="view hidden">
+                    <div id="matrix-header"></div>
+                    <div id="matrix-filter-bar"></div>
+                    <div id="matrix-view-container"></div>
                 </div>
             </main>
         </div>
@@ -1005,6 +1038,7 @@
     <script src="js/api.js?v=4"></script>
     <script src="js/notifications.js"></script>
     <script src="js/statistics.js?v=1"></script>
+    <script src="js/taskMatrix.js?v=1"></script>
     <script src="js/app.js?v=8"></script>
 </body>
 

@@ -28,6 +28,7 @@ const defaultSmartLists = [
 ];
 
 const defaultTools = [
+    { id: 'matrix', icon: 'grid-2x2', label: 'Task Matrix', view: 'matrix' },
     { id: 'habits', icon: 'target', label: 'Habits', view: 'habits' },
     { id: 'calendar', icon: 'calendar', label: 'Calendar', view: 'calendar' },
     { id: 'pomodoro', icon: 'timer', label: 'Pomodoro', view: 'pomodoro' },
@@ -792,10 +793,26 @@ function showView(view) {
     elements.settingsView.classList.add('hidden');
     elements.pomodoroView.classList.add('hidden');
     elements.statsView.classList.add('hidden');
+    
+    // Hide matrix view
+    const matrixView = document.getElementById('matrix-view');
+    if (matrixView) matrixView.classList.add('hidden');
 
     state.currentView = view;
 
     switch (view) {
+        case 'matrix':
+            if (matrixView) {
+                matrixView.classList.remove('hidden');
+                elements.currentViewTitle.textContent = 'Task Matrix';
+                document.querySelector('[data-view="matrix"]')?.classList.add('active');
+                // Initialize Task Matrix
+                if (window.taskMatrix && typeof window.taskMatrix.init === 'function') {
+                    window.taskMatrix.init();
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+            break;
         case 'habits':
             elements.habitsView.classList.remove('hidden');
             elements.currentViewTitle.textContent = 'Habits';
