@@ -292,21 +292,33 @@ async def google_auth_callback(
 
 @router.post("/disconnect")
 async def disconnect_google(current_user: dict = Depends(get_current_user)):
-    """Disconnect Google Calendar"""
+    """Disconnect Google Calendar and optionally delete synced events"""
     db = get_database()
+    user_oid = ObjectId(current_user["_id"])
     
-    db.users.update_one(
-        {"_id": ObjectId(current_user["_id"])},
+    # Delete all synced Google Calendar events for this user
+    delete_result = await db.tasks.delete_many({
+        "user": user_oid,
+        "googleEventId": {"$exists": True}
+    })
+    
+    # Remove Google credentials
+    await db.users.update_one(
+        {"_id": user_oid},
         {"$unset": {
             "googleAccessToken": "",
             "googleRefreshToken": "",
             "googleEmail": "",
             "googleConnectedAt": "",
-            "googleSelectedCalendars": ""
+            "googleSelectedCalendars": "",
+            "lastCalendarSync": ""
         }}
     )
     
-    return {"message": "Google Calendar disconnected"}
+    return {
+        "message": "Google Calendar disconnected",
+        "eventsDeleted": delete_result.deleted_count
+    }
 
 
 @router.get("/calendars")
@@ -590,6 +602,15 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
         
         synced_count = 0
         
+        # FIRST: Delete events from calendars that are NO LONGER selected
+        all_calendar_ids = [c['id'] for c in calendars_items]
+        deleted_result = await db.tasks.delete_many({
+            "user": user_oid,
+            "googleCalendarId": {"$nin": selected_ids, "$exists": True}
+        })
+        if deleted_result.deleted_count > 0:
+            logger.info(f"[SYNC] Deleted {deleted_result.deleted_count} events from deselected calendars")
+        
         # Iterate over EACH selected calendar
         for cal_id in selected_ids:
             try:
@@ -610,12 +631,12 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                 for event in events:
                     google_event_id = event.get("id")
                     
-                    # Check if exists
+                    # Check if exists - use both event ID and calendar ID for uniqueness
+                    # (same event ID can appear in different calendars)
                     existing = await db.tasks.find_one({
-                        "$or": [
-                            {"user": user_id, "googleEventId": google_event_id},
-                            {"user": user_oid, "googleEventId": google_event_id}
-                        ]
+                        "user": user_oid,
+                        "googleEventId": google_event_id,
+                        "googleCalendarId": cal_id
                     })
                     
                     if not existing:

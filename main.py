@@ -97,137 +97,141 @@ async def serve_spa(full_path: str):
 
 
 def kill_port_process(port: int):
-    """Kill any process running on the specified port"""
+    """Kill any process running on the specified port - AGGRESSIVELY"""
     import subprocess
     import platform
     import time
     
-    try:
-        if platform.system() == "Windows":
-            # Find ALL processes using the port (including children)
+    if platform.system() == "Windows":
+        try:
+            # Use PowerShell for more reliable process killing on Windows
+            # Get all PIDs listening on the port
+            ps_cmd = f"""
+            $pids = (Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | 
+                     Where-Object {{ $_.OwningProcess -ne 0 }} | 
+                     Select-Object -ExpandProperty OwningProcess -Unique)
+            foreach ($pid in $pids) {{
+                Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                Write-Host "Killed PID: $pid"
+            }}
+            """
+            subprocess.run(['powershell', '-Command', ps_cmd], capture_output=True)
+            
+            # Also try netstat approach as backup
             result = subprocess.run(
                 f'netstat -ano | findstr :{port}',
                 shell=True, capture_output=True, text=True
             )
             if result.stdout:
                 pids = set()
-                lines = result.stdout.strip().split('\n')
-                for line in lines:
+                for line in result.stdout.strip().split('\n'):
                     parts = line.split()
-                    if len(parts) >= 5:
-                        pid = parts[-1]
-                        pids.add(pid)
+                    if len(parts) >= 5 and parts[-1].isdigit() and parts[-1] != '0':
+                        pids.add(parts[-1])
                 
-                # Kill all found PIDs
                 for pid in pids:
                     try:
+                        # Use /T to kill entire process tree
                         subprocess.run(f'taskkill /PID {pid} /F /T', shell=True, capture_output=True)
-                        print(f"  Killed process on port {port} (PID: {pid})")
+                        print(f"  Killed process {pid}")
                     except:
                         pass
-                
-                # Wait a bit and do a second pass to ensure cleanup
-                time.sleep(0.5)
-                result2 = subprocess.run(
-                    f'netstat -ano | findstr :{port}',
-                    shell=True, capture_output=True, text=True
-                )
-                if result2.stdout:
-                    for line in result2.stdout.strip().split('\n'):
-                        parts = line.split()
-                        if len(parts) >= 5:
-                            pid = parts[-1]
-                            subprocess.run(f'taskkill /PID {pid} /F /T', shell=True, capture_output=True)
-        else:
-            # Unix/Mac
+            
+            # Small delay then verify
+            time.sleep(0.3)
+            
+        except Exception as e:
+            print(f"  Warning: Cleanup error: {e}")
+    else:
+        # Unix/Mac
+        try:
             result = subprocess.run(
                 f'lsof -ti:{port}',
                 shell=True, capture_output=True, text=True
             )
             if result.stdout:
-                pids = result.stdout.strip().split('\n')
-                for pid in pids:
+                for pid in result.stdout.strip().split('\n'):
                     if pid:
                         subprocess.run(f'kill -9 {pid}', shell=True)
-                        print(f"  Killed existing process on port {port} (PID: {pid})")
-    except Exception as e:
-        print(f"  Warning: Could not check for existing processes: {e}")
+                        print(f"  Killed PID: {pid}")
+        except Exception as e:
+            print(f"  Warning: Cleanup error: {e}")
+
+
+def kill_all_app_processes(exclude_self=False):
+    """Kill ALL processes related to this NovaDo app"""
+    import subprocess
+    import platform
+    import time
+    import os
+    
+    current_pid = os.getpid()
+    
+    print("\n  🔪 KILLING ALL NOVADO PROCESSES...")
+    
+    # Ports to clean
+    ports = [5000, 3000]  # Main app and any frontend dev server
+    
+    # 1. Kill by port (this won't kill ourselves since we're not listening yet on startup)
+    for port in ports:
+        kill_port_process(port)
+    
+    if platform.system() == "Windows" and not exclude_self:
+        try:
+            # 2. Kill all Python processes running uvicorn or main:app, EXCEPT ourselves
+            ps_cmd = f'''
+            $currentPid = {current_pid}
+            Get-Process python -ErrorAction SilentlyContinue | ForEach-Object {{
+                if ($_.Id -ne $currentPid) {{
+                    $cmdline = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)" -ErrorAction SilentlyContinue).CommandLine
+                    if ($cmdline -match "uvicorn|main:app") {{
+                        Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+                        Write-Host "Killed Python process: $($_.Id)"
+                    }}
+                }}
+            }}
+            '''
+            subprocess.run(['powershell', '-Command', ps_cmd], capture_output=True)
+        except:
+            pass
+    
+    # 3. Wait and verify cleanup
+    time.sleep(0.3)
+    
+    # 4. Final pass on ports
+    for port in ports:
+        kill_port_process(port)
+    
+    print("  ✅ Cleanup complete\n")
 
 
 if __name__ == "__main__":
     import signal
     import sys
     import atexit
-    import psutil
-    
-    main_process_pid = None
-    
-    def kill_all_related_processes():
-        """Kill ALL processes related to this app"""
-        import subprocess
-        import time
-        
-        port = int(os.getenv("PORT", 5000))
-        print("\n  ⚠️  KILLING ALL PROCESSES...")
-        
-        # 1. Kill by port
-        kill_port_process(port)
-        
-        # 2. Kill all uvicorn processes
-        try:
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-                try:
-                    cmdline = ' '.join(proc.info['cmdline'] or [])
-                    if 'uvicorn' in cmdline.lower() or 'main:app' in cmdline:
-                        print(f"  Killing uvicorn process: {proc.info['pid']}")
-                        proc.kill()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass
-        except:
-            pass
-        
-        # 3. Kill main process and all children
-        if main_process_pid:
-            try:
-                parent = psutil.Process(main_process_pid)
-                children = parent.children(recursive=True)
-                for child in children:
-                    try:
-                        child.kill()
-                        print(f"  Killed child process: {child.pid}")
-                    except:
-                        pass
-            except:
-                pass
-        
-        # 4. Final port cleanup
-        time.sleep(0.5)
-        kill_port_process(port)
-        print("  ✓ Cleanup complete\n")
     
     def signal_handler(sig, frame):
         """Handle Ctrl+C"""
         print("\n\n  🛑 SHUTDOWN SIGNAL RECEIVED...")
-        kill_all_related_processes()
+        kill_all_app_processes()
         sys.exit(0)
     
     # Register cleanup handlers
-    atexit.register(kill_all_related_processes)
+    atexit.register(kill_all_app_processes)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Initial cleanup
-    port = int(os.getenv("PORT", 5000))
-    kill_port_process(port)
+    # Initial cleanup - kill any lingering processes
+    print("\n  🧹 Cleaning up any existing processes...")
+    kill_all_app_processes()
     
-    print(f"\n  🚀 NovaDo is running!")
+    port = int(os.getenv("PORT", 5000))
+    
+    print(f"  🚀 NovaDo is running!")
     print(f"  🌐 Open http://localhost:{port} in your browser")
     print(f"  ⚠️  Press Ctrl+C to stop (will kill ALL processes)\n")
     
     try:
-        import multiprocessing
-        main_process_pid = multiprocessing.current_process().pid
-        
         uvicorn.run(
             "main:app",
             host="0.0.0.0",
@@ -240,5 +244,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n  ❌ Error: {e}")
     finally:
-        kill_all_related_processes()
+        kill_all_app_processes()
 
