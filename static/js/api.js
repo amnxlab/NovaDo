@@ -343,17 +343,37 @@ class API {
         });
     }
 
-    // Pomodoro
-    async savePomodoroSession(session) {
-        return this.request('/pomodoro/', {
+    // Focus / Pomodoro
+    async saveFocusSession(session) {
+        return this.request('/focus/sessions', {
             method: 'POST',
             body: JSON.stringify(session)
         });
     }
 
-    async getPomodoroSessions(date = null) {
-        const query = date ? `?date=${date}` : '';
-        return this.request(`/pomodoro/${query}`);
+    async getFocusSessions(limit = 50) {
+        return this.request(`/focus/sessions?limit=${limit}`);
+    }
+
+    async getFocusStats() {
+        return this.request('/focus/stats');
+    }
+
+    async deleteFocusSession(id) {
+        return this.request(`/focus/sessions/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Deprecated Pomodoro methods (kept for backward compatibility if any)
+    async savePomodoroSession(session) {
+        // Convert old format to new
+        return this.saveFocusSession({
+            duration: session.duration,
+            type: 'pomo',
+            startTime: new Date(Date.now() - session.duration * 60000).toISOString(),
+            endTime: new Date().toISOString()
+        });
     }
 
     // Statistics

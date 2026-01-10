@@ -51,11 +51,12 @@ async def get_stats(
     # Calculate streak
     streak = await calculate_streak(db, user_id)
     
-    # Today's pomodoro sessions
-    pomodoro_sessions = await db.pomodoro_sessions.count_documents({
-        "userId": user_id,
-        "completedAt": {"$gte": today.isoformat()}
-    }) if hasattr(db, 'pomodoro_sessions') else 0
+    # Today's pomodoro sessions (using new focus_sessions)
+    pomodoro_sessions = await db.focus_sessions.count_documents({
+        "user": user_id,
+        "type": "pomo",
+        "startTime": {"$gte": today}
+    }) if hasattr(db, 'focus_sessions') else 0
     
     # Weekly data for chart
     weekly_data = await get_weekly_data(db, user_id)
@@ -68,7 +69,8 @@ async def get_stats(
         "weeklyData": weekly_data,
         "totalTasks": len(tasks),
         "completedTasks": len([t for t in tasks if t.get("status") == "completed"]),
-        "pendingTasks": len([t for t in tasks if t.get("status") != "completed"])
+        "skippedTasks": len([t for t in tasks if t.get("status") == "skipped"]),
+        "pendingTasks": len([t for t in tasks if t.get("status") not in ["completed", "skipped"]])
     }
 
 
