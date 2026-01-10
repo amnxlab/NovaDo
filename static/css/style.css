@@ -1791,12 +1791,208 @@ textarea {
 }
 
 /* ============================================
-   Settings
+   Settings - Modern Centered Layout
    ============================================ */
 
-.settings-section {
-    max-width: 480px;
+#settings-view {
+    background: var(--bg-primary);
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.settings-container {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.settings-header {
+    text-align: center;
     margin-bottom: 2rem;
+}
+
+.settings-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.settings-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+}
+
+.settings-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-card-header i,
+.settings-card-header svg {
+    width: 20px;
+    height: 20px;
+    color: var(--accent-primary);
+}
+
+.settings-card-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.settings-card-danger {
+    border-color: var(--error);
+}
+
+.settings-card-danger .settings-card-header i,
+.settings-card-danger .settings-card-header svg {
+    color: var(--error);
+}
+
+/* Profile Section */
+.profile-section {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.profile-avatar-section {
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 3px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-placeholder svg {
+    width: 48px;
+    height: 48px;
+    color: var(--text-muted);
+}
+
+.avatar-upload-btn {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.profile-avatar:hover .avatar-upload-btn {
+    opacity: 1;
+}
+
+.avatar-upload-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.avatar-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.profile-form {
+    flex: 1;
+}
+
+.profile-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.form-hint {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Toggle Options */
+.notification-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    transition: background var(--transition-fast);
+}
+
+.toggle-option:hover {
+    background: var(--bg-hover);
+}
+
+.toggle-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
+}
+
+.toggle-label {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+/* Account Actions */
+.account-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Legacy settings-section (for backward compatibility) */
+.settings-section {
+    max-width: 640px;
+    margin: 0 auto 2rem;
     padding: 1.5rem;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -1810,26 +2006,27 @@ textarea {
     border-bottom: 1px solid var(--border-color);
 }
 
-.status-text {
-    margin-top: 0.75rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-}
-
-.status-text.success {
-    color: var(--success);
-}
-
-.theme-toggle {
-    display: flex;
-    gap: 0.5rem;
-}
-
-/* Google Calendar Settings */
 .settings-description {
     color: var(--text-secondary);
     font-size: 0.875rem;
     margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .profile-section {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .profile-form {
+        width: 100%;
+    }
+
+    .settings-container {
+        padding: 0 1rem;
+    }
 }
 
 .gcal-status {
@@ -4100,4 +4297,285 @@ textarea {
 .calendar-more:hover {
     color: var(--accent-primary);
     text-decoration: underline;
+}
+
+
+/* ============================================
+   Theme Picker UI
+   ============================================ */
+
+.theme-picker {
+    margin-top: 1rem;
+}
+
+.theme-category-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.theme-category-title:first-child {
+    margin-top: 0;
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.75rem;
+}
+
+.theme-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.theme-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.theme-card.active {
+    border-color: var(--accent-primary);
+    background: var(--accent-light);
+}
+
+.theme-preview {
+    width: 100%;
+    height: 48px;
+    border-radius: var(--border-radius);
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.theme-card.active .theme-name {
+    color: var(--accent-primary);
+}
+
+/* Theme Preview Swatches - Light Themes */
+.theme-preview-classic {
+    background: linear-gradient(135deg, #FAFBFC 0%, #FAFBFC 50%, #3B82F6 50%, #3B82F6 100%);
+}
+
+.theme-preview-pastel {
+    background: linear-gradient(135deg, #FAF9F7 0%, #FAF9F7 50%, #9F7AEA 50%, #9F7AEA 100%);
+}
+
+.theme-preview-earth {
+    background: linear-gradient(135deg, #FFFBF5 0%, #FFFBF5 50%, #D97706 50%, #D97706 100%);
+}
+
+.theme-preview-nordic {
+    background: linear-gradient(135deg, #F7FAFC 0%, #F7FAFC 50%, #0EA5E9 50%, #0EA5E9 100%);
+}
+
+.theme-preview-sunrise {
+    background: linear-gradient(135deg, #FFFDF9 0%, #FFFDF9 50%, #F97316 50%, #EC4899 100%);
+}
+
+/* Theme Preview Swatches - Dark Themes */
+.theme-preview-midnight {
+    background: linear-gradient(135deg, #0F0F0F 0%, #1A1A1A 50%, #3B82F6 50%, #3B82F6 100%);
+}
+
+.theme-preview-ocean {
+    background: linear-gradient(135deg, #0A1628 0%, #0F1D32 50%, #06B6D4 50%, #06B6D4 100%);
+}
+
+.theme-preview-charcoal {
+    background: linear-gradient(135deg, #121217 0%, #1C1C24 50%, #A855F7 50%, #A855F7 100%);
+}
+
+.theme-preview-neon {
+    background: linear-gradient(135deg, #09090B 0%, #18181B 50%, #22D3EE 50%, #A78BFA 100%);
+}
+
+.theme-preview-forest {
+    background: linear-gradient(135deg, #0C1410 0%, #141F18 50%, #F97316 50%, #84CC16 100%);
+}
+
+.theme-preview-stormy {
+    background: linear-gradient(135deg, #111114 0%, #1A1A1E 50%, #14B8A6 50%, #F97316 100%);
+}
+
+.theme-preview-ember {
+    background: linear-gradient(135deg, #151210 0%, #1F1A15 50%, #EA580C 50%, #DC2626 100%);
+}
+
+.theme-preview-cyber {
+    background: linear-gradient(135deg, #0D0D1A 0%, #151527 50%, #8B5CF6 50%, #06B6D4 100%);
+}
+
+.theme-preview-hacker {
+    background: linear-gradient(135deg, #000000 0%, #050505 50%, #00FF00 50%, #39FF14 100%);
+}
+
+/* Responsive Theme Grid */
+@media (max-width: 768px) {
+    .theme-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .theme-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* ============================================
+   Sidebar Drag & Drop
+   ============================================ */
+
+.nav-item {
+    cursor: grab;
+}
+
+.nav-item:active {
+    cursor: grabbing;
+}
+
+.nav-item.dragging {
+    opacity: 0.5;
+    background: var(--accent-light);
+    border: 1px dashed var(--accent-primary);
+}
+
+.nav-item[draggable]:hover {
+    background: var(--bg-hover);
+}
+
+/* Day view task time display */
+.calendar-task .task-time {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--accent-primary);
+    margin-right: 0.5rem;
+}
+
+
+/* ============================================
+   Logo Styling
+   ============================================ */
+
+.logo-icon-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.auth-header .logo-icon-img {
+    width: 48px;
+    height: 48px;
+}
+
+
+/* ============================================
+   Lucide Icons in Sidebar
+   ============================================ */
+
+.nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.nav-icon i,
+.nav-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+
+/* ============================================
+   Icon Picker (in Rename Modal)
+   ============================================ */
+
+.icon-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.icon-preview {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.icon-preview svg {
+    width: 24px;
+    height: 24px;
+    stroke: var(--accent-primary);
+}
+
+.icon-picker-row input {
+    flex: 1;
+}
+
+.icon-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.icon-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+}
+
+.icon-btn.active {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+}
+
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: var(--text-secondary);
+}
+
+.icon-btn:hover svg,
+.icon-btn.active svg {
+    stroke: var(--accent-primary);
 }

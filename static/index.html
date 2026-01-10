@@ -5,11 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NovaDo - Smart Task Management</title>
-    <link rel="stylesheet" href="css/style.css?v=7">
+    <link rel="stylesheet" href="css/themes.css?v=1">
+    <link rel="stylesheet" href="css/style.css?v=9">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
+    <!-- Lucide Icons (modern, lightweight SVG icons) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -19,7 +22,7 @@
             <div class="auth-container">
                 <div class="auth-header">
                     <div class="logo">
-                        <span class="logo-icon">✦</span>
+                        <img src="logo.png" alt="NovaDo" class="logo-icon-img">
                         <span class="logo-text">NovaDo</span>
                     </div>
                     <p class="tagline">Smart Task Management</p>
@@ -70,7 +73,7 @@
             <aside class="sidebar">
                 <div class="sidebar-header">
                     <div class="logo">
-                        <span class="logo-icon">✦</span>
+                        <img src="logo.png" alt="NovaDo" class="logo-icon-img">
                         <span class="logo-text">NovaDo</span>
                     </div>
                 </div>
@@ -332,135 +335,236 @@
 
                 <!-- Settings View -->
                 <div id="settings-view" class="view hidden">
-                    <div class="settings-section">
-                        <h2>Profile</h2>
-                        <form id="profile-form">
-                            <div class="form-group">
-                                <label for="settings-name">Name</label>
-                                <input type="text" id="settings-name">
-                            </div>
-                            <div class="form-group">
-                                <label for="settings-email">Email</label>
-                                <input type="email" id="settings-email" disabled>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </form>
-                    </div>
+                    <div class="settings-container">
+                        <header class="settings-header">
+                            <h1>Settings</h1>
+                            <p class="settings-subtitle">Manage your account and preferences</p>
+                        </header>
 
-                    <div class="settings-section">
-                        <h2>AI Assistant</h2>
-                        <p class="settings-description">Enable AI-powered task creation with natural language. Choose a
-                            free provider below:</p>
-                        <form id="ai-config-form">
-                            <div class="form-group">
-                                <label for="llm-provider">Provider</label>
-                                <select id="llm-provider">
-                                    <option value="gemini">🌟 Google Gemini (Free)</option>
-                                    <option value="groq">⚡ Groq / Llama (Free)</option>
-                                    <option value="openai">OpenAI (Paid)</option>
-                                </select>
-                                <small id="provider-help" class="form-help">Get free API key at <a
-                                        href="https://ai.google.dev" target="_blank">ai.google.dev</a></small>
+                        <!-- Profile Section -->
+                        <section class="settings-card">
+                            <div class="settings-card-header">
+                                <i data-lucide="user"></i>
+                                <h2>Profile</h2>
                             </div>
-                            <div class="form-group">
-                                <label for="llm-api-key">API Key</label>
-                                <input type="password" id="llm-api-key" placeholder="Paste your API key here">
+                            <div class="profile-section">
+                                <div class="profile-avatar-section">
+                                    <div class="profile-avatar" id="profile-avatar">
+                                        <img src="" alt="Profile" id="profile-avatar-img" class="hidden">
+                                        <span class="avatar-placeholder" id="avatar-placeholder">
+                                            <i data-lucide="user"></i>
+                                        </span>
+                                        <label class="avatar-upload-btn" for="avatar-upload" title="Upload photo">
+                                            <i data-lucide="camera"></i>
+                                        </label>
+                                        <input type="file" id="avatar-upload" accept="image/*" class="hidden">
+                                    </div>
+                                    <p class="avatar-hint">Click to upload photo</p>
+                                </div>
+                                <form id="profile-form" class="profile-form">
+                                    <div class="form-group">
+                                        <label for="settings-name">Display Name</label>
+                                        <input type="text" id="settings-name" placeholder="Your name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="settings-email">Email</label>
+                                        <input type="email" id="settings-email" disabled>
+                                        <small class="form-hint">Email cannot be changed</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i data-lucide="save"></i> Save Profile
+                                    </button>
+                                </form>
                             </div>
-                            <button type="submit" class="btn btn-primary">Configure AI</button>
-                            <p id="ai-status" class="status-text"></p>
-                        </form>
-                    </div>
+                        </section>
 
-                    <div class="settings-section">
-                        <h2>📅 Google Calendar</h2>
-                        <p class="settings-description">Connect your Google Calendar to automatically import events and
-                            keep everything in sync.</p>
-                        <div id="google-calendar-settings">
-                            <div id="gcal-not-configured" class="gcal-status hidden">
-                                <div class="status-badge warning">⚠️ Not Configured</div>
-                                <p>Google Calendar integration requires setup. Add your Google OAuth credentials to the
-                                    .env file:</p>
-                                <code class="code-block">
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
-                                </code>
-                                <p><a href="https://console.cloud.google.com/apis/credentials" target="_blank">Get
-                                        credentials from Google Cloud Console →</a></p>
+                        <!-- Appearance Section -->
+                        <section class="settings-card">
+                            <div class="settings-card-header">
+                                <i data-lucide="palette"></i>
+                                <h2>Appearance</h2>
                             </div>
-                            <div id="gcal-disconnected" class="gcal-status hidden">
-                                <div class="status-badge neutral">Not Connected</div>
-                                <p>Click below to connect your Google Calendar. Your events will be automatically
-                                    imported as tasks.</p>
-                                <button class="btn btn-primary" id="connect-google-btn">
-                                    <span class="google-icon">G</span> Connect Google Calendar
+                            <p class="settings-description">Choose a color theme for your workspace.</p>
+                            <div class="theme-picker">
+                                <h4 class="theme-category-title">☀️ Light Themes</h4>
+                                <div class="theme-grid">
+                                    <button class="theme-card" data-theme="light" title="Classic">
+                                        <div class="theme-preview theme-preview-classic"></div>
+                                        <span class="theme-name">Classic</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="pastel-calm" title="Pastel">
+                                        <div class="theme-preview theme-preview-pastel"></div>
+                                        <span class="theme-name">Pastel</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="warm-earth" title="Earth">
+                                        <div class="theme-preview theme-preview-earth"></div>
+                                        <span class="theme-name">Earth</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="crisp-nordic" title="Nordic">
+                                        <div class="theme-preview theme-preview-nordic"></div>
+                                        <span class="theme-name">Nordic</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="energetic-sunrise" title="Sunrise">
+                                        <div class="theme-preview theme-preview-sunrise"></div>
+                                        <span class="theme-name">Sunrise</span>
+                                    </button>
+                                </div>
+
+                                <h4 class="theme-category-title">🌙 Dark Themes</h4>
+                                <div class="theme-grid">
+                                    <button class="theme-card active" data-theme="dark" title="Midnight">
+                                        <div class="theme-preview theme-preview-midnight"></div>
+                                        <span class="theme-name">Midnight</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="deep-ocean" title="Ocean">
+                                        <div class="theme-preview theme-preview-ocean"></div>
+                                        <span class="theme-name">Ocean</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="charcoal-elegance" title="Charcoal">
+                                        <div class="theme-preview theme-preview-charcoal"></div>
+                                        <span class="theme-name">Charcoal</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="neon-pulse" title="Neon">
+                                        <div class="theme-preview theme-preview-neon"></div>
+                                        <span class="theme-name">Neon</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="forest-dusk" title="Forest">
+                                        <div class="theme-preview theme-preview-forest"></div>
+                                        <span class="theme-name">Forest</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="stormy-void" title="Stormy">
+                                        <div class="theme-preview theme-preview-stormy"></div>
+                                        <span class="theme-name">Stormy</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="warm-ember" title="Ember">
+                                        <div class="theme-preview theme-preview-ember"></div>
+                                        <span class="theme-name">Ember</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="cyber-twilight" title="Cyber">
+                                        <div class="theme-preview theme-preview-cyber"></div>
+                                        <span class="theme-name">Cyber</span>
+                                    </button>
+                                    <button class="theme-card" data-theme="hacker" title="Hacker">
+                                        <div class="theme-preview theme-preview-hacker"></div>
+                                        <span class="theme-name">Hacker</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- AI Assistant Section -->
+                        <section class="settings-card">
+                            <div class="settings-card-header">
+                                <i data-lucide="bot"></i>
+                                <h2>AI Assistant</h2>
+                            </div>
+                            <p class="settings-description">Enable AI-powered task creation with natural language.</p>
+                            <form id="ai-config-form">
+                                <div class="form-group">
+                                    <label for="llm-provider">Provider</label>
+                                    <select id="llm-provider">
+                                        <option value="gemini">🌟 Google Gemini (Free)</option>
+                                        <option value="groq">⚡ Groq / Llama (Free)</option>
+                                        <option value="openai">OpenAI (Paid)</option>
+                                    </select>
+                                    <small id="provider-help" class="form-hint">Get free API key at <a
+                                            href="https://ai.google.dev" target="_blank">ai.google.dev</a></small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="llm-api-key">API Key</label>
+                                    <input type="password" id="llm-api-key" placeholder="Paste your API key here">
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i data-lucide="key"></i> Configure AI
+                                </button>
+                                <p id="ai-status" class="status-text"></p>
+                            </form>
+                        </section>
+
+                        <!-- Google Calendar Section -->
+                        <section class="settings-card">
+                            <div class="settings-card-header">
+                                <i data-lucide="calendar"></i>
+                                <h2>Google Calendar</h2>
+                            </div>
+                            <p class="settings-description">Connect your Google Calendar to automatically import events.
+                            </p>
+                            <div id="google-calendar-settings">
+                                <div id="gcal-not-configured" class="gcal-status hidden">
+                                    <div class="status-badge warning">⚠️ Not Configured</div>
+                                    <p>Add Google OAuth credentials to .env file.</p>
+                                    <a href="https://console.cloud.google.com/apis/credentials" target="_blank"
+                                        class="link">Get credentials →</a>
+                                </div>
+                                <div id="gcal-disconnected" class="gcal-status hidden">
+                                    <div class="status-badge neutral">Not Connected</div>
+                                    <button class="btn btn-primary" id="connect-google-btn">
+                                        <span class="google-icon">G</span> Connect Google Calendar
+                                    </button>
+                                </div>
+                                <div id="gcal-connected" class="gcal-status hidden">
+                                    <div class="status-badge success">✓ Connected</div>
+                                    <p>Connected as: <strong id="gcal-email"></strong></p>
+                                    <div id="gcal-calendars-list" class="gcal-calendars-list hidden">
+                                        <label class="gcal-list-label">Select Calendars to Sync:</label>
+                                        <div id="gcal-calendars-container" class="gcal-calendars-container"></div>
+                                        <button id="save-calendars-btn" class="btn btn-small btn-primary hidden">Save
+                                            Selection</button>
+                                    </div>
+                                    <div class="gcal-actions">
+                                        <button class="btn btn-secondary" id="sync-calendar-btn">
+                                            <i data-lucide="refresh-cw"></i> Sync Now
+                                        </button>
+                                        <button class="btn btn-outline danger"
+                                            id="disconnect-google-btn">Disconnect</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Notifications Section -->
+                        <section class="settings-card">
+                            <div class="settings-card-header">
+                                <i data-lucide="bell"></i>
+                                <h2>Notifications</h2>
+                            </div>
+                            <p class="settings-description">Get reminders for tasks, habits, and pomodoro sessions.</p>
+                            <div class="notification-settings">
+                                <div class="notification-permission">
+                                    <span id="notification-status">Permission: <strong
+                                            id="notification-permission-state">Unknown</strong></span>
+                                    <button class="btn btn-secondary" id="enable-notifications-btn">Enable
+                                        Notifications</button>
+                                </div>
+                                <div class="notification-options">
+                                    <label class="toggle-option">
+                                        <input type="checkbox" id="notify-task-reminders" checked>
+                                        <span class="toggle-label">Task Reminders (30 min before)</span>
+                                    </label>
+                                    <label class="toggle-option">
+                                        <input type="checkbox" id="notify-habit-reminders" checked>
+                                        <span class="toggle-label">Habit Reminders</span>
+                                    </label>
+                                    <label class="toggle-option">
+                                        <input type="checkbox" id="notify-pomodoro-alerts" checked>
+                                        <span class="toggle-label">Pomodoro Timer Alerts</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Account Section -->
+                        <section class="settings-card settings-card-danger">
+                            <div class="settings-card-header">
+                                <i data-lucide="shield"></i>
+                                <h2>Account</h2>
+                            </div>
+                            <div class="account-actions">
+                                <button class="btn btn-outline" onclick="handleLogout()">
+                                    <i data-lucide="log-out"></i> Sign Out
                                 </button>
                             </div>
-                            <div id="gcal-connected" class="gcal-status hidden">
-                                <div class="status-badge success">✓ Connected</div>
-                                <p>Connected as: <strong id="gcal-email"></strong></p>
-                                <p class="settings-description" style="margin-top: 0.5rem;">Your calendar events are
-                                    automatically synced. New events will appear as tasks.</p>
-
-                                <div id="gcal-calendars-list" class="gcal-calendars-list hidden"
-                                    style="margin: 1rem 0;">
-                                    <label class="gcal-list-label"
-                                        style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Select
-                                        Calendars to Sync:</label>
-                                    <div id="gcal-calendars-container" class="gcal-calendars-container"
-                                        style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px;">
-                                        <!-- Checkboxes will be rendered here -->
-                                    </div>
-                                    <button id="save-calendars-btn" class="btn btn-small btn-primary hidden"
-                                        style="margin-top: 1rem;">Save Selection</button>
-                                </div>
-                                <div class="gcal-actions">
-                                    <button class="btn btn-secondary" id="sync-calendar-btn">🔄 Sync Now</button>
-                                    <button class="btn btn-outline danger"
-                                        id="disconnect-google-btn">Disconnect</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="settings-section">
-                        <h2>Notifications</h2>
-                        <p class="settings-description">Get reminders for tasks, habits, and pomodoro sessions.</p>
-                        <div class="notification-settings">
-                            <div class="notification-permission">
-                                <span id="notification-status">Permission: <strong
-                                        id="notification-permission-state">Unknown</strong></span>
-                                <button class="btn btn-secondary" id="enable-notifications-btn">Enable
-                                    Notifications</button>
-                            </div>
-                            <div class="form-group notification-option">
-                                <label>
-                                    <input type="checkbox" id="notify-task-reminders" checked>
-                                    Task Reminders (30 min before due)
-                                </label>
-                            </div>
-                            <div class="form-group notification-option">
-                                <label>
-                                    <input type="checkbox" id="notify-habit-reminders" checked>
-                                    Habit Reminders
-                                </label>
-                            </div>
-                            <div class="form-group notification-option">
-                                <label>
-                                    <input type="checkbox" id="notify-pomodoro-alerts" checked>
-                                    Pomodoro Timer Alerts
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="settings-section">
-                        <h2>Theme</h2>
-                        <div class="theme-toggle">
-                            <button class="theme-btn active" data-theme="dark">🌙 Dark</button>
-                            <button class="theme-btn" data-theme="light">☀️ Light</button>
-                            <button class="theme-btn" data-theme="hacker">💻 Hacker</button>
-                        </div>
+                        </section>
                     </div>
                 </div>
             </main>
@@ -655,6 +759,9 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
         <button class="context-menu-item" data-action="rename">
             <span>✏️</span> Rename
         </button>
+        <button class="context-menu-item" data-action="duplicate">
+            <span>📋</span> Duplicate
+        </button>
         <button class="context-menu-item" data-action="delete">
             <span>🗑️</span> Remove
         </button>
@@ -679,7 +786,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
         <div class="modal-overlay"></div>
         <div class="modal-content modal-sm">
             <div class="modal-header">
-                <h2>Rename</h2>
+                <h2>Edit Item</h2>
                 <button class="btn-close" id="close-rename-modal">&times;</button>
             </div>
             <form id="rename-form">
@@ -688,6 +795,41 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                 <div class="form-group">
                     <label for="rename-input">Name</label>
                     <input type="text" id="rename-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="rename-icon">Icon (Lucide icon name)</label>
+                    <div class="icon-picker-row">
+                        <div class="icon-preview" id="icon-preview">
+                            <i data-lucide="inbox"></i>
+                        </div>
+                        <input type="text" id="rename-icon" placeholder="e.g. inbox, sun, star, heart">
+                    </div>
+                    <div class="icon-suggestions">
+                        <button type="button" class="icon-btn" data-icon="inbox" title="inbox"><i
+                                data-lucide="inbox"></i></button>
+                        <button type="button" class="icon-btn" data-icon="sun" title="sun"><i
+                                data-lucide="sun"></i></button>
+                        <button type="button" class="icon-btn" data-icon="star" title="star"><i
+                                data-lucide="star"></i></button>
+                        <button type="button" class="icon-btn" data-icon="heart" title="heart"><i
+                                data-lucide="heart"></i></button>
+                        <button type="button" class="icon-btn" data-icon="folder" title="folder"><i
+                                data-lucide="folder"></i></button>
+                        <button type="button" class="icon-btn" data-icon="bookmark" title="bookmark"><i
+                                data-lucide="bookmark"></i></button>
+                        <button type="button" class="icon-btn" data-icon="flag" title="flag"><i
+                                data-lucide="flag"></i></button>
+                        <button type="button" class="icon-btn" data-icon="zap" title="zap"><i
+                                data-lucide="zap"></i></button>
+                        <button type="button" class="icon-btn" data-icon="target" title="target"><i
+                                data-lucide="target"></i></button>
+                        <button type="button" class="icon-btn" data-icon="calendar" title="calendar"><i
+                                data-lucide="calendar"></i></button>
+                        <button type="button" class="icon-btn" data-icon="clock" title="clock"><i
+                                data-lucide="clock"></i></button>
+                        <button type="button" class="icon-btn" data-icon="home" title="home"><i
+                                data-lucide="home"></i></button>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancel-rename">Cancel</button>

@@ -17,20 +17,20 @@ const state = {
     calendarViewMode: 'month' // 'day', 'week', 'month', 'agenda'
 };
 
-// Sidebar configuration
+// Sidebar configuration - Uses Lucide icon names (https://lucide.dev/icons)
 const defaultSmartLists = [
-    { id: 'inbox', icon: '📥', label: 'Inbox', countId: 'inbox-count' },
-    { id: 'today', icon: '📅', label: 'Today', countId: 'today-count' },
-    { id: 'week', icon: '📆', label: 'Next 7 Days', countId: 'week-count' },
-    { id: 'all', icon: '📋', label: 'All Tasks', countId: 'all-count' },
-    { id: 'completed', icon: '✅', label: 'Completed', countId: 'completed-count' }
+    { id: 'inbox', icon: 'inbox', label: 'Inbox', countId: 'inbox-count' },
+    { id: 'today', icon: 'sun', label: 'Today', countId: 'today-count' },
+    { id: 'week', icon: 'calendar-days', label: 'Next 7 Days', countId: 'week-count' },
+    { id: 'all', icon: 'list-todo', label: 'All Tasks', countId: 'all-count' },
+    { id: 'completed', icon: 'circle-check', label: 'Completed', countId: 'completed-count' }
 ];
 
 const defaultTools = [
-    { id: 'habits', icon: '🎯', label: 'Habits', view: 'habits' },
-    { id: 'calendar', icon: '📆', label: 'Calendar', view: 'calendar' },
-    { id: 'pomodoro', icon: '🍅', label: 'Pomodoro', view: 'pomodoro' },
-    { id: 'stats', icon: '📊', label: 'Statistics', view: 'stats' }
+    { id: 'habits', icon: 'target', label: 'Habits', view: 'habits' },
+    { id: 'calendar', icon: 'calendar', label: 'Calendar', view: 'calendar' },
+    { id: 'pomodoro', icon: 'timer', label: 'Pomodoro', view: 'pomodoro' },
+    { id: 'stats', icon: 'bar-chart-3', label: 'Statistics', view: 'stats' }
 ];
 
 // Get sidebar config from localStorage or use defaults
@@ -114,6 +114,7 @@ document.addEventListener('DOMContentLoaded', init);
 async function init() {
     try {
         setupEventListeners();
+        initSidebarDragDrop(); // Enable drag-drop reordering
         checkGoogleAuthCallback(); // Check for Google OAuth callback
         await checkAuth();
     } catch (error) {
@@ -230,7 +231,7 @@ function setupEventListeners() {
     // Settings
     document.getElementById('profile-form').addEventListener('submit', handleProfileSubmit);
     document.getElementById('ai-config-form').addEventListener('submit', handleAIConfigSubmit);
-    document.querySelectorAll('.theme-btn').forEach(btn => {
+    document.querySelectorAll('.theme-card').forEach(btn => {
         btn.addEventListener('click', () => setTheme(btn.dataset.theme));
     });
 
@@ -315,6 +316,8 @@ function setupEventListeners() {
 
             if (action === 'rename') {
                 openRenameModal(itemType, itemId);
+            } else if (action === 'duplicate') {
+                duplicateSidebarItem(itemType, itemId);
             } else if (action === 'delete') {
                 if (itemType === 'custom-list') {
                     deleteList(itemId);
@@ -342,6 +345,80 @@ function setupEventListeners() {
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
+
+    // Avatar upload handler
+    const avatarUpload = document.getElementById('avatar-upload');
+    if (avatarUpload) {
+        avatarUpload.addEventListener('change', handleAvatarUpload);
+    }
+
+    // Load saved avatar
+    loadSavedAvatar();
+}
+
+// Handle avatar upload
+function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('Image must be less than 5MB', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const avatarImg = document.getElementById('profile-avatar-img');
+        const avatarPlaceholder = document.getElementById('avatar-placeholder');
+
+        if (avatarImg && avatarPlaceholder) {
+            avatarImg.src = event.target.result;
+            avatarImg.classList.remove('hidden');
+            avatarPlaceholder.classList.add('hidden');
+
+            // Save to localStorage
+            localStorage.setItem('userAvatar', event.target.result);
+
+            // Update sidebar avatar if exists
+            updateSidebarAvatar(event.target.result);
+
+            showToast('Profile picture updated!', 'success');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// Load saved avatar from localStorage
+function loadSavedAvatar() {
+    const savedAvatar = localStorage.getItem('userAvatar');
+    if (savedAvatar) {
+        const avatarImg = document.getElementById('profile-avatar-img');
+        const avatarPlaceholder = document.getElementById('avatar-placeholder');
+
+        if (avatarImg && avatarPlaceholder) {
+            avatarImg.src = savedAvatar;
+            avatarImg.classList.remove('hidden');
+            avatarPlaceholder.classList.add('hidden');
+        }
+
+        // Update sidebar avatar
+        updateSidebarAvatar(savedAvatar);
+    }
+}
+
+// Update sidebar user avatar
+function updateSidebarAvatar(avatarSrc) {
+    const sidebarAvatar = document.querySelector('.user-avatar');
+    if (sidebarAvatar && avatarSrc) {
+        sidebarAvatar.innerHTML = `<img src="${avatarSrc}" alt="User" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+    }
 }
 
 // Auth
@@ -1187,9 +1264,12 @@ function renderSmartLists() {
         li.className = `nav-item${state.currentList === item.id ? ' active' : ''}`;
         li.dataset.list = item.id;
         li.dataset.itemType = 'smart-list';
+        li.draggable = true;
 
+        // Use Lucide icon element (custom icon overrides default)
+        const iconName = item.customIcon || item.icon;
         li.innerHTML = `
-            <span class="nav-icon">${item.icon}</span>
+            <span class="nav-icon"><i data-lucide="${iconName}"></i></span>
             <span class="nav-label">${escapeHTML(item.customLabel || item.label)}</span>
             <span class="nav-count" id="${item.countId}">0</span>
             <div class="item-actions">
@@ -1207,6 +1287,9 @@ function renderSmartLists() {
 
         smartListsEl.appendChild(li);
     });
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function renderTools() {
@@ -1221,9 +1304,12 @@ function renderTools() {
         li.className = `nav-item${state.currentView === item.view ? ' active' : ''}`;
         li.dataset.view = item.view;
         li.dataset.itemType = 'tool';
+        li.draggable = true;
 
+        // Use Lucide icon element (custom icon overrides default)
+        const iconName = item.customIcon || item.icon;
         li.innerHTML = `
-            <span class="nav-icon">${item.icon}</span>
+            <span class="nav-icon"><i data-lucide="${iconName}"></i></span>
             <span class="nav-label">${escapeHTML(item.customLabel || item.label)}</span>
             <div class="item-actions">
                 <button class="item-action-btn delete" title="Remove" onclick="event.stopPropagation(); removeSidebarItem('tool', '${item.id}')">×</button>
@@ -1240,6 +1326,9 @@ function renderTools() {
 
         toolsListEl.appendChild(li);
     });
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function showContextMenu(e, itemType, itemId) {
@@ -1292,6 +1381,158 @@ function removeSidebarItem(itemType, itemId) {
     renderSmartLists();
     renderTools();
     showToast('Item removed. Click + to add it back.', 'info');
+}
+
+// Duplicate a sidebar item (creates a copy with new ID)
+function duplicateSidebarItem(itemType, itemId) {
+    const config = getSidebarConfig();
+
+    if (itemType === 'smart-list') {
+        const original = config.smartLists.find(i => i.id === itemId);
+        if (original) {
+            const newItem = {
+                ...original,
+                id: `${original.id}_copy_${Date.now()}`,
+                customLabel: (original.customLabel || original.label) + ' (Copy)',
+                visible: true
+            };
+            config.smartLists.push(newItem);
+            showToast(`Duplicated "${original.customLabel || original.label}"`, 'success');
+        }
+    } else if (itemType === 'tool') {
+        const original = config.tools.find(i => i.id === itemId);
+        if (original) {
+            const newItem = {
+                ...original,
+                id: `${original.id}_copy_${Date.now()}`,
+                customLabel: (original.customLabel || original.label) + ' (Copy)',
+                visible: true
+            };
+            config.tools.push(newItem);
+            showToast(`Duplicated "${original.customLabel || original.label}"`, 'success');
+        }
+    } else if (itemType === 'custom-list') {
+        // For custom lists, duplicate via API
+        const original = state.lists.find(l => (l._id || l.id) === itemId);
+        if (original) {
+            api.createList({ name: original.name + ' (Copy)', color: original.color })
+                .then(() => loadData())
+                .then(() => showToast(`Duplicated "${original.name}"`, 'success'))
+                .catch(() => showToast('Failed to duplicate list', 'error'));
+            return;
+        }
+    }
+
+    saveSidebarConfig(config);
+    renderSmartLists();
+    renderTools();
+}
+
+// ============================================
+// SIDEBAR DRAG & DROP REORDERING
+// ============================================
+
+let draggedSidebarItem = null;
+
+function initSidebarDragDrop() {
+    const smartListsEl = document.getElementById('smart-lists');
+    const toolsListEl = document.getElementById('tools-list');
+    const customListsEl = document.getElementById('custom-lists');
+
+    [smartListsEl, toolsListEl, customListsEl].forEach(container => {
+        if (!container) return;
+
+        container.addEventListener('dragstart', handleSidebarDragStart);
+        container.addEventListener('dragover', handleSidebarDragOver);
+        container.addEventListener('drop', handleSidebarDrop);
+        container.addEventListener('dragend', handleSidebarDragEnd);
+    });
+}
+
+function handleSidebarDragStart(e) {
+    if (!e.target.classList.contains('nav-item')) return;
+
+    draggedSidebarItem = e.target;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.list || e.target.dataset.view || e.target.dataset.customList);
+}
+
+function handleSidebarDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    const afterElement = getDragAfterElement(e.currentTarget, e.clientY);
+    const dragging = document.querySelector('.nav-item.dragging');
+
+    if (dragging && afterElement === null) {
+        e.currentTarget.appendChild(dragging);
+    } else if (dragging && afterElement) {
+        e.currentTarget.insertBefore(dragging, afterElement);
+    }
+}
+
+function handleSidebarDrop(e) {
+    e.preventDefault();
+
+    // Save the new order
+    const container = e.currentTarget;
+    const items = Array.from(container.querySelectorAll('.nav-item'));
+    const config = getSidebarConfig();
+
+    if (container.id === 'smart-lists') {
+        const newOrder = items.map(item => item.dataset.list);
+        const reordered = [];
+        newOrder.forEach(id => {
+            const found = config.smartLists.find(i => i.id === id);
+            if (found) reordered.push(found);
+        });
+        // Add any items not in DOM (hidden ones)
+        config.smartLists.forEach(i => {
+            if (!reordered.find(r => r.id === i.id)) reordered.push(i);
+        });
+        config.smartLists = reordered;
+    } else if (container.id === 'tools-list') {
+        const newOrder = items.map(item => item.dataset.view);
+        const reordered = [];
+        newOrder.forEach(view => {
+            const found = config.tools.find(i => i.view === view);
+            if (found) reordered.push(found);
+        });
+        config.tools.forEach(i => {
+            if (!reordered.find(r => r.id === i.id)) reordered.push(i);
+        });
+        config.tools = reordered;
+    }
+
+    saveSidebarConfig(config);
+}
+
+function handleSidebarDragEnd(e) {
+    if (draggedSidebarItem) {
+        draggedSidebarItem.classList.remove('dragging');
+        draggedSidebarItem = null;
+    }
+
+    // Remove any leftover drag styling
+    document.querySelectorAll('.nav-item.dragging').forEach(el => {
+        el.classList.remove('dragging');
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.nav-item:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 function openAddSidebarModal(section) {
@@ -1366,6 +1607,8 @@ function addSidebarItem(section, itemId) {
 function openRenameModal(itemType, itemId) {
     const modal = document.getElementById('rename-modal');
     const input = document.getElementById('rename-input');
+    const iconInput = document.getElementById('rename-icon');
+    const iconPreview = document.getElementById('icon-preview');
     const itemIdField = document.getElementById('rename-item-id');
     const itemTypeField = document.getElementById('rename-item-type');
 
@@ -1386,7 +1629,43 @@ function openRenameModal(itemType, itemId) {
     itemIdField.value = itemId;
     itemTypeField.value = itemType;
 
+    // Set current icon
+    const currentIcon = item.customIcon || item.icon;
+    if (iconInput) iconInput.value = currentIcon;
+    if (iconPreview) {
+        iconPreview.innerHTML = `<i data-lucide="${currentIcon}"></i>`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // Setup icon button click handlers
+    document.querySelectorAll('.icon-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.icon === currentIcon) btn.classList.add('active');
+        btn.onclick = () => {
+            const icon = btn.dataset.icon;
+            if (iconInput) iconInput.value = icon;
+            if (iconPreview) {
+                iconPreview.innerHTML = `<i data-lucide="${icon}"></i>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+            document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+    });
+
+    // Setup icon input change handler
+    if (iconInput) {
+        iconInput.oninput = () => {
+            const icon = iconInput.value.trim() || 'circle';
+            if (iconPreview) {
+                iconPreview.innerHTML = `<i data-lucide="${icon}"></i>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        };
+    }
+
     modal.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     input.focus();
     input.select();
 }
@@ -1400,6 +1679,7 @@ function handleRenameSubmit(e) {
     e.preventDefault();
 
     const input = document.getElementById('rename-input');
+    const iconInput = document.getElementById('rename-icon');
     const itemId = document.getElementById('rename-item-id').value;
     const itemType = document.getElementById('rename-item-type').value;
 
@@ -1416,10 +1696,13 @@ function handleRenameSubmit(e) {
 
     if (item) {
         item.customLabel = input.value.trim();
+        if (iconInput && iconInput.value.trim()) {
+            item.customIcon = iconInput.value.trim();
+        }
         saveSidebarConfig(config);
         renderSmartLists();
         renderTools();
-        showToast('Renamed successfully!', 'success');
+        showToast('Updated successfully!', 'success');
     }
 
     closeRenameModal();
@@ -1797,9 +2080,27 @@ function renderDayView() {
     const hours = [];
     for (let h = 0; h < 24; h++) {
         const hourLabel = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+
+        // Filter tasks for this hour
         const hourTasks = dayTasks.filter(t => {
-            if (!t.due_time) return h === 9; // Default to 9 AM
-            const [taskHour] = t.due_time.split(':').map(Number);
+            // Priority 1: Use dueTime field (Google Calendar events)
+            if (t.dueTime || t.due_time) {
+                const timeStr = t.dueTime || t.due_time;
+                const [taskH] = timeStr.split(':').map(Number);
+                if (!isNaN(taskH)) return taskH === h;
+            }
+
+            // Priority 2: Extract from dueDate 
+            const dueDate = t.dueDate || t.due_date;
+            if (!dueDate) return h === 9; // Default to 9 AM if no date
+
+            const d = new Date(dueDate);
+            const taskHour = d.getHours();
+            const taskMins = d.getMinutes();
+
+            // If midnight with no dueTime, default to 9 AM
+            if (taskHour === 0 && taskMins === 0) return h === 9;
+
             return taskHour === h;
         });
 
@@ -1807,11 +2108,30 @@ function renderDayView() {
             <div class="day-hour-slot" data-hour="${h}">
                 <div class="hour-label">${hourLabel}</div>
                 <div class="hour-tasks">
-                    ${hourTasks.map(t => `
+                    ${hourTasks.map(t => {
+            // Get display time from dueTime field or extract from dueDate
+            let timeDisplay = '';
+            if (t.dueTime || t.due_time) {
+                timeDisplay = formatTimeDisplay(t.dueTime || t.due_time);
+            } else {
+                const dueDate = t.dueDate || t.due_date;
+                if (dueDate) {
+                    const d = new Date(dueDate);
+                    const hours = d.getHours();
+                    const mins = d.getMinutes();
+                    if (hours !== 0 || mins !== 0) {
+                        const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                        timeDisplay = formatTimeDisplay(timeStr);
+                    }
+                }
+            }
+            return `
                         <div class="calendar-task status-${t.status || 'scheduled'}" data-task-id="${t._id || t.id}" onclick="openTaskModal('${t._id || t.id}')">
+                            ${timeDisplay ? `<span class="task-time">${timeDisplay}</span>` : ''}
                             ${escapeHTML(t.title)}
                         </div>
-                    `).join('')}
+                    `;
+        }).join('')}
                 </div>
             </div>
         `);
@@ -1826,6 +2146,15 @@ function renderDayView() {
         </div>
         <div class="day-view-hours">${hours.join('')}</div>
     `;
+}
+
+// Format time from "HH:MM" (24hr) to "H:MM AM/PM" (12hr) for display
+function formatTimeDisplay(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h % 12 || 12;
+    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
 function renderWeekView() {
@@ -1875,18 +2204,39 @@ function renderWeekView() {
 
         // Process tasks to get time-based positioning
         const processedTasks = dayTasks.map(t => {
-            // Parse start time
+            // Get time from dueTime field FIRST (for Google Calendar events)
+            // Fallback to extracting from dueDate for regular tasks
             let startMinutes = 9 * 60; // Default 9 AM
-            if (t.dueTime) {
-                const [h, m] = t.dueTime.split(':').map(Number);
-                startMinutes = h * 60 + (m || 0);
+            let dueTime = null;
+
+            // Priority 1: Use dueTime field (Google Calendar events have this)
+            if (t.dueTime || t.due_time) {
+                const timeStr = t.dueTime || t.due_time;
+                const [h, m] = timeStr.split(':').map(Number);
+                if (!isNaN(h) && !isNaN(m)) {
+                    startMinutes = h * 60 + m;
+                    dueTime = timeStr;
+                }
             }
-            // Duration: 1 hour by default for events
-            const duration = t.googleEventId ? 60 : 30; // Google events 1hr, tasks 30min
+            // Priority 2: Extract from dueDate ISO string (for regular tasks with time in date)
+            else if (t.dueDate) {
+                const d = new Date(t.dueDate);
+                const hours = d.getHours();
+                const mins = d.getMinutes();
+                // Only use time if it's not midnight (meaning a time was set)
+                if (hours !== 0 || mins !== 0) {
+                    startMinutes = hours * 60 + mins;
+                    dueTime = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                }
+            }
+
+            // Duration: 1 hour by default for events, 30min for tasks
+            const duration = t.googleEventId ? 60 : 30;
             return {
                 ...t,
                 startMinutes,
-                endMinutes: startMinutes + duration
+                endMinutes: startMinutes + duration,
+                displayTime: dueTime
             };
         }).sort((a, b) => a.startMinutes - b.startMinutes);
 
@@ -1956,7 +2306,7 @@ function renderWeekView() {
                      data-task-id="${task._id || task.id}" 
                      style="${style}"
                      onclick="openTaskModal('${task._id || task.id}')">
-                    <span class="week-task-time">${task.dueTime || ''}</span>
+                    <span class="week-task-time">${task.displayTime ? formatTimeDisplay(task.displayTime) : ''}</span>
                     <span class="week-task-title">${escapeHTML(task.title)}</span>
                 </div>
             `;
@@ -2108,6 +2458,30 @@ function formatDateLocal(date) {
     return `${year}-${month}-${day}`;
 }
 
+// Format time string (HH:MM) to 12-hour display
+function formatTimeDisplay(timeStr) {
+    if (!timeStr) return '';
+    const [hours, mins] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `${displayHour}:${mins.toString().padStart(2, '0')} ${period}`;
+}
+
+// Extract time from dueDate ISO string
+function getTimeFromDueDate(dueDate) {
+    if (!dueDate) return null;
+    const d = new Date(dueDate);
+    const hours = d.getHours();
+    const mins = d.getMinutes();
+    // Return null if midnight (likely means no time was set)
+    if (hours === 0 && mins === 0) return null;
+    return {
+        hours,
+        mins,
+        formatted: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
+    };
+}
+
 function getTasksForDate(date) {
     return state.tasks.filter(t => {
         // Support both dueDate (from backend) and due_date (legacy)
@@ -2203,11 +2577,22 @@ async function handleAIConfigSubmit(e) {
 }
 
 function setTheme(theme) {
+    // Add transition class for smooth theme switching
+    document.body.dataset.themeTransitioning = 'true';
+
+    // Set the theme
     document.body.dataset.theme = theme;
     localStorage.setItem('theme', theme);
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === theme);
+
+    // Update theme cards UI
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.theme === theme);
     });
+
+    // Remove transition class after animation completes
+    setTimeout(() => {
+        delete document.body.dataset.themeTransitioning;
+    }, 400);
 }
 
 // ============================================
