@@ -292,32 +292,35 @@ async def google_auth_callback(
 
 @router.post("/disconnect")
 async def disconnect_google(current_user: dict = Depends(get_current_user)):
-    """Disconnect Google Calendar and optionally delete synced events"""
+    """Disconnect Google Calendar and delete synced events"""
     db = get_database()
     user_oid = ObjectId(current_user["_id"])
     
     # Delete all synced Google Calendar events for this user
-    delete_result = await db.tasks.delete_many({
-        "user": user_oid,
-        "googleEventId": {"$exists": True}
-    })
+    # Mongita doesn't support $exists, so we fetch and filter manually
+    all_tasks = await db.tasks.find({"user": user_oid}).to_list(None)
+    synced_tasks = [t for t in all_tasks if t.get("googleEventId")]
+    deleted_count = 0
+    for task in synced_tasks:
+        await db.tasks.delete_one({"_id": task["_id"]})
+        deleted_count += 1
     
-    # Remove Google credentials
+    # Remove Google credentials - use $set with None since Mongita doesn't support $unset
     await db.users.update_one(
         {"_id": user_oid},
-        {"$unset": {
-            "googleAccessToken": "",
-            "googleRefreshToken": "",
-            "googleEmail": "",
-            "googleConnectedAt": "",
-            "googleSelectedCalendars": "",
-            "lastCalendarSync": ""
+        {"$set": {
+            "googleAccessToken": None,
+            "googleRefreshToken": None,
+            "googleEmail": None,
+            "googleConnectedAt": None,
+            "googleSelectedCalendars": None,
+            "lastCalendarSync": None
         }}
     )
     
     return {
         "message": "Google Calendar disconnected",
-        "eventsDeleted": delete_result.deleted_count
+        "eventsDeleted": deleted_count
     }
 
 
@@ -603,13 +606,18 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
         synced_count = 0
         
         # FIRST: Delete events from calendars that are NO LONGER selected
-        all_calendar_ids = [c['id'] for c in calendars_items]
-        deleted_result = await db.tasks.delete_many({
-            "user": user_oid,
-            "googleCalendarId": {"$nin": selected_ids, "$exists": True}
-        })
-        if deleted_result.deleted_count > 0:
-            logger.info(f"[SYNC] Deleted {deleted_result.deleted_count} events from deselected calendars")
+        # Mongita doesn't support $exists, so we fetch and filter manually
+        all_tasks = await db.tasks.find({"user": user_oid}).to_list(None)
+        deselected_tasks = [
+            t for t in all_tasks 
+            if t.get("googleCalendarId") and t.get("googleCalendarId") not in selected_ids
+        ]
+        deleted_count = 0
+        for task in deselected_tasks:
+            await db.tasks.delete_one({"_id": task["_id"]})
+            deleted_count += 1
+        if deleted_count > 0:
+            logger.info(f"[SYNC] Deleted {deleted_count} events from deselected calendars")
         
         # Iterate over EACH selected calendar
         for cal_id in selected_ids:
@@ -650,8 +658,22 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                         else:
                             start_str = start.get("dateTime", "")
                             if start_str:
+                                # Parse the datetime - it may include timezone offset
                                 start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                                due_time = start_dt.strftime("%H:%M")
+                                
+                                # Extract time from the original string which is in local timezone
+                                # The Google API returns time in the calendar's timezone
+                                # Format: 2026-01-09T14:30:00-07:00
+                                if 'T' in start_str:
+                                    time_part = start_str.split('T')[1]
+                                    # Get just the HH:MM part
+                                    due_time = time_part[:5]
+                                else:
+                                    due_time = start_dt.strftime("%H:%M")
+                                    
+                                # Store the date part only (local date)
+                                date_part = start_str.split('T')[0]
+                                start_dt = datetime.fromisoformat(date_part)
                             else:
                                 continue
                         

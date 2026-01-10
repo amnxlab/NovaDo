@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NovaDo - Smart Task Management</title>
-    <link rel="stylesheet" href="css/style.css?v=4">
+    <link rel="stylesheet" href="css/style.css?v=7">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -181,49 +181,99 @@
 
                 <!-- Pomodoro View -->
                 <div id="pomodoro-view" class="view hidden">
-                    <div class="pomodoro-container">
-                        <div class="pomodoro-timer">
-                            <div class="timer-display" id="timer-display">25:00</div>
-                            <div class="timer-label" id="timer-label">Focus Time</div>
+                    <div class="pomo-split-layout">
+                        <!-- Left Panel: Timer -->
+                        <div class="pomo-timer-panel">
+                            <div class="pomo-mode-tabs">
+                                <button class="pomo-tab active" data-mode="pomo">Pomo</button>
+                                <button class="pomo-tab" data-mode="stopwatch">Stopwatch</button>
+                            </div>
+
+                            <div class="pomo-task-selector">
+                                <select id="pomo-task-select">
+                                    <option value="">Select a task...</option>
+                                </select>
+                                <span class="pomo-task-arrow">›</span>
+                            </div>
+
+                            <div class="pomo-timer-ring">
+                                <svg viewBox="0 0 200 200">
+                                    <circle class="timer-bg" cx="100" cy="100" r="90" />
+                                    <circle class="timer-progress" id="timer-progress" cx="100" cy="100" r="90"
+                                        stroke-dasharray="565" stroke-dashoffset="0" />
+                                </svg>
+                                <div class="timer-display" id="timer-display">25:00</div>
+                            </div>
+
+                            <div class="pomo-action-btns">
+                                <button class="btn pomo-btn-primary" id="timer-start">Go On</button>
+                                <button class="btn pomo-btn-secondary" id="timer-exit">Exit</button>
+                            </div>
+
+                            <div class="pomo-settings-toggle">
+                                <button class="btn-icon" id="pomo-settings-btn" title="Settings">⚙️</button>
+                            </div>
+
+                            <div class="pomo-settings-panel hidden" id="pomo-settings-panel">
+                                <h4>Timer Settings</h4>
+                                <div class="pomo-setting">
+                                    <label>Focus Duration</label>
+                                    <input type="number" id="pomo-work-duration" value="25" min="1" max="60"> min
+                                </div>
+                                <div class="pomo-setting">
+                                    <label>Short Break</label>
+                                    <input type="number" id="pomo-short-break" value="5" min="1" max="30"> min
+                                </div>
+                                <div class="pomo-setting">
+                                    <label>Long Break</label>
+                                    <input type="number" id="pomo-long-break" value="15" min="1" max="60"> min
+                                </div>
+                                <div class="pomo-setting">
+                                    <label>Sessions before long break</label>
+                                    <input type="number" id="pomo-sessions-count" value="4" min="1" max="10">
+                                </div>
+                            </div>
                         </div>
-                        <div class="pomodoro-controls">
-                            <button class="btn btn-large btn-primary" id="timer-start">▶ Start</button>
-                            <button class="btn btn-large btn-secondary" id="timer-pause" disabled>⏸ Pause</button>
-                            <button class="btn btn-large btn-outline" id="timer-reset">↺ Reset</button>
-                        </div>
-                        <div class="pomodoro-stats">
-                            <div class="pomo-stat">
-                                <span class="pomo-stat-value" id="pomo-sessions">0</span>
-                                <span class="pomo-stat-label">Sessions Today</span>
+
+                        <!-- Right Panel: Stats & History -->
+                        <div class="pomo-stats-panel">
+                            <h3>Overview</h3>
+                            <div class="pomo-stats-grid">
+                                <div class="pomo-stat-box">
+                                    <div class="stat-label">Today's Pomos</div>
+                                    <div class="stat-value" id="today-pomos">0</div>
+                                </div>
+                                <div class="pomo-stat-box">
+                                    <div class="stat-label">Today's Focus Duration</div>
+                                    <div class="stat-value" id="today-duration">0<span class="stat-unit">m</span></div>
+                                </div>
+                                <div class="pomo-stat-box">
+                                    <div class="stat-label">Total Pomos</div>
+                                    <div class="stat-value" id="total-pomos">0</div>
+                                </div>
+                                <div class="pomo-stat-box highlight">
+                                    <div class="stat-label">Total Focus Duration</div>
+                                    <div class="stat-value" id="total-duration">0<span class="stat-unit">h</span> 0<span
+                                            class="stat-unit">m</span></div>
+                                </div>
                             </div>
-                            <div class="pomo-stat">
-                                <span class="pomo-stat-value" id="pomo-total-time">0m</span>
-                                <span class="pomo-stat-label">Focus Time</span>
+
+                            <div class="pomo-focus-record">
+                                <div class="focus-record-header">
+                                    <h3>Focus Record</h3>
+                                </div>
+                                <div class="focus-record-list" id="focus-record-list">
+                                    <!-- Focus records will be rendered here -->
+                                    <div class="focus-record-empty">No focus sessions yet. Start a timer to begin
+                                        tracking!</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="pomodoro-task">
-                            <label>Working on:</label>
-                            <select id="pomo-task-select">
-                                <option value="">No task selected</option>
-                            </select>
-                        </div>
-                        <div class="pomodoro-settings">
-                            <h3>Timer Settings</h3>
-                            <div class="pomo-setting">
-                                <label>Focus Duration</label>
-                                <input type="number" id="pomo-work-duration" value="25" min="1" max="60"> min
-                            </div>
-                            <div class="pomo-setting">
-                                <label>Short Break</label>
-                                <input type="number" id="pomo-short-break" value="5" min="1" max="30"> min
-                            </div>
-                            <div class="pomo-setting">
-                                <label>Long Break</label>
-                                <input type="number" id="pomo-long-break" value="15" min="1" max="60"> min
-                            </div>
-                            <div class="pomo-setting">
-                                <label>Sessions before long break</label>
-                                <input type="number" id="pomo-sessions-count" value="4" min="1" max="10">
+
+                            <div class="pomo-tag-stats hidden" id="pomo-tag-stats">
+                                <h3>Focus by Tag</h3>
+                                <div class="tag-stats-list" id="tag-stats-list">
+                                    <!-- Tag stats will be rendered here -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -452,6 +502,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
                             <option value="scheduled">📅 Scheduled</option>
                             <option value="in_progress">▶️ In Progress</option>
                             <option value="completed">✓ Completed</option>
+                            <option value="skipped">⏭️ Skipped</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -646,7 +697,7 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
 
     <script src="js/api.js?v=4"></script>
     <script src="js/notifications.js"></script>
-    <script src="js/app.js?v=4"></script>
+    <script src="js/app.js?v=7"></script>
 </body>
 
 </html>

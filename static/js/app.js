@@ -544,8 +544,19 @@ function renderCalendar() {
             const more = document.createElement('div');
             more.className = 'calendar-more';
             more.textContent = `+${dayTasks.length - 3} more`;
+            more.onclick = (e) => {
+                e.stopPropagation();
+                openDayAgenda(new Date(currentYear, currentMonth, day), dayTasks);
+            };
             cell.appendChild(more);
         }
+
+        // Click on cell background opens day agenda
+        cell.onclick = (e) => {
+            if (e.target === cell || e.target.classList.contains('day-number')) {
+                openDayAgenda(new Date(currentYear, currentMonth, day), dayTasks);
+            }
+        };
 
         // Add drop listeners for drag and drop
         cell.dataset.date = new Date(currentYear, currentMonth, day).toISOString();
@@ -892,6 +903,92 @@ async function deleteTask(id, e) {
     } catch (error) {
         showToast('Failed to delete task', 'error');
     }
+}
+
+/**
+ * Open a modal showing all tasks for a specific day (Day Agenda View)
+ */
+function openDayAgenda(date, tasks) {
+    // Remove existing modal if present
+    let modal = document.getElementById('day-agenda-modal');
+    if (modal) modal.remove();
+
+    // Create modal
+    modal = document.createElement('div');
+    modal.id = 'day-agenda-modal';
+    modal.className = 'modal-overlay';
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+
+    const dateStr = date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    // Sort tasks by time
+    const sortedTasks = [...tasks].sort((a, b) => {
+        const timeA = a.dueTime || '23:59';
+        const timeB = b.dueTime || '23:59';
+        return timeA.localeCompare(timeB);
+    });
+
+    modal.innerHTML = `
+        <div class="day-agenda-content">
+            <div class="day-agenda-header">
+                <h2>${dateStr}</h2>
+                <span class="task-count">${tasks.length} task${tasks.length !== 1 ? 's' : ''}</span>
+                <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="day-agenda-list">
+                ${sortedTasks.length === 0 ? '<p class="no-tasks">No tasks for this day</p>' : ''}
+                ${sortedTasks.map(task => {
+        const time = task.dueTime || 'All day';
+        const priorityClass = task.priority === 'high' ? 'priority-high' :
+            task.priority === 'medium' ? 'priority-medium' :
+                task.priority === 'low' ? 'priority-low' : '';
+        const isGoogle = task.googleEventId ? true : false;
+        const bgColor = task.googleCalendarColor || '';
+
+        return `
+                        <div class="day-agenda-item ${priorityClass}" 
+                             data-task-id="${task._id}"
+                             style="${bgColor ? `border-left: 4px solid ${bgColor};` : ''}"
+                             onclick="document.getElementById('day-agenda-modal').remove(); openTaskModal('${task._id}');">
+                            <div class="agenda-time">${time}</div>
+                            <div class="agenda-details">
+                                <div class="agenda-title">${task.title}</div>
+                                ${task.description ? `<div class="agenda-desc">${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</div>` : ''}
+                                <div class="agenda-tags">
+                                    ${isGoogle ? '<span class="tag google-tag">📅 Google</span>' : ''}
+                                    ${(task.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+                                </div>
+                            </div>
+                            <div class="agenda-status ${task.status === 'completed' ? 'completed' : ''}">${task.status === 'completed' ? '✓' : '○'}</div>
+                        </div>
+                    `;
+    }).join('')}
+            </div>
+            <div class="day-agenda-footer">
+                <button class="btn btn-primary" onclick="document.getElementById('day-agenda-modal').remove(); state.taskDefaultDate = '${date.toISOString().split('T')[0]}'; openTaskModal();">
+                    + Add Task
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Add escape key handler
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 }
 
 function openTaskModal(taskId = null) {
@@ -1742,7 +1839,7 @@ function renderWeekView() {
         `;
     }
 
-    // Time column and day columns
+    // Time column
     let bodyHtml = '<div class="week-time-col">';
     for (let h = 0; h < 24; h++) {
         const hourLabel = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
@@ -1750,27 +1847,102 @@ function renderWeekView() {
     }
     bodyHtml += '</div>';
 
-    // Day columns with tasks
+    // Day columns with positioned tasks
     for (let d = 0; d < 7; d++) {
         const date = new Date(startOfWeek);
         date.setDate(date.getDate() + d);
         const dayTasks = getTasksForDate(date);
         const dateStr = formatDateLocal(date);
 
-        bodyHtml += `<div class="week-day-col" data-date="${dateStr}">`;
-        for (let h = 0; h < 24; h++) {
-            const hourTasks = dayTasks.filter(t => {
-                if (!t.due_time) return h === 9;
-                const [taskHour] = t.due_time.split(':').map(Number);
-                return taskHour === h;
-            });
+        // Process tasks to get time-based positioning
+        const processedTasks = dayTasks.map(t => {
+            // Parse start time
+            let startMinutes = 9 * 60; // Default 9 AM
+            if (t.dueTime) {
+                const [h, m] = t.dueTime.split(':').map(Number);
+                startMinutes = h * 60 + (m || 0);
+            }
+            // Duration: 1 hour by default for events
+            const duration = t.googleEventId ? 60 : 30; // Google events 1hr, tasks 30min
+            return {
+                ...t,
+                startMinutes,
+                endMinutes: startMinutes + duration
+            };
+        }).sort((a, b) => a.startMinutes - b.startMinutes);
 
-            bodyHtml += `<div class="week-hour-slot" data-hour="${h}">`;
-            hourTasks.forEach(t => {
-                bodyHtml += `<div class="week-task status-${t.status || 'scheduled'}" data-task-id="${t._id || t.id}" onclick="openTaskModal('${t._id || t.id}')">${escapeHTML(t.title)}</div>`;
+        // Calculate overlapping columns using a greedy algorithm
+        const columns = [];
+        processedTasks.forEach(task => {
+            // Find a column where this task doesn't overlap
+            let placed = false;
+            for (let col = 0; col < columns.length; col++) {
+                const lastInCol = columns[col][columns[col].length - 1];
+                if (task.startMinutes >= lastInCol.endMinutes) {
+                    columns[col].push(task);
+                    task.column = col;
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                task.column = columns.length;
+                columns.push([task]);
+            }
+        });
+
+        // Calculate max columns at any point for width calculation
+        processedTasks.forEach(task => {
+            let maxConcurrent = 1;
+            processedTasks.forEach(other => {
+                if (task !== other) {
+                    // Check if overlaps
+                    if (task.startMinutes < other.endMinutes && task.endMinutes > other.startMinutes) {
+                        maxConcurrent = Math.max(maxConcurrent, Math.max(task.column, other.column) + 1);
+                    }
+                }
             });
-            bodyHtml += '</div>';
+            task.totalColumns = maxConcurrent;
+        });
+
+        // Build day column HTML
+        bodyHtml += `<div class="week-day-col" data-date="${dateStr}">`;
+
+        // Background hour slots (for visual grid)
+        for (let h = 0; h < 24; h++) {
+            bodyHtml += `<div class="week-hour-slot" data-hour="${h}"></div>`;
         }
+
+        // Positioned tasks
+        processedTasks.forEach(task => {
+            const totalCols = Math.max(task.totalColumns, columns.length);
+            const width = 100 / totalCols;
+            const left = task.column * width;
+            const top = (task.startMinutes / (24 * 60)) * 100;
+            const height = Math.max(((task.endMinutes - task.startMinutes) / (24 * 60)) * 100, 2); // Min 2% height
+
+            const bgColor = task.googleCalendarColor || '';
+            const style = `
+                position: absolute;
+                top: ${top}%;
+                left: ${left}%;
+                width: calc(${width}% - 2px);
+                height: ${height}%;
+                min-height: 20px;
+                ${bgColor ? `background: ${bgColor};` : ''}
+            `.replace(/\s+/g, ' ');
+
+            bodyHtml += `
+                <div class="week-task-positioned status-${task.status || 'scheduled'}" 
+                     data-task-id="${task._id || task.id}" 
+                     style="${style}"
+                     onclick="openTaskModal('${task._id || task.id}')">
+                    <span class="week-task-time">${task.dueTime || ''}</span>
+                    <span class="week-task-title">${escapeHTML(task.title)}</span>
+                </div>
+            `;
+        });
+
         bodyHtml += '</div>';
     }
 
@@ -1784,7 +1956,9 @@ function renderAgendaView() {
     if (!elements.calendarAgendaView) return;
     elements.calendarAgendaView.classList.remove('hidden');
 
-    elements.calendarMonth.textContent = 'Upcoming Tasks';
+    // Get current month for header
+    const currentMonth = state.calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    elements.calendarMonth.textContent = currentMonth;
 
     // Get tasks for next 30 days
     const today = new Date();
@@ -1792,12 +1966,23 @@ function renderAgendaView() {
 
     const upcomingTasks = state.tasks
         .filter(t => {
-            if (!t.due_date) return false;
-            const taskDate = new Date(t.due_date);
+            const taskDueDate = t.dueDate || t.due_date;
+            if (!taskDueDate) return false;
+            const taskDate = new Date(taskDueDate);
             taskDate.setHours(0, 0, 0, 0);
             return taskDate >= today;
         })
-        .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+        .sort((a, b) => {
+            const dateA = new Date(a.dueDate || a.due_date);
+            const dateB = new Date(b.dueDate || b.due_date);
+            if (dateA.toDateString() !== dateB.toDateString()) {
+                return dateA - dateB;
+            }
+            // Same day - sort by time
+            const timeA = a.dueTime || a.due_time || '99:99';
+            const timeB = b.dueTime || b.due_time || '99:99';
+            return timeA.localeCompare(timeB);
+        });
 
     if (upcomingTasks.length === 0) {
         elements.calendarAgendaView.innerHTML = '<div class="agenda-empty">No upcoming tasks</div>';
@@ -1807,41 +1992,93 @@ function renderAgendaView() {
     // Group by date
     const grouped = {};
     upcomingTasks.forEach(task => {
-        const dateKey = new Date(task.due_date).toDateString();
+        const taskDate = task.dueDate || task.due_date;
+        const dateKey = new Date(taskDate).toDateString();
         if (!grouped[dateKey]) grouped[dateKey] = [];
         grouped[dateKey].push(task);
     });
 
-    let html = '';
-    Object.keys(grouped).slice(0, 14).forEach(dateKey => {
-        const date = new Date(dateKey);
-        const isToday = isSameDay(date, today);
-        const isTomorrow = isSameDay(date, new Date(today.getTime() + 86400000));
+    // Helper to format time
+    const formatTime = (time) => {
+        if (!time) return 'All Day';
+        const [h, m] = time.split(':').map(Number);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const hour = h % 12 || 12;
+        return `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+    };
 
-        let dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        if (isToday) dateLabel = 'Today';
-        else if (isTomorrow) dateLabel = 'Tomorrow';
+    // Helper to get end time (add 1 hour for Google events, 30 min for tasks)
+    const getEndTime = (time, isGoogle) => {
+        if (!time) return '';
+        const [h, m] = time.split(':').map(Number);
+        const addMinutes = isGoogle ? 60 : 30;
+        let endH = h + Math.floor((m + addMinutes) / 60);
+        let endM = (m + addMinutes) % 60;
+        if (endH >= 24) endH -= 24;
+        const ampm = endH >= 12 ? 'PM' : 'AM';
+        const hour = endH % 12 || 12;
+        return `${String(hour).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${ampm}`;
+    };
+
+    let html = '';
+    Object.keys(grouped).slice(0, 30).forEach(dateKey => {
+        const date = new Date(dateKey);
+        const dayNum = date.getDate();
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        const isToday = isSameDay(date, today);
+
+        // Sort tasks: All Day first, then by time
+        const dayTasks = grouped[dateKey].sort((a, b) => {
+            const timeA = a.dueTime || a.due_time;
+            const timeB = b.dueTime || b.due_time;
+            if (!timeA && timeB) return -1; // All day first
+            if (timeA && !timeB) return 1;
+            if (!timeA && !timeB) return 0;
+            return timeA.localeCompare(timeB);
+        });
 
         html += `
-            <div class="agenda-day-group">
-                <div class="agenda-day-header">
-                    <span class="agenda-day-date">${dateLabel}</span>
-                    <span class="agenda-day-weekday">${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+            <div class="ticktick-agenda-day ${isToday ? 'today' : ''}">
+                <div class="ticktick-agenda-date">
+                    <span class="day-num ${isToday ? 'today' : ''}">${dayNum}</span>
+                    <span class="day-name">${dayName}</span>
                 </div>
-                <div class="agenda-tasks">
-                    ${grouped[dateKey].map(t => `
-                        <div class="agenda-task ${t.status === 'completed' ? 'completed' : ''}" data-task-id="${t._id || t.id}">
-                            <div class="agenda-task-time">${t.due_time || 'All day'}</div>
-                            <div class="agenda-task-checkbox" onclick="toggleCalendarTask('${t._id || t.id}', event)"></div>
-                            <div class="agenda-task-title" onclick="openTaskModal('${t._id || t.id}')">${escapeHTML(t.title)}</div>
-                        </div>
-                    `).join('')}
+                <div class="ticktick-agenda-events">
+                    ${dayTasks.map(t => {
+            const time = t.dueTime || t.due_time;
+            const isGoogle = !!t.googleEventId;
+            const bgColor = t.googleCalendarColor || '';
+            const timeStart = formatTime(time);
+            const timeEnd = time ? getEndTime(time, isGoogle) : '';
+            const timeRange = time ? `${timeStart} - ${timeEnd}` : '';
+            const isCompleted = t.status === 'completed';
+            const hasPriority = t.priority && t.priority !== 'none';
+            const priorityColor = t.priority === 'high' ? '#ff5630' :
+                t.priority === 'medium' ? '#ffab00' :
+                    t.priority === 'low' ? '#36b37e' : '';
+
+            return `
+                            <div class="ticktick-agenda-row">
+                                <div class="ticktick-time-col">
+                                    <span class="time-text">${time ? timeStart : 'All Day'}</span>
+                                    ${isGoogle ? '<span class="calendar-icon">📅</span>' : ''}
+                                </div>
+                                <div class="ticktick-event-card ${isCompleted ? 'completed' : ''}"
+                                     style="${bgColor ? `background: ${bgColor};` : ''} ${priorityColor && !bgColor ? `border-left: 3px solid ${priorityColor};` : ''}"
+                                     data-task-id="${t._id || t.id}"
+                                     onclick="openTaskModal('${t._id || t.id}')">
+                                    ${time && isGoogle ? `<div class="event-time-range">${timeRange}</div>` : ''}
+                                    <div class="event-title">${escapeHTML(t.title)}</div>
+                                </div>
+                            </div>
+                        `;
+        }).join('')}
                 </div>
             </div>
         `;
     });
 
-    elements.calendarAgendaView.innerHTML = html;
+    elements.calendarAgendaView.innerHTML = `<div class="ticktick-agenda-container">${html}</div>`;
 }
 
 // Helper functions for calendar

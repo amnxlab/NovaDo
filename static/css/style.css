@@ -1395,6 +1395,64 @@ textarea {
     cursor: pointer;
 }
 
+/* Positioned week tasks (for overlap handling) */
+.week-task-positioned {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent-primary);
+    border-radius: 4px;
+    padding: 0.25rem 0.375rem;
+    font-size: 0.6875rem;
+    overflow: hidden;
+    cursor: pointer;
+    z-index: 1;
+    transition: all var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.week-task-positioned:hover {
+    z-index: 10;
+    box-shadow: var(--shadow-md);
+    transform: scale(1.02);
+}
+
+.week-task-positioned .week-task-time {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.week-task-positioned .week-task-title {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Google Calendar colored events */
+.week-task-positioned[style*="background:"] {
+    border-left: none;
+}
+
+.week-task-positioned[style*="background:"] .week-task-time,
+.week-task-positioned[style*="background:"] .week-task-title {
+    color: #fff;
+}
+
+/* Completed status */
+.week-task-positioned.status-completed {
+    opacity: 0.5;
+}
+
+.week-task-positioned.status-completed .week-task-title {
+    text-decoration: line-through;
+}
+
 /* Agenda View */
 .calendar-agenda-view {
     background: var(--bg-primary);
@@ -1410,6 +1468,133 @@ textarea {
     color: var(--text-muted);
 }
 
+/* TickTick-style Agenda */
+.ticktick-agenda-container {
+    padding: 0;
+}
+
+.ticktick-agenda-day {
+    display: flex;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.ticktick-agenda-day:last-child {
+    border-bottom: none;
+}
+
+.ticktick-agenda-day.today {
+    background: var(--bg-secondary);
+}
+
+.ticktick-agenda-date {
+    width: 100px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 0.25rem;
+}
+
+.ticktick-agenda-date .day-num {
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.ticktick-agenda-date .day-num.today {
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+
+.ticktick-agenda-date .day-name {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+}
+
+.ticktick-agenda-events {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ticktick-agenda-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.ticktick-time-col {
+    width: 70px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding-top: 0.5rem;
+}
+
+.ticktick-time-col .time-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.ticktick-time-col .calendar-icon {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.ticktick-event-card {
+    flex: 1;
+    padding: 0.625rem 0.875rem;
+    background: var(--accent-light);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-left: 3px solid var(--accent-primary);
+}
+
+.ticktick-event-card:hover {
+    transform: translateX(2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.ticktick-event-card[style*="background:"] {
+    border-left: none;
+    border-radius: var(--border-radius);
+}
+
+.ticktick-event-card .event-time-range {
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.25rem;
+    text-decoration: underline;
+}
+
+.ticktick-event-card .event-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ticktick-event-card[style*="background:"] .event-title {
+    color: #fff;
+}
+
+.ticktick-event-card.completed {
+    opacity: 0.5;
+}
+
+.ticktick-event-card.completed .event-title {
+    text-decoration: line-through;
+}
+
+/* Legacy agenda styles (keep for compatibility) */
 .agenda-day-group {
     border-bottom: 1px solid var(--border-light);
 }
@@ -2490,9 +2675,374 @@ textarea {
 }
 
 /* ============================================
-   Pomodoro Timer
+   Pomodoro Timer - TickTick Style
    ============================================ */
 
+.pomo-split-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    height: calc(100vh - var(--header-height) - 3rem);
+    background: var(--border-color);
+}
+
+@media (max-width: 900px) {
+    .pomo-split-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+/* Left Panel - Timer */
+.pomo-timer-panel {
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+}
+
+.pomo-mode-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+}
+
+.pomo-tab {
+    padding: 0.5rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-radius: 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.pomo-tab.active {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.pomo-task-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    cursor: pointer;
+}
+
+.pomo-task-selector select {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    cursor: pointer;
+    max-width: 200px;
+}
+
+.pomo-task-selector select:focus {
+    outline: none;
+}
+
+.pomo-task-arrow {
+    color: var(--text-muted);
+}
+
+.pomo-timer-ring {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin-bottom: 2rem;
+}
+
+.pomo-timer-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.pomo-timer-ring .timer-bg {
+    fill: none;
+    stroke: var(--bg-tertiary);
+    stroke-width: 6;
+}
+
+.pomo-timer-ring .timer-progress {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.pomo-timer-ring .timer-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    font-weight: 300;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.pomo-action-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 200px;
+}
+
+.pomo-btn-primary {
+    background: var(--accent-primary);
+    color: white;
+    padding: 0.875rem 2rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.pomo-btn-primary:hover {
+    background: var(--accent-secondary);
+}
+
+.pomo-btn-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 0.75rem 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 25px;
+    font-size: 0.9375rem;
+}
+
+.pomo-btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.pomo-settings-toggle {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+}
+
+.pomo-settings-panel {
+    position: absolute;
+    bottom: 4rem;
+    right: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 1rem;
+    width: 280px;
+    z-index: 10;
+}
+
+.pomo-settings-panel h4 {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.pomo-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.pomo-setting label {
+    color: var(--text-primary);
+}
+
+.pomo-setting input {
+    width: 50px;
+    padding: 0.375rem;
+    text-align: center;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+}
+
+/* Right Panel - Stats */
+.pomo-stats-panel {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.pomo-stats-panel h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.pomo-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.pomo-stat-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.pomo-stat-box .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.375rem;
+}
+
+.pomo-stat-box .stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pomo-stat-box .stat-unit {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.pomo-stat-box.highlight {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+}
+
+.pomo-stat-box.highlight .stat-value {
+    color: var(--accent-primary);
+}
+
+/* Focus Record */
+.pomo-focus-record {
+    margin-bottom: 1.5rem;
+}
+
+.focus-record-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.focus-record-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.focus-record-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.focus-record-date {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    margin-top: 1rem;
+}
+
+.focus-record-date:first-child {
+    margin-top: 0;
+}
+
+.focus-record-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.focus-record-item:last-child {
+    border-bottom: none;
+}
+
+.focus-record-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--accent-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+}
+
+.focus-record-details {
+    flex: 1;
+}
+
+.focus-record-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.focus-record-task {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    margin-top: 0.125rem;
+}
+
+.focus-record-duration {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Tag Stats */
+.pomo-tag-stats h3 {
+    margin-bottom: 1rem;
+}
+
+.tag-stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.tag-stat-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+}
+
+.tag-stat-name {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.tag-stat-duration {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--accent-primary);
+}
+
+/* Legacy Pomodoro CSS - kept for backward compatibility */
 .pomodoro-container {
     max-width: 500px;
     margin: 0 auto;
@@ -2545,76 +3095,6 @@ textarea {
     padding: 1.5rem;
     background: var(--bg-secondary);
     border-radius: var(--border-radius-lg);
-}
-
-.pomo-stat {
-    text-align: center;
-}
-
-.pomo-stat-value {
-    display: block;
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--accent-primary);
-}
-
-.pomo-stat-label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.pomodoro-task {
-    margin-bottom: 2rem;
-    text-align: left;
-}
-
-.pomodoro-task label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--text-secondary);
-}
-
-.pomodoro-task select {
-    width: 100%;
-    padding: 0.75rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    color: var(--text-primary);
-}
-
-.pomodoro-settings {
-    text-align: left;
-    padding: 1.5rem;
-    background: var(--bg-secondary);
-    border-radius: var(--border-radius-lg);
-}
-
-.pomodoro-settings h3 {
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    color: var(--text-secondary);
-}
-
-.pomo-setting {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-}
-
-.pomo-setting label {
-    color: var(--text-primary);
-}
-
-.pomo-setting input {
-    width: 60px;
-    padding: 0.5rem;
-    text-align: center;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    color: var(--text-primary);
 }
 
 /* ============================================
@@ -3358,6 +3838,7 @@ textarea {
     font-size: 0.9rem;
     user-select: none;
 }
+
 /* Hacker Theme Button Style */
 .theme-btn[data-theme='hacker'] {
     background-color: #000000;
@@ -3418,14 +3899,205 @@ textarea {
     box-shadow: none;
     text-shadow: none;
 }
+
 .theme-btn[data-theme='hacker']:hover {
     background-color: #161b22;
     border-color: #7ee787;
     box-shadow: 0 0 8px rgba(126, 231, 135, 0.2);
 }
+
 .theme-btn[data-theme='hacker'].active {
     background-color: #2ea043;
     color: #ffffff;
     font-weight: bold;
     box-shadow: 0 0 12px rgba(46, 160, 67, 0.4);
+}
+
+/* ============================================
+   Day Agenda Modal
+   ============================================ */
+
+#day-agenda-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.day-agenda-content {
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    animation: modalIn 0.25s ease-out;
+    overflow: hidden;
+}
+
+.day-agenda-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.day-agenda-header h2 {
+    flex: 1;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.day-agenda-header .task-count {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--accent-light);
+    color: var(--accent-primary);
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.day-agenda-header .close-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius);
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.day-agenda-header .close-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.day-agenda-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.day-agenda-list .no-tasks {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+}
+
+.day-agenda-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.875rem 1.5rem;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    border-left: 4px solid transparent;
+}
+
+.day-agenda-item:hover {
+    background: var(--bg-hover);
+}
+
+.agenda-time {
+    min-width: 60px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding-top: 0.125rem;
+}
+
+.agenda-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.agenda-title {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+}
+
+.agenda-desc {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-bottom: 0.375rem;
+    line-height: 1.4;
+}
+
+.agenda-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.agenda-tags .tag {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-radius: 10px;
+}
+
+.agenda-tags .google-tag {
+    background: var(--accent-light);
+    color: var(--accent-primary);
+}
+
+.agenda-status {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+}
+
+.agenda-status.completed {
+    color: var(--success);
+}
+
+.day-agenda-item.priority-high {
+    border-left-color: var(--priority-high) !important;
+}
+
+.day-agenda-item.priority-medium {
+    border-left-color: var(--priority-medium) !important;
+}
+
+.day-agenda-item.priority-low {
+    border-left-color: var(--priority-low) !important;
+}
+
+.day-agenda-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.day-agenda-footer .btn {
+    width: 100%;
+}
+
+/* Make calendar-more clickable */
+.calendar-more {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.calendar-more:hover {
+    color: var(--accent-primary);
+    text-decoration: underline;
 }
