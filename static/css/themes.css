@@ -82,6 +82,28 @@
     /* Layout */
     --sidebar-width: 280px;
     --header-height: 56px;
+
+    /* Modern Event Palette (Vibrant & Pastel) */
+    --evt-0: #FF9B9B;
+    /* Soft Red */
+    --evt-1: #FFC971;
+    /* Warm Orange */
+    --evt-2: #FFD93D;
+    /* Sunny Yellow */
+    --evt-3: #6BCB77;
+    /* Fresh Green */
+    --evt-4: #4D96FF;
+    /* Sky Blue */
+    --evt-5: #6F69AC;
+    /* Deep Purple */
+    --evt-6: #FF6B6B;
+    /* Coral */
+    --evt-7: #A1E3D8;
+    /* Teal */
+    --evt-8: #F0A500;
+    /* Amber */
+    --evt-9: #E05D5D;
+    /* Brick */
 }
 
 

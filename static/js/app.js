@@ -52,6 +52,7 @@ function saveSidebarConfig(config) {
 
 // DOM Elements
 const elements = {
+    loadingScreen: document.getElementById('loading-screen'),
     authScreen: document.getElementById('auth-screen'),
     mainScreen: document.getElementById('main-screen'),
     loginForm: document.getElementById('login-form'),
@@ -436,6 +437,7 @@ function updateSidebarAvatar(avatarSrc) {
 async function checkAuth() {
     if (!api.token) {
         showAuthScreen();
+        hideLoadingScreen();
         return;
     }
 
@@ -447,6 +449,8 @@ async function checkAuth() {
     } catch (error) {
         api.logout();
         showAuthScreen();
+    } finally {
+        hideLoadingScreen();
     }
 }
 
@@ -495,8 +499,15 @@ function handleLogout() {
 }
 
 // Screens
+function hideLoadingScreen() {
+    if (elements.loadingScreen) {
+        elements.loadingScreen.classList.add('hidden');
+    }
+}
+
 function showAuthScreen() {
     elements.authScreen.classList.remove('hidden');
+    elements.loadingScreen.classList.add('hidden');
     elements.mainScreen.classList.add('hidden');
 }
 
@@ -621,7 +632,7 @@ function renderCalendar() {
 
         displayTasks.forEach(task => {
             const taskEl = document.createElement('div');
-            
+
             // Calculate event duration for short-duration optimization (Requirements 3.3)
             let duration = 0;
             if (task.dueDate && task.startTime) {
@@ -629,37 +640,37 @@ function renderCalendar() {
                 const end = new Date(task.dueDate);
                 duration = (end - start) / (1000 * 60); // duration in minutes
             }
-            
+
             // Get enhanced styling with theme integration
             const styleConfig = getEnhancedEventCardStyles({
                 ...task,
                 duration,
                 googleCalendarColor: task.googleCalendarColor
             }, document.documentElement.dataset.theme, 'month');
-            
+
             // Apply unified CSS classes for theme colors
             const cssClasses = [
                 'calendar-task-item',
                 styleConfig.classes
             ].filter(Boolean).join(' ');
-            
+
             // Apply styles
             taskEl.className = cssClasses;
             if (styleConfig.style) {
                 taskEl.style.cssText = styleConfig.style; // Only Google Calendar colors
             }
-            
+
             // Create structured content with time and title (Requirements 3.6)
             const eventContent = document.createElement('div');
             eventContent.style.display = 'flex';
             eventContent.style.alignItems = 'center';
             eventContent.style.width = '100%';
-            
+
             // Add time if available (bold timestamps - Requirements 3.6)
             if (task.dueDate || task.dueTime || task.due_time) {
                 const timeEl = document.createElement('span');
                 timeEl.className = 'event-time';
-                
+
                 // Fix time translation for prayer calendar and other synced events
                 let timeToDisplay = '';
                 if (task.dueTime || task.due_time) {
@@ -672,21 +683,21 @@ function renderCalendar() {
                         timeToDisplay = formatTimeDisplay(timeStr);
                     }
                 }
-                
+
                 if (timeToDisplay) {
                     timeEl.textContent = timeToDisplay;
                     eventContent.appendChild(timeEl);
                 }
             }
-            
+
             // Add title with truncation support (Requirements 3.4)
             const titleEl = document.createElement('span');
             titleEl.className = 'event-title';
             titleEl.textContent = task.title;
             eventContent.appendChild(titleEl);
-            
+
             taskEl.appendChild(eventContent);
-            
+
             // Enhanced tooltip for long titles (Requirements 3.4)
             if (task.title.length > 25) {
                 taskEl.title = `${task.title}${task.description ? '\n' + task.description : ''}`;
@@ -705,7 +716,7 @@ function renderCalendar() {
             taskEl.dataset.taskId = task._id;
             taskEl.dataset.originalDate = task.dueDate;
             taskEl.dataset.originalTime = task.dueTime || task.due_time || '';
-            
+
             // Add drag event listeners
             taskEl.addEventListener('dragstart', handleCalendarTaskDragStart);
             taskEl.addEventListener('dragend', handleCalendarTaskDragEnd);
@@ -776,6 +787,8 @@ function showView(view) {
             elements.currentViewTitle.textContent = 'Habits';
             document.querySelector('[data-view="habits"]')?.classList.add('active');
             renderHabits();
+            // Initialize Lucide icons for the habits view
+            if (typeof lucide !== 'undefined') lucide.createIcons();
             break;
         case 'calendar':
             elements.calendarView.classList.remove('hidden');
@@ -793,10 +806,8 @@ function showView(view) {
             elements.statsView.classList.remove('hidden');
             elements.currentViewTitle.textContent = 'Statistics';
             document.querySelector('[data-view="stats"]')?.classList.add('active');
-            if (window.statsModule) {
-                window.statsModule.init();
-            } else {
-                loadStats();
+            if (window.statisticsModule) {
+                window.statisticsModule.init();
             }
             break;
         case 'settings':
@@ -833,6 +844,8 @@ function selectSmartList(listId) {
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
     elements.settingsView.classList.add('hidden');
+    elements.pomodoroView.classList.add('hidden');
+    elements.statsView.classList.add('hidden');
 
     renderTasks();
 }
@@ -851,6 +864,8 @@ function selectCustomList(listId) {
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
     elements.settingsView.classList.add('hidden');
+    elements.pomodoroView.classList.add('hidden');
+    elements.statsView.classList.add('hidden');
 
     renderTasks();
 }
@@ -948,7 +963,7 @@ function getStatusIcon(status, theme = 'light', animated = false) {
                     </path>
                 </svg>`;
     }
-    
+
     const icons = {
         'scheduled': '📅',      // Scheduled - calendar emoji (unchanged)
         'in_progress': '⏳',    // In Progress - hourglass/loading indicator
@@ -963,12 +978,12 @@ function getEventCardStyles(event, theme) {
     const isShort = event.duration && event.duration < 30; // minutes
     const currentTheme = theme || document.documentElement.dataset.theme || 'light';
     const isDark = currentTheme.includes('dark') || currentTheme === 'dark';
-    
+
     if (event.googleCalendarColor) {
         // Keep Google Calendar colors but add theme-aware opacity
         return `background: ${event.googleCalendarColor};`;
     }
-    
+
     if (isDark) {
         return `background: linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%); border-left: 3px solid var(--accent-primary);`;
     } else {
@@ -1080,10 +1095,10 @@ async function completeTask(id, e) {
     try {
         const updatedTask = await api.updateTask(id, { status: newStatus });
         state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask };
-        
+
         // Cross-view synchronization (Requirements 1.6)
         updateAllViews();
-        
+
         showToast(newStatus === 'completed' ? 'Task completed!' : 'Task reopened');
     } catch (error) {
         console.error('Complete task error:', error);
@@ -1112,10 +1127,10 @@ async function cycleTaskStatus(id, e) {
     try {
         const updatedTask = await api.updateTask(id, { status: nextStatus });
         state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask };
-        
+
         // Cross-view synchronization (Requirements 1.6)
         updateAllViews();
-        
+
         showToast(`Task: ${statusLabels[nextStatus]}`);
     } catch (error) {
         console.error('Cycle task status error:', error);
@@ -1128,12 +1143,12 @@ function updateAllViews() {
     renderTasks();
     renderCalendar();
     updateCounts();
-    
+
     // Update any other views that might be showing tasks
     if (state.currentView === 'habits') {
         renderHabits();
     }
-    
+
     // Update stats if stats view is active
     if (state.currentView === 'stats' && window.statsModule) {
         window.statsModule.refresh();
@@ -1148,10 +1163,10 @@ async function restoreTask(id, e) {
         if (taskIndex !== -1) {
             state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...updatedTask };
         }
-        
+
         // Cross-view synchronization (Requirements 1.6)
         updateAllViews();
-        
+
         showToast('Task restored to Scheduled');
     } catch (error) {
         console.error('Restore task error:', error);
@@ -1988,6 +2003,8 @@ function renderHabits() {
                 <p>Create habits to track your daily routines</p>
             </div>
         `;
+        // Initialize Lucide icons for the add button
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
 
@@ -1995,6 +2012,9 @@ function renderHabits() {
         const card = createHabitCard(habit);
         elements.habitsList.appendChild(card);
     });
+
+    // Initialize Lucide icons after rendering
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function createHabitCard(habit) {
@@ -2301,22 +2321,22 @@ function renderDayView() {
             }
             const statusIcon = getStatusIcon(t.status || 'scheduled');
             const duration = t.googleEventId ? 60 : 30;
-            
+
             // Get enhanced styling with theme integration
             const styleConfig = getEnhancedEventCardStyles({
                 ...t,
                 duration,
                 googleCalendarColor: t.googleCalendarColor
             }, document.documentElement.dataset.theme, 'day');
-            
+
             // Apply unified CSS classes for theme colors
             const cssClasses = [
                 'calendar-task',
                 styleConfig.classes
             ].filter(Boolean).join(' ');
-            
+
             const inlineStyle = styleConfig.style; // Only Google Calendar colors
-            
+
             return `
                         <div class="${cssClasses}" 
                              data-task-id="${t._id || t.id}" 
@@ -2407,29 +2427,34 @@ function renderWeekView() {
 
         // Process tasks to get time-based positioning
         const processedTasks = dayTasks.map(t => {
-            // Get time from dueTime field FIRST (for Google Calendar events)
-            // Fallback to extracting from dueDate for regular tasks
+            // dueTime is stored as LOCAL time "HH:MM" in the backend (already converted from UTC)
+            // dueDate is stored as midnight (no time component)
             let startMinutes = 9 * 60; // Default 9 AM
             let dueTime = null;
 
-            // Priority 1: Use dueTime field (Google Calendar events have this)
+            // Priority 1: Use dueTime field if available (already in local time)
             if (t.dueTime || t.due_time) {
                 const timeStr = t.dueTime || t.due_time;
-                const [h, m] = timeStr.split(':').map(Number);
-                if (!isNaN(h) && !isNaN(m)) {
-                    startMinutes = h * 60 + m;
-                    dueTime = timeStr;
+                // Parse HH:MM format directly
+                if (timeStr && timeStr.match(/^\d{1,2}:\d{2}$/)) {
+                    const [h, m] = timeStr.split(':').map(Number);
+                    if (!isNaN(h) && !isNaN(m)) {
+                        startMinutes = h * 60 + m;
+                        dueTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                    }
                 }
             }
-            // Priority 2: Extract from dueDate ISO string (for regular tasks with time in date)
+            // Priority 2: Extract from dueDate if it has time component (non-Google events)
             else if (t.dueDate) {
                 const d = new Date(t.dueDate);
-                const hours = d.getHours();
-                const mins = d.getMinutes();
-                // Only use time if it's not midnight (meaning a time was set)
-                if (hours !== 0 || mins !== 0) {
-                    startMinutes = hours * 60 + mins;
-                    dueTime = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                if (!isNaN(d.getTime())) {
+                    const hours = d.getHours();
+                    const mins = d.getMinutes();
+                    // Only use time if it's not exactly midnight
+                    if (hours !== 0 || mins !== 0) {
+                        startMinutes = hours * 60 + mins;
+                        dueTime = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                    }
                 }
             }
 
@@ -2443,39 +2468,108 @@ function renderWeekView() {
             };
         }).sort((a, b) => a.startMinutes - b.startMinutes);
 
-        // Calculate overlapping columns using a greedy algorithm
-        const columns = [];
-        processedTasks.forEach(task => {
-            // Find a column where this task doesn't overlap
-            let placed = false;
-            for (let col = 0; col < columns.length; col++) {
-                const lastInCol = columns[col][columns[col].length - 1];
-                if (task.startMinutes >= lastInCol.endMinutes) {
-                    columns[col].push(task);
-                    task.column = col;
-                    placed = true;
-                    break;
-                }
-            }
-            if (!placed) {
-                task.column = columns.length;
-                columns.push([task]);
-            }
-        });
+        // Simple column assignment for non-overlapping events
+        // If events don't overlap, they each take full width
+        // If events overlap, they share the column space
 
-        // Calculate max columns at any point for width calculation
-        processedTasks.forEach(task => {
-            let maxConcurrent = 1;
-            processedTasks.forEach(other => {
-                if (task !== other) {
-                    // Check if overlaps
-                    if (task.startMinutes < other.endMinutes && task.endMinutes > other.startMinutes) {
-                        maxConcurrent = Math.max(maxConcurrent, Math.max(task.column, other.column) + 1);
+        if (processedTasks.length === 0) {
+            // No tasks - continue to next day
+        } else if (processedTasks.length === 1) {
+            // Single task takes full width
+            processedTasks[0].column = 0;
+            processedTasks[0].totalColumns = 1;
+        } else {
+            // Multiple tasks - check for overlaps
+            // Step 1: Build overlap groups
+            const groups = [];
+            const taskToGroup = new Map();
+
+            processedTasks.forEach((task, i) => {
+                // Find all tasks this overlaps with
+                let foundGroup = null;
+
+                for (const group of groups) {
+                    for (const existingTask of group) {
+                        // Check overlap: task.start < existing.end AND task.end > existing.start
+                        if (task.startMinutes < existingTask.endMinutes &&
+                            task.endMinutes > existingTask.startMinutes) {
+                            foundGroup = group;
+                            break;
+                        }
                     }
+                    if (foundGroup) break;
+                }
+
+                if (foundGroup) {
+                    foundGroup.push(task);
+                    taskToGroup.set(task, foundGroup);
+                } else {
+                    const newGroup = [task];
+                    groups.push(newGroup);
+                    taskToGroup.set(task, newGroup);
                 }
             });
-            task.totalColumns = maxConcurrent;
-        });
+
+            // Step 2: Merge overlapping groups (transitive closure)
+            let merged = true;
+            while (merged) {
+                merged = false;
+                for (let i = 0; i < groups.length; i++) {
+                    for (let j = i + 1; j < groups.length; j++) {
+                        // Check if any task in group i overlaps with any in group j
+                        let shouldMerge = false;
+                        for (const taskI of groups[i]) {
+                            for (const taskJ of groups[j]) {
+                                if (taskI.startMinutes < taskJ.endMinutes &&
+                                    taskI.endMinutes > taskJ.startMinutes) {
+                                    shouldMerge = true;
+                                    break;
+                                }
+                            }
+                            if (shouldMerge) break;
+                        }
+                        if (shouldMerge) {
+                            // Merge group j into group i
+                            groups[i].push(...groups[j]);
+                            groups.splice(j, 1);
+                            merged = true;
+                            break;
+                        }
+                    }
+                    if (merged) break;
+                }
+            }
+
+            // Step 3: For each group, assign columns using greedy algorithm
+            groups.forEach(group => {
+                // Sort by start time
+                group.sort((a, b) => a.startMinutes - b.startMinutes);
+
+                const columns = [];
+                group.forEach(task => {
+                    let placed = false;
+                    for (let col = 0; col < columns.length; col++) {
+                        const lastInCol = columns[col][columns[col].length - 1];
+                        if (task.startMinutes >= lastInCol.endMinutes) {
+                            columns[col].push(task);
+                            task.column = col;
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        task.column = columns.length;
+                        columns.push([task]);
+                    }
+                });
+
+                // All tasks in this group share the same totalColumns
+                const totalCols = columns.length;
+                group.forEach(task => {
+                    task.totalColumns = totalCols;
+                });
+            });
+        }
 
         // Build day column HTML
         bodyHtml += `<div class="week-day-col" data-date="${dateStr}">`;
@@ -2487,9 +2581,9 @@ function renderWeekView() {
 
         // Positioned tasks
         processedTasks.forEach(task => {
-            const totalCols = Math.max(task.totalColumns, columns.length);
+            const totalCols = task.totalColumns || 1;
             const width = 100 / totalCols;
-            const left = task.column * width;
+            const left = (task.column || 0) * width;
             const top = (task.startMinutes / (24 * 60)) * 100;
             const height = Math.max(((task.endMinutes - task.startMinutes) / (24 * 60)) * 100, 2); // Min 2% height
 
@@ -2499,13 +2593,13 @@ function renderWeekView() {
                 duration: task.endMinutes - task.startMinutes,
                 googleCalendarColor: task.googleCalendarColor
             }, document.documentElement.dataset.theme, 'week');
-            
+
             // Apply unified CSS classes for theme colors
             const cssClasses = [
                 'week-task-positioned',
                 styleConfig.classes
             ].filter(Boolean).join(' ');
-            
+
             const positionStyle = `
                 position: absolute;
                 top: ${top}%;
@@ -2514,18 +2608,18 @@ function renderWeekView() {
                 height: ${height}%;
                 min-height: 20px;
             `.replace(/\s+/g, ' ');
-            
+
             const finalStyle = positionStyle + (styleConfig.style || ''); // Add Google Calendar colors if any
-            
+
             const statusIcon = getStatusIcon(task.status || 'scheduled');
-            
+
             // Fix time display for prayer calendar and other synced events
             let timeDisplay = '';
             if (task.displayTime) {
                 const fixedTime = fixTimeTranslation(task.displayTime, !!task.googleEventId);
                 timeDisplay = formatTimeDisplay(fixedTime);
             }
-            
+
             bodyHtml += `
                 <div class="${cssClasses}" 
                      data-task-id="${task._id || task.id}" 
@@ -2548,7 +2642,7 @@ function renderWeekView() {
         <div class="week-view-header">${headerHtml}</div>
         <div class="week-view-body">${bodyHtml}</div>
     `;
-    
+
     // Initialize drag and drop for week view
     setTimeout(() => {
         attachEventTooltips();
@@ -2660,24 +2754,24 @@ function renderAgendaView() {
             const priorityColor = t.priority === 'high' ? '#ff5630' :
                 t.priority === 'medium' ? '#ffab00' :
                     t.priority === 'low' ? '#36b37e' : '';
-            
+
             // Calculate duration for short event detection
             const duration = time ? (isGoogle ? 60 : 30) : 0;
-            
+
             // Apply enhanced theme-responsive styling
-            const eventStyles = getEnhancedEventCardStyles({ 
-                ...t, 
-                duration, 
-                googleCalendarColor: t.googleCalendarColor 
+            const eventStyles = getEnhancedEventCardStyles({
+                ...t,
+                duration,
+                googleCalendarColor: t.googleCalendarColor
             }, document.documentElement.dataset.theme, 'agenda');
-            
+
             // Apply unified CSS classes for theme colors
             const cssClasses = [
                 'ticktick-event-card',
                 eventStyles.classes,
                 isCompleted ? 'completed' : ''
             ].filter(Boolean).join(' ');
-            
+
             const inlineStyle = eventStyles.style || ''; // Only Google Calendar colors
 
             return `
@@ -2706,7 +2800,7 @@ function renderAgendaView() {
     });
 
     elements.calendarAgendaView.innerHTML = `<div class="ticktick-agenda-container">${html}</div>`;
-    
+
     // Initialize drag and drop for agenda view
     setTimeout(() => {
         attachEventTooltips();
@@ -4036,7 +4130,7 @@ async function handleCalendarDayDrop(e) {
 
         // Update task
         await updateTaskDateTime(taskId, localDate, newTime);
-        
+
         showToast('Task moved successfully', 'success');
     } catch (error) {
         console.error('Failed to move task:', error);
@@ -4102,7 +4196,7 @@ async function handleWeekViewColDrop(e) {
 
     const taskId = e.dataTransfer.getData('text/plain');
     const dateStr = e.currentTarget.dataset.date; // Format: YYYY-MM-DD
-    
+
     if (!taskId || !dateStr) return;
 
     // Calculate time from Y position within the day column
@@ -4110,28 +4204,28 @@ async function handleWeekViewColDrop(e) {
     const dropY = e.clientY - colRect.top;
     const colHeight = colRect.height;
     const positionRatio = Math.max(0, Math.min(1, dropY / colHeight));
-    
+
     // Convert to hours and minutes (24 hours in a day)
     const totalMinutes = Math.round(positionRatio * 24 * 60);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    
+
     // Round minutes to nearest 15 for better UX
     const roundedMinutes = Math.round(minutes / 15) * 15;
     const finalHours = roundedMinutes >= 60 ? hours + 1 : hours;
     const finalMinutes = roundedMinutes >= 60 ? 0 : roundedMinutes;
-    
+
     try {
         // Parse date
         const [year, month, day] = dateStr.split('-').map(Number);
         const newDate = new Date(year, month - 1, day, finalHours, finalMinutes, 0, 0);
-        
+
         // Format time as HH:MM
         const newTime = `${finalHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
 
         // Update task
         await updateTaskDateTime(taskId, newDate, newTime);
-        
+
         showToast(`Task moved to ${formatTimeDisplay(newTime)}`, 'success');
     } catch (error) {
         console.error('Failed to move task in week view:', error);
@@ -4197,7 +4291,7 @@ async function handleDayViewSlotDrop(e) {
 
     const taskId = e.dataTransfer.getData('text/plain');
     const hourStr = e.currentTarget.dataset.hour; // Format: "09" or "14"
-    
+
     if (!taskId || !hourStr) return;
 
     try {
@@ -4206,23 +4300,23 @@ async function handleDayViewSlotDrop(e) {
         const dropY = e.clientY - slotRect.top;
         const slotHeight = slotRect.height;
         const positionRatio = Math.max(0, Math.min(1, dropY / slotHeight));
-        
+
         // Convert to minutes within the hour (0-59)
         const minutes = Math.round(positionRatio * 60);
         const roundedMinutes = Math.round(minutes / 15) * 15; // Round to nearest 15 minutes
         const finalMinutes = roundedMinutes >= 60 ? 0 : roundedMinutes;
         const finalHour = roundedMinutes >= 60 ? parseInt(hourStr) + 1 : parseInt(hourStr);
-        
+
         // Create new date with the selected time
         const newDate = new Date(state.calendarDate);
         newDate.setHours(finalHour, finalMinutes, 0, 0);
-        
+
         // Format time as HH:MM
         const newTime = `${finalHour.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
 
         // Update task
         await updateTaskDateTime(taskId, newDate, newTime);
-        
+
         showToast(`Task moved to ${formatTimeDisplay(newTime)}`, 'success');
     } catch (error) {
         console.error('Failed to move task in day view:', error);
@@ -4288,23 +4382,23 @@ async function handleAgendaViewDayDrop(e) {
 
     const taskId = e.dataTransfer.getData('text/plain');
     const dateStr = e.currentTarget.dataset.date; // Format: YYYY-MM-DD
-    
+
     if (!taskId || !dateStr) return;
 
     try {
         // Parse date from data attribute
         const [year, month, day] = dateStr.split('-').map(Number);
         const newDate = new Date(year, month - 1, day, 12, 0, 0, 0); // Set to noon to avoid timezone issues
-        
+
         const task = state.tasks.find(t => (t._id || t.id) === taskId);
         if (!task) return;
 
         // Preserve existing time if task has one
         const existingTime = task.dueTime || task.due_time || null;
-        
+
         // Update task
         await updateTaskDateTime(taskId, newDate, existingTime);
-        
+
         showToast('Task moved successfully', 'success');
     } catch (error) {
         console.error('Failed to move task in agenda view:', error);
@@ -4323,7 +4417,7 @@ async function updateTaskDateTime(taskId, newDate, newTime = null) {
 
         // If newTime is provided, use it; otherwise preserve existing time
         const timeToUse = newTime !== null ? newTime : (task.dueTime || task.due_time || null);
-        
+
         // If time exists, apply it to the date
         if (timeToUse) {
             const [h, m] = timeToUse.split(':').map(Number);
@@ -4368,7 +4462,7 @@ async function updateTaskDateTime(taskId, newDate, newTime = null) {
 // Fix time translation issues for synced events (especially prayer calendar)
 function fixTimeTranslation(timeStr, isGoogleEvent = false) {
     if (!timeStr) return null;
-    
+
     // Handle different time formats from Google Calendar
     if (typeof timeStr === 'string') {
         // Handle ISO date strings from Google Calendar
@@ -4378,46 +4472,63 @@ function fixTimeTranslation(timeStr, isGoogleEvent = false) {
                 return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
             }
         }
-        
+
         // Handle HH:MM format
         if (timeStr.match(/^\d{1,2}:\d{2}$/)) {
             return timeStr;
         }
-        
+
         // Handle H:MM format (single digit hour)
         if (timeStr.match(/^\d:\d{2}$/)) {
             return `0${timeStr}`;
         }
     }
-    
+
     return timeStr;
 }
 
 // Enhanced time display formatting with proper 12-hour conversion
 function formatTimeDisplay(timeStr) {
     if (!timeStr) return '';
-    
+
     // Fix time translation first
     const fixedTime = fixTimeTranslation(timeStr);
     if (!fixedTime) return '';
-    
+
     const [hours, mins] = fixedTime.split(':').map(Number);
     if (isNaN(hours) || isNaN(mins)) return '';
-    
+
     const period = hours >= 12 ? 'PM' : 'AM';
     const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    
+
     return `${displayHour}:${mins.toString().padStart(2, '0')} ${period}`;
 }
 
+
+
+// Helper: Get consistent color for an event based on its ID
+function getEventColor(id) {
+    if (!id) return 'var(--accent-primary)';
+
+    // Simple hash function
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+        hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // Map to one of the 10 palette colors (0-9)
+    const index = Math.abs(hash % 10);
+    return `var(--evt-${index})`;
+}
+
 // Enhanced event card styling with proper theme integration
+// ALL events use the same unified styling - no Google Calendar color overrides
 function getEnhancedEventCardStyles(event, theme, view = 'month') {
-    const currentTheme = theme || document.documentElement.dataset.theme || 'light';
     const isShort = event.duration && event.duration < 30; // minutes
-    
+
     // Base unified classes - all cards inherit from event-card-base
     let unifiedClasses = ['event-card-base'];
-    
+
     // Add view-specific classes
     if (view === 'week') {
         unifiedClasses.push('event-card-week');
@@ -4428,33 +4539,20 @@ function getEnhancedEventCardStyles(event, theme, view = 'month') {
     } else {
         unifiedClasses.push('event-card-month');
     }
-    
+
     // Short duration events get special class
     if (isShort) {
         unifiedClasses.push('event-card-short');
     }
-    
-    // Add status-based unified classes
-    const status = event.status || 'scheduled';
-    unifiedClasses.push(`event-card-${status}`);
-    
-    // Add priority-based classes
-    if (event.priority) {
-        const priorityLevel = event.priority === 3 ? 'high' : event.priority === 2 ? 'medium' : 'low';
-        unifiedClasses.push(`priority-${priorityLevel}`);
-    }
-    
-    // Google Calendar events get special class and preserve original colors
-    let inlineStyles = '';
-    if (event.googleCalendarColor) {
-        unifiedClasses.push('event-card-google');
-        const googleColor = event.googleCalendarColor;
-        inlineStyles = `background: ${googleColor} !important;`;
-    }
-    
+
+    // ALL events get a consistent hashed accent color for the left border
+    // This includes Google Calendar events - we no longer use googleCalendarColor for backgrounds
+    const eventColor = getEventColor(event._id || event.id || event.title);
+    const inlineStyles = `border-left: 4px solid ${eventColor} !important;`;
+
     return {
-        style: inlineStyles, // Only for Google Calendar colors
-        classes: unifiedClasses.join(' ') // Unified classes for all theming
+        style: inlineStyles,
+        classes: unifiedClasses.join(' ')
     };
 }
 
@@ -4817,13 +4915,13 @@ function showEventTooltip(event, element) {
     const title = element.dataset.taskTitle || '';
     const description = element.dataset.taskDescription || '';
     const time = element.dataset.taskTime || '';
-    
+
     if (!title && !description) return;
-    
+
     // Remove existing tooltip
     const existingTooltip = document.querySelector('.event-tooltip');
     if (existingTooltip) existingTooltip.remove();
-    
+
     const tooltip = document.createElement('div');
     tooltip.className = 'event-tooltip';
     tooltip.innerHTML = `
@@ -4831,15 +4929,15 @@ function showEventTooltip(event, element) {
         <div class="tooltip-title">${escapeHTML(title)}</div>
         ${description ? `<div class="tooltip-description">${escapeHTML(description)}</div>` : ''}
     `;
-    
+
     document.body.appendChild(tooltip);
-    
+
     const rect = element.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
-    
+
     let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
     let top = rect.bottom + 8;
-    
+
     // Adjust if tooltip goes off screen
     if (left < 8) left = 8;
     if (left + tooltipRect.width > window.innerWidth - 8) {
@@ -4848,17 +4946,17 @@ function showEventTooltip(event, element) {
     if (top + tooltipRect.height > window.innerHeight - 8) {
         top = rect.top - tooltipRect.height - 8;
     }
-    
+
     tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;
     tooltip.classList.add('visible');
-    
+
     // Remove tooltip on mouse leave or click
     const removeTooltip = () => {
         tooltip.classList.remove('visible');
         setTimeout(() => tooltip.remove(), 200);
     };
-    
+
     element.addEventListener('mouseleave', removeTooltip, { once: true });
     element.addEventListener('click', removeTooltip, { once: true });
 }

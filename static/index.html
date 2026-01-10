@@ -21,8 +21,19 @@
 
 <body>
     <div id="app">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="screen">
+            <div class="loading-content">
+                <div class="loading-logo">
+                    <img src="logo.png" alt="NovaDo" class="logo-icon-img">
+                </div>
+                <div class="loading-loader"></div>
+                <div class="loading-text">NovaDo</div>
+            </div>
+        </div>
+
         <!-- Auth Screen -->
-        <div id="auth-screen" class="screen">
+        <div id="auth-screen" class="screen hidden">
             <div class="auth-container">
                 <div class="auth-header">
                     <div class="logo">
@@ -154,12 +165,21 @@
 
                 <!-- Habits View -->
                 <div id="habits-view" class="view hidden">
-                    <div class="habits-header">
-                        <button class="btn btn-primary" id="add-habit-btn">
-                            <span>+</span> New Habit
-                        </button>
+                    <div class="habits-container">
+                        <div class="habits-header">
+                            <div class="habits-header-content">
+                                <div class="habits-title-section">
+                                    <h2 class="habits-page-title">Habits</h2>
+                                    <p class="habits-page-subtitle">Track your daily routines and build consistency</p>
+                                </div>
+                                <button class="btn btn-primary btn-icon-left" id="add-habit-btn">
+                                    <i data-lucide="plus"></i>
+                                    <span>New Habit</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="habits-list" class="habits-list"></div>
                     </div>
-                    <div id="habits-list" class="habits-list"></div>
                 </div>
 
                 <!-- Calendar View -->
@@ -292,27 +312,33 @@
                         <!-- Stats Header with View Switcher -->
                         <div class="stats-header">
                             <div class="stats-view-tabs" role="tablist">
-                                <button class="stats-tab active" data-view="daily" role="tab" aria-selected="true" aria-controls="stats-daily-view">
+                                <button class="stats-tab active" data-view="daily" role="tab" aria-selected="true"
+                                    aria-controls="stats-daily-view">
                                     <span class="tab-icon">🌅</span>
                                     <span class="tab-label">Daily</span>
                                 </button>
-                                <button class="stats-tab" data-view="weekly" role="tab" aria-selected="false" aria-controls="stats-weekly-view">
+                                <button class="stats-tab" data-view="weekly" role="tab" aria-selected="false"
+                                    aria-controls="stats-weekly-view">
                                     <span class="tab-icon">📊</span>
                                     <span class="tab-label">Weekly</span>
                                 </button>
-                                <button class="stats-tab" data-view="monthly" role="tab" aria-selected="false" aria-controls="stats-monthly-view">
+                                <button class="stats-tab" data-view="monthly" role="tab" aria-selected="false"
+                                    aria-controls="stats-monthly-view">
                                     <span class="tab-icon">📅</span>
                                     <span class="tab-label">Monthly</span>
                                 </button>
-                                <button class="stats-tab" data-view="gamified" role="tab" aria-selected="false" aria-controls="stats-gamified-view">
+                                <button class="stats-tab" data-view="gamified" role="tab" aria-selected="false"
+                                    aria-controls="stats-gamified-view">
                                     <span class="tab-icon">🎮</span>
                                     <span class="tab-label">Gamified</span>
                                 </button>
-                                <button class="stats-tab" data-view="insights" role="tab" aria-selected="false" aria-controls="stats-insights-view">
+                                <button class="stats-tab" data-view="insights" role="tab" aria-selected="false"
+                                    aria-controls="stats-insights-view">
                                     <span class="tab-icon">💡</span>
                                     <span class="tab-label">Insights</span>
                                 </button>
-                                <button class="stats-tab" data-view="hyperfocus" role="tab" aria-selected="false" aria-controls="stats-hyperfocus-view">
+                                <button class="stats-tab" data-view="hyperfocus" role="tab" aria-selected="false"
+                                    aria-controls="stats-hyperfocus-view">
                                     <span class="tab-icon">🎯</span>
                                     <span class="tab-label">Hyperfocus</span>
                                 </button>
@@ -321,14 +347,16 @@
                                 <button class="btn btn-secondary btn-small" id="stats-export-btn" title="Export Stats">
                                     <span>📥</span> Export
                                 </button>
-                                <button class="btn btn-secondary btn-small" id="stats-focus-mode-btn" title="Toggle Focus Mode">
+                                <button class="btn btn-secondary btn-small" id="stats-focus-mode-btn"
+                                    title="Toggle Focus Mode">
                                     <span>👁️</span> Focus Mode
                                 </button>
                             </div>
                         </div>
 
                         <!-- Daily Snapshot View -->
-                        <div id="stats-daily-view" class="stats-view-content active" role="tabpanel" aria-labelledby="stats-daily-tab">
+                        <div id="stats-daily-view" class="stats-view-content active" role="tabpanel"
+                            aria-labelledby="stats-daily-tab">
                             <div class="daily-snapshot-grid">
                                 <div class="daily-metric-card">
                                     <div class="metric-icon">⏱️</div>
@@ -354,7 +382,8 @@
                         </div>
 
                         <!-- Weekly Trends View -->
-                        <div id="stats-weekly-view" class="stats-view-content" role="tabpanel" aria-labelledby="stats-weekly-tab">
+                        <div id="stats-weekly-view" class="stats-view-content" role="tabpanel"
+                            aria-labelledby="stats-weekly-tab">
                             <div class="weekly-trends-container">
                                 <div class="trends-chart-container">
                                     <h3>Task Completion Trends</h3>
@@ -374,7 +403,8 @@
                         </div>
 
                         <!-- Monthly Analytics View -->
-                        <div id="stats-monthly-view" class="stats-view-content" role="tabpanel" aria-labelledby="stats-monthly-tab">
+                        <div id="stats-monthly-view" class="stats-view-content" role="tabpanel"
+                            aria-labelledby="stats-monthly-tab">
                             <div class="monthly-analytics-container">
                                 <div class="analytics-mode-toggle">
                                     <button class="mode-btn active" data-mode="simplified">Simplified</button>
@@ -403,7 +433,8 @@
                         </div>
 
                         <!-- Gamified Progress View -->
-                        <div id="stats-gamified-view" class="stats-view-content" role="tabpanel" aria-labelledby="stats-gamified-tab">
+                        <div id="stats-gamified-view" class="stats-view-content" role="tabpanel"
+                            aria-labelledby="stats-gamified-tab">
                             <div class="gamified-container">
                                 <div class="character-display">
                                     <canvas id="character-canvas" width="200" height="200"></canvas>
@@ -427,7 +458,8 @@
                         </div>
 
                         <!-- Custom Insight View -->
-                        <div id="stats-insights-view" class="stats-view-content" role="tabpanel" aria-labelledby="stats-insights-tab">
+                        <div id="stats-insights-view" class="stats-view-content" role="tabpanel"
+                            aria-labelledby="stats-insights-tab">
                             <div class="insights-container">
                                 <div class="insights-widget-grid" id="insights-widget-grid">
                                     <!-- Widgets will be dynamically added here -->
@@ -442,14 +474,16 @@
                         </div>
 
                         <!-- Hyperfocus Mode View -->
-                        <div id="stats-hyperfocus-view" class="stats-view-content" role="tabpanel" aria-labelledby="stats-hyperfocus-tab">
+                        <div id="stats-hyperfocus-view" class="stats-view-content" role="tabpanel"
+                            aria-labelledby="stats-hyperfocus-tab">
                             <div class="hyperfocus-container">
                                 <div class="hyperfocus-streak">
                                     <div class="hyperfocus-value" id="hyperfocus-streak-value">0</div>
                                     <div class="hyperfocus-label">Day Streak</div>
                                 </div>
                                 <div class="hyperfocus-goal">
-                                    <div class="hyperfocus-goal-text" id="hyperfocus-goal-text">Next Goal: Complete 5 tasks</div>
+                                    <div class="hyperfocus-goal-text" id="hyperfocus-goal-text">Next Goal: Complete 5
+                                        tasks</div>
                                 </div>
                                 <div class="hyperfocus-progress">
                                     <div class="hyperfocus-progress-bar" id="hyperfocus-progress-bar"></div>
@@ -970,8 +1004,8 @@
 
     <script src="js/api.js?v=4"></script>
     <script src="js/notifications.js"></script>
-    <script src="js/app.js?v=7"></script>
-    <script src="js/stats.js"></script>
+    <script src="js/statistics.js?v=1"></script>
+    <script src="js/app.js?v=8"></script>
 </body>
 
 </html>
