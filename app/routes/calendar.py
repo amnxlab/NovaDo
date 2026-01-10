@@ -551,17 +551,24 @@ async def import_calendar(
 @router.post("/sync")
 async def sync_calendar(current_user: dict = Depends(get_current_user)):
     """Sync new events from ALL selected Google Calendars"""
+    logger.info(f"[SYNC] Starting sync for user: {current_user.get('email', 'unknown')}")
+    
     creds = get_credentials_from_user(current_user)
     if not creds:
+        logger.warning(f"[SYNC] No credentials found for user")
         raise HTTPException(status_code=400, detail="Google Calendar not connected")
+    
+    logger.info(f"[SYNC] Credentials found, access token present: {bool(creds.token)}")
     
     try:
         service = build("calendar", "v3", credentials=creds)
         db = get_database()
         user_id = str(current_user["_id"])
+        user_oid = ObjectId(user_id)  # For database operations
         
         # Get selected calendars and their colors
         selected_ids = current_user.get("googleSelectedCalendars", ["primary"])
+        logger.info(f"[SYNC] Selected calendars: {selected_ids}")
         
         # Fetch calendar colors
         calendars_result = service.calendarList().list().execute()
@@ -573,16 +580,20 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
         if last_sync:
             # Buffer back 1 hour to ensure nothing missed
             time_min = (last_sync - timedelta(hours=1)).isoformat() + "Z"
+            logger.info(f"[SYNC] Using lastCalendarSync: {last_sync}, time_min: {time_min}")
         else:
             time_min = (datetime.utcnow() - timedelta(days=7)).isoformat() + "Z"
+            logger.info(f"[SYNC] No lastCalendarSync, using 7 days ago: {time_min}")
             
         time_max = (datetime.utcnow() + timedelta(days=90)).isoformat() + "Z"
+        logger.info(f"[SYNC] Time range: {time_min} to {time_max}")
         
         synced_count = 0
         
         # Iterate over EACH selected calendar
         for cal_id in selected_ids:
             try:
+                logger.info(f"[SYNC] Fetching events from calendar: {cal_id}")
                 events_result = service.events().list(
                     calendarId=cal_id,
                     timeMin=time_min,
@@ -593,6 +604,7 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                 ).execute()
                 
                 events = events_result.get("items", [])
+                logger.info(f"[SYNC] Found {len(events)} events in calendar {cal_id}")
                 cal_color = calendar_colors.get(cal_id, "#4772fa")
                 
                 for event in events:
@@ -600,11 +612,14 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                     
                     # Check if exists
                     existing = await db.tasks.find_one({
-                        "user": user_id,
-                        "googleEventId": google_event_id
+                        "$or": [
+                            {"user": user_id, "googleEventId": google_event_id},
+                            {"user": user_oid, "googleEventId": google_event_id}
+                        ]
                     })
                     
                     if not existing:
+                        logger.info(f"[SYNC] Importing new event: {event.get('summary', 'Untitled')}")
                         start = event.get("start", {})
                         is_all_day = "date" in start
                         
@@ -622,7 +637,7 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                         task_doc = {
                             "title": event.get("summary", "Untitled"),
                             "description": event.get("description", ""),
-                            "user": user_id,
+                            "user": user_oid,  # Store as ObjectId for consistency
                             "list": None,
                             "dueDate": start_dt,
                             "dueTime": due_time,
@@ -641,9 +656,11 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                         
                         await db.tasks.insert_one(task_doc)
                         synced_count += 1
+                    else:
+                        logger.debug(f"[SYNC] Skipping already synced: {event.get('summary', 'Untitled')}")
                         
             except Exception as cal_error:
-                print(f"Error syncing calendar {cal_id}: {cal_error}")
+                logger.error(f"Error syncing calendar {cal_id}: {cal_error}")
                 continue
         
         # Update last sync time
@@ -658,5 +675,23 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
         }
         
     except Exception as e:
-        print(f"Sync error: {e}")
+        logger.exception(f"Sync error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to sync: {str(e)}")
+
+
+@router.post("/sync/force")
+async def force_sync_calendar(current_user: dict = Depends(get_current_user)):
+    """Force a full resync by clearing lastCalendarSync timestamp"""
+    db = get_database()
+    user_id = str(current_user["_id"])
+    
+    # Clear the last sync time to force full re-import
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$unset": {"lastCalendarSync": ""}}
+    )
+    
+    logger.info(f"[SYNC] Force sync requested - cleared lastCalendarSync for user {current_user.get('email', 'unknown')}")
+    
+    # Now run the actual sync
+    return await sync_calendar(current_user)

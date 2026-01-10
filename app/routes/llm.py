@@ -333,15 +333,19 @@ async def chat(
         provider = current_user["llmProvider"]
         db = get_database()
         user_id = str(current_user["_id"])
+        user_oid = ObjectId(user_id)
         
-        # Fetch user's tasks for context
-        tasks_cursor = db.tasks.find({"user": user_id})
+        # Fetch user's tasks for context - LIMIT to avoid token overflow
+        # Groq has 6000 TPM limit, so we only send recent/active tasks
+        tasks_cursor = db.tasks.find(
+            {"user": user_oid, "status": {"$ne": "completed"}}
+        ).sort("updatedAt", -1).limit(30)
         tasks = []
         async for task in tasks_cursor:
             tasks.append(task)
         
         # Fetch user's lists for context
-        lists_cursor = db.lists.find({"user": user_id})
+        lists_cursor = db.lists.find({"user": user_oid})
         lists = []
         async for lst in lists_cursor:
             lists.append(lst)

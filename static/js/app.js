@@ -1854,16 +1854,17 @@ function formatDateLocal(date) {
 
 function getTasksForDate(date) {
     return state.tasks.filter(t => {
-        if (!t.due_date) return false;
-        const taskDate = new Date(t.due_date);
+        // Support both dueDate (from backend) and due_date (legacy)
+        const taskDueDate = t.dueDate || t.due_date;
+        if (!taskDueDate) return false;
+        const taskDate = new Date(taskDueDate);
         return isSameDay(taskDate, date);
     });
 }
 
 function isSameDay(d1, d2) {
-    return d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
+    // Use toDateString for robust timezone-safe comparison
+    return d1.toDateString() === d2.toDateString();
 }
 
 function setCalendarViewMode(mode) {

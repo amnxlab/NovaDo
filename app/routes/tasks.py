@@ -30,7 +30,12 @@ async def get_tasks(
 ):
     """Get all tasks for the user"""
     db = get_database()
-    query = {"user": ObjectId(current_user["_id"])}
+    user_id_str = str(current_user["_id"])
+    user_oid = ObjectId(user_id_str)
+    
+    print(f"[TASKS API] User: {current_user.get('email')}, ID: {user_id_str}, ObjectId: {user_oid}")
+    
+    query = {"user": user_oid}
     
     if list:
         query["list"] = ObjectId(list)

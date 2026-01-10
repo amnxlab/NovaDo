@@ -36,3 +36,12 @@ uploads/
 *.tmp
 .cache/
 
+# Local database (contains user tokens/secrets)
+data/
+
+# Debug scripts and output
+check_*.py
+migrate_*.py
+output.txt
+task_format.txt
+user_type.txt
