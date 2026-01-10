@@ -35,10 +35,24 @@ const defaultTools = [
 ];
 
 // Get sidebar config from localStorage or use defaults
+// Get sidebar config from localStorage or use defaults
 function getSidebarConfig() {
     const saved = localStorage.getItem('sidebarConfig');
     if (saved) {
-        return JSON.parse(saved);
+        const config = JSON.parse(saved);
+
+        // Merge with defaults to ensure new lists (like wont-do) appear
+        // Filter out any defaults that are already present in saved config
+        const newDefaults = defaultSmartLists.filter(def =>
+            !config.smartLists.some(savedItem => savedItem.id === def.id)
+        ).map(l => ({ ...l, visible: true, customLabel: null }));
+
+        if (newDefaults.length > 0) {
+            config.smartLists = [...config.smartLists, ...newDefaults];
+            saveSidebarConfig(config); // Save the merged config
+        }
+
+        return config;
     }
     return {
         smartLists: defaultSmartLists.map(l => ({ ...l, visible: true, customLabel: null })),
@@ -1010,7 +1024,8 @@ function createTaskElement(task) {
         'skipped': { icon: '❌', label: 'Skipped', class: 'skipped', ariaLabel: 'Task was skipped' }
     };
     const statusInfo = statusConfig[status] || statusConfig['scheduled'];
-    const statusBadgeHTML = `<span class="task-status-badge ${statusInfo.class}" 
+    // Hide badge for completed tasks as requested (removed green true emoji)
+    const statusBadgeHTML = status === 'completed' ? '' : `<span class="task-status-badge ${statusInfo.class}" 
                                    title="${statusInfo.label}" 
                                    aria-label="${statusInfo.ariaLabel}" 
                                    role="status">${statusInfo.icon}</span>`;
