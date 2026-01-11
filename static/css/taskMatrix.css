@@ -337,10 +337,10 @@ html[data-theme="midnight-minimal"] {
 .matrix-view-switcher {
     display: flex;
     gap: var(--matrix-spacing-xs);
-    background: var(--bg-secondary);
+    background: var(--bg-secondary) !important;
     padding: 4px;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color) !important;
 }
 
 .matrix-view-btn {
@@ -350,7 +350,7 @@ html[data-theme="midnight-minimal"] {
     padding: var(--matrix-spacing-sm) var(--matrix-spacing-md);
     border: none;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-secondary) !important;
     border-radius: 8px;
     cursor: pointer;
     transition: var(--matrix-transition);
@@ -359,13 +359,13 @@ html[data-theme="midnight-minimal"] {
 }
 
 .matrix-view-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
+    background: var(--bg-hover) !important;
+    color: var(--text-primary) !important;
 }
 
 .matrix-view-btn.active {
-    background: var(--accent-primary);
-    color: white;
+    background: var(--accent-primary) !important;
+    color: white !important;
 }
 
 .matrix-view-btn i {
@@ -398,31 +398,33 @@ html[data-theme="midnight-minimal"] {
 }
 
 .matrix-btn-primary {
-    background: var(--primary, #3b82f6);
+    background: var(--accent-primary);
     color: white;
 }
 
 .matrix-btn-primary:hover {
-    background: var(--primary-hover, #2563eb);
+    background: var(--accent-secondary);
 }
 
 .matrix-btn-secondary {
-    background: var(--matrix-card-bg);
-    color: var(--matrix-text);
-    border: 1px solid var(--matrix-border);
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
 }
 
 .matrix-btn-secondary:hover {
-    background: var(--matrix-bg);
+    background: var(--bg-hover) !important;
+    border-color: var(--accent-primary) !important;
 }
 
 .matrix-btn-text {
     background: transparent;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
 }
 
 .matrix-btn-text:hover {
-    color: var(--matrix-text);
+    color: var(--text-primary);
+    background: var(--bg-hover);
 }
 
 .matrix-btn-small {
@@ -437,9 +439,9 @@ html[data-theme="midnight-minimal"] {
     align-items: center;
     gap: var(--matrix-spacing-lg);
     padding: var(--matrix-spacing-md);
-    background: var(--matrix-card-bg);
+    background: var(--bg-secondary) !important;
     border-radius: 12px;
-    border: 1px solid var(--matrix-border);
+    border: 1px solid var(--border-color) !important;
     margin-bottom: var(--matrix-spacing-md);
     flex-shrink: 0;
     overflow: hidden;
@@ -472,7 +474,7 @@ html[data-theme="midnight-minimal"] {
 .filter-label {
     font-size: 12px;
     font-weight: 600;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -488,11 +490,11 @@ html[data-theme="midnight-minimal"] {
     align-items: center;
     gap: 4px;
     padding: 6px 12px;
-    background: var(--matrix-bg);
-    border: 1px solid var(--matrix-border);
+    background: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 20px;
     font-size: 13px;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary) !important;
     cursor: pointer;
     transition: var(--matrix-transition);
     white-space: nowrap;
@@ -500,14 +502,15 @@ html[data-theme="midnight-minimal"] {
 }
 
 .filter-chip:hover {
-    border-color: var(--primary, #3b82f6);
-    color: var(--matrix-text);
+    border-color: var(--accent-primary) !important;
+    color: var(--text-primary) !important;
+    background: var(--bg-hover) !important;
 }
 
 .filter-chip.active {
-    background: var(--primary, #3b82f6);
-    border-color: var(--primary, #3b82f6);
-    color: white;
+    background: var(--accent-primary) !important;
+    border-color: var(--accent-primary) !important;
+    color: white !important;
 }
 
 .priority-dot {
@@ -542,7 +545,7 @@ html[data-theme="midnight-minimal"] {
 
 .filter-count {
     font-size: 12px;
-    color: var(--primary, #3b82f6);
+    color: var(--accent-primary);
     font-weight: 500;
 }
 
@@ -560,18 +563,19 @@ html[data-theme="midnight-minimal"] {
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: var(--matrix-bg);
-    border: 1px solid var(--matrix-border);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 20px;
     font-size: 13px;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
     cursor: pointer;
     transition: var(--matrix-transition);
 }
 
 .filter-tags-trigger:hover {
-    border-color: var(--primary, #3b82f6);
-    color: var(--matrix-text);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    background: var(--bg-hover);
 }
 
 .filter-tags-trigger i {
@@ -593,8 +597,8 @@ html[data-theme="midnight-minimal"] {
     left: 0;
     min-width: 220px;
     max-width: 300px;
-    background: var(--matrix-card-bg);
-    border: 1px solid var(--matrix-border);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     z-index: 200;
@@ -613,28 +617,28 @@ html[data-theme="midnight-minimal"] {
 .tags-search-container {
     position: relative;
     padding: var(--matrix-spacing-sm);
-    border-bottom: 1px solid var(--matrix-border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .tags-search-input {
     width: 100%;
     padding: 8px 12px 8px 32px;
-    border: 1px solid var(--matrix-border);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    background: var(--matrix-bg);
-    color: var(--matrix-text);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     font-size: 13px;
     outline: none;
     transition: var(--matrix-transition);
 }
 
 .tags-search-input:focus {
-    border-color: var(--primary, #3b82f6);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .tags-search-input::placeholder {
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
 }
 
 .tags-search-icon {
@@ -644,7 +648,7 @@ html[data-theme="midnight-minimal"] {
     transform: translateY(-50%);
     width: 14px;
     height: 14px;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
     pointer-events: none;
 }
 
@@ -664,19 +668,19 @@ html[data-theme="midnight-minimal"] {
     border: none;
     border-radius: 6px;
     font-size: 13px;
-    color: var(--matrix-text);
+    color: var(--text-primary);
     cursor: pointer;
     text-align: left;
     transition: var(--matrix-transition);
 }
 
 .tag-option:hover {
-    background: var(--matrix-bg);
+    background: var(--bg-hover);
 }
 
 .tag-option.active {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--primary, #3b82f6);
+    background: var(--accent-light);
+    color: var(--accent-primary);
 }
 
 .tag-checkbox {
@@ -685,22 +689,22 @@ html[data-theme="midnight-minimal"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--matrix-border);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 10px;
-    color: var(--primary, #3b82f6);
+    color: var(--accent-primary);
 }
 
 .tag-option.active .tag-checkbox {
-    background: var(--primary, #3b82f6);
-    border-color: var(--primary, #3b82f6);
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
     color: white;
 }
 
 .tags-empty {
     padding: var(--matrix-spacing-md);
     text-align: center;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
     font-size: 13px;
 }
 
@@ -710,9 +714,9 @@ html[data-theme="midnight-minimal"] {
     margin: var(--matrix-spacing-xs) var(--matrix-spacing-sm) var(--matrix-spacing-sm);
     padding: 8px;
     background: transparent;
-    border: 1px dashed var(--matrix-border);
+    border: 1px dashed var(--border-color);
     border-radius: 6px;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
     font-size: 12px;
     cursor: pointer;
     transition: var(--matrix-transition);
@@ -1835,23 +1839,39 @@ html[data-theme="midnight-minimal"] {
    ENHANCED VISUAL EFFECTS (Premium Polish)
    ============================================ */
 
-/* Glass-morphism header */
+/* Glass-morphism header - use theme colors like hacker theme */
 #matrix-header {
-    background: rgba(255, 255, 255, 0.8);
+    background: var(--bg-secondary) !important;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: 16px;
     padding: var(--matrix-spacing-md) var(--matrix-spacing-lg);
     margin-bottom: var(--matrix-spacing-md);
+    border: 1px solid var(--border-color) !important;
 }
 
-[data-theme="dark"] #matrix-header {
-    background: rgba(15, 23, 42, 0.8);
+/* Theme-specific header backgrounds - using var(--bg-secondary) like hacker theme */
+[data-theme="light"] #matrix-header,
+[data-theme="classic-productivity"] #matrix-header,
+[data-theme="pastel-calm"] #matrix-header,
+[data-theme="warm-earth"] #matrix-header,
+[data-theme="crisp-nordic"] #matrix-header,
+[data-theme="energetic-sunrise"] #matrix-header,
+[data-theme="dark"] #matrix-header,
+[data-theme="hacker"] #matrix-header,
+[data-theme="deep-ocean"] #matrix-header,
+[data-theme="charcoal-elegance"] #matrix-header,
+[data-theme="neon-pulse"] #matrix-header,
+[data-theme="forest-dusk"] #matrix-header,
+[data-theme="stormy-void"] #matrix-header,
+[data-theme="warm-ember"] #matrix-header,
+[data-theme="cyber-twilight"] #matrix-header,
+[data-theme="midnight-minimal"] #matrix-header {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
 }
 
 [data-theme="hacker"] #matrix-header {
-    background: rgba(0, 0, 0, 0.9);
-    border: 1px solid var(--border-color);
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
 }
 
@@ -1868,15 +1888,15 @@ html[data-theme="midnight-minimal"] {
 }
 
 [data-theme="hacker"] #matrix-filter-bar {
-    background: var(--matrix-card-bg);
-    border: 1px solid var(--matrix-border);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     box-shadow: 0 0 5px rgba(0, 255, 0, 0.1);
 }
 
 [data-theme="hacker"] .filter-chip {
-    background: var(--matrix-bg);
-    border: 1px solid var(--matrix-border);
-    color: var(--matrix-text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
 }
 
 [data-theme="hacker"] .filter-chip:hover {
@@ -1905,8 +1925,29 @@ html[data-theme="midnight-minimal"] {
     color: var(--matrix-text);
 }
 
+/* Ensure all themes use var(--bg-secondary) for view switcher, like hacker theme */
+[data-theme="light"] .matrix-view-switcher,
+[data-theme="classic-productivity"] .matrix-view-switcher,
+[data-theme="pastel-calm"] .matrix-view-switcher,
+[data-theme="warm-earth"] .matrix-view-switcher,
+[data-theme="crisp-nordic"] .matrix-view-switcher,
+[data-theme="energetic-sunrise"] .matrix-view-switcher,
+[data-theme="dark"] .matrix-view-switcher,
+[data-theme="hacker"] .matrix-view-switcher,
+[data-theme="deep-ocean"] .matrix-view-switcher,
+[data-theme="charcoal-elegance"] .matrix-view-switcher,
+[data-theme="neon-pulse"] .matrix-view-switcher,
+[data-theme="forest-dusk"] .matrix-view-switcher,
+[data-theme="stormy-void"] .matrix-view-switcher,
+[data-theme="warm-ember"] .matrix-view-switcher,
+[data-theme="cyber-twilight"] .matrix-view-switcher,
+[data-theme="midnight-minimal"] .matrix-view-switcher {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
 [data-theme="hacker"] .matrix-view-btn {
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
 }
 
 [data-theme="hacker"] .matrix-view-btn:hover {
@@ -1932,9 +1973,9 @@ html[data-theme="midnight-minimal"] {
 }
 
 [data-theme="hacker"] .matrix-btn-secondary {
-    background: var(--matrix-card-bg);
-    color: var(--matrix-text);
-    border: 1px solid var(--matrix-border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
 }
 
 [data-theme="hacker"] .matrix-btn-secondary:hover {
@@ -2213,20 +2254,36 @@ html[data-theme="midnight-minimal"] {
 .matrix-banner {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 1;
-    max-height: 380px;
-    min-height: 180px;
+    height: 200px !important;
+    min-height: 200px !important;
+    max-height: 200px !important;
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: var(--matrix-spacing-md);
     background: var(--matrix-card-bg);
     border: 1px solid var(--matrix-border);
+    flex: 0 0 200px !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    align-self: flex-start !important;
+    box-sizing: border-box;
+    line-height: 0;
+    display: block;
+    /* Ensure border doesn't affect height calculation */
+    border-width: 1px;
+    /* Prevent any transform or scale from affecting size */
+    transform: none !important;
+    /* Ensure no padding affects height */
+    padding: 0;
 }
 
 .banner-image-container {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    inset: 0;
 }
 
 .banner-image {
@@ -2234,11 +2291,16 @@ html[data-theme="midnight-minimal"] {
     height: 100%;
     object-fit: cover;
     object-position: 50% 50%;
+    display: block;
 }
 
 .banner-default {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    inset: 0;
     background: linear-gradient(135deg,
             var(--accent-primary, #4772fa) 0%,
             var(--accent-secondary, #6366f1) 50%,
@@ -2448,12 +2510,14 @@ html[data-theme="midnight-minimal"] {
     gap: var(--matrix-spacing-sm);
 }
 
-/* Responsive banner */
+/* Responsive banner - Fixed heights */
 @media (max-width: 768px) {
     .matrix-banner {
-        aspect-ratio: 3 / 1;
-        max-height: 200px;
-        min-height: 120px;
+        height: 180px !important;
+        min-height: 180px !important;
+        max-height: 180px !important;
+        flex: 0 0 180px !important;
+        align-self: flex-start !important;
         border-radius: 12px;
     }
 
@@ -2475,8 +2539,10 @@ html[data-theme="midnight-minimal"] {
 
 @media (max-width: 480px) {
     .matrix-banner {
-        aspect-ratio: 2.5 / 1;
-        max-height: 150px;
-        min-height: 80px;
+        height: 150px !important;
+        min-height: 150px !important;
+        max-height: 150px !important;
+        flex: 0 0 150px !important;
+        align-self: flex-start !important;
     }
 }
