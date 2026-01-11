@@ -73,6 +73,60 @@ class CalendarEvent(BaseModel):
     location: Optional[str] = None
 
 
+def convert_event_time_to_user_tz(time_str: str, user_preferences: dict) -> tuple:
+    """
+    Convert calendar event time to user's timezone.
+    
+    Handles various time formats from calendar sources:
+    - UTC times ending with 'Z' (e.g., "2026-01-09T14:30:00Z")
+    - Times with timezone offset (e.g., "2026-01-09T14:30:00-07:00")
+    - Local times without timezone info (e.g., PrayerCal's "2026-01-09T14:30:00")
+    
+    Args:
+        time_str: The datetime string from the calendar
+        user_preferences: User's preferences dict containing timezone setting
+        
+    Returns:
+        Tuple of (date_only: datetime, time_str: str)
+        - date_only: datetime with date part only (midnight, no timezone)
+        - time_str: formatted time string "HH:MM" in user's timezone
+    """
+    # Get user's configured timezone (default to UTC if not set)
+    user_tz_str = user_preferences.get("timezone", "UTC")
+    try:
+        user_tz = pytz.timezone(user_tz_str)
+    except pytz.UnknownTimeZoneError:
+        logger.warning(f"[TZ] Unknown timezone '{user_tz_str}', falling back to UTC")
+        user_tz = pytz.UTC
+    
+    # Parse the datetime string
+    if time_str.endswith('Z'):
+        # UTC timezone (e.g., "2026-01-09T14:30:00Z")
+        dt_utc = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+    elif '+' in time_str or (time_str.count('-') > 2 and 'T' in time_str):
+        # Has timezone offset (e.g., "-07:00" or "+05:30")
+        dt_utc = datetime.fromisoformat(time_str)
+    else:
+        # No timezone info - this is the PrayerCal case
+        # Treat as LOCAL time in user's timezone, not UTC
+        naive_dt = datetime.fromisoformat(time_str)
+        # Localize to user's timezone (it's already in their local time)
+        dt_utc = user_tz.localize(naive_dt)
+        logger.debug(f"[TZ] No timezone in '{time_str}', treating as user's local time ({user_tz_str})")
+    
+    # Convert to user's timezone
+    dt_user = dt_utc.astimezone(user_tz)
+    logger.debug(f"[TZ] Converted {time_str} -> {dt_user} (user tz: {user_tz_str})")
+    
+    # Extract time string
+    time_result = dt_user.strftime("%H:%M")
+    
+    # Store date part only (user's local date, midnight, no timezone)
+    date_only = dt_user.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    
+    return (date_only, time_result)
+
+
 def get_oauth_flow():
     """Create OAuth flow with client config"""
     client_id = get_google_client_id()
@@ -362,15 +416,39 @@ async def select_calendars(
     selection: CalendarSelection,
     current_user: dict = Depends(get_current_user)
 ):
-    """Update selected Google Calendars"""
+    """Update selected Google Calendars and remove events from deselected calendars"""
     db = get_database()
+    user_oid = ObjectId(current_user["_id"])
     
+    # Get previously selected calendars
+    previously_selected = current_user.get("googleSelectedCalendars", ["primary"])
+    newly_selected = selection.calendar_ids
+    
+    # Find calendars that were deselected
+    deselected_calendars = set(previously_selected) - set(newly_selected)
+    
+    # Delete events from deselected calendars immediately
+    deleted_count = 0
+    if deselected_calendars:
+        all_tasks = await db.tasks.find({"user": user_oid}).to_list(None)
+        for task in all_tasks:
+            if task.get("googleCalendarId") in deselected_calendars:
+                await db.tasks.delete_one({"_id": task["_id"]})
+                deleted_count += 1
+        if deleted_count > 0:
+            logger.info(f"[SELECT] Deleted {deleted_count} events from deselected calendars: {deselected_calendars}")
+    
+    # Update selected calendars
     await db.users.update_one(
-        {"_id": ObjectId(current_user["_id"])},
-        {"$set": {"googleSelectedCalendars": selection.calendar_ids}}
+        {"_id": user_oid},
+        {"$set": {"googleSelectedCalendars": newly_selected}}
     )
     
-    return {"message": "Calendar selection updated", "selected": selection.calendar_ids}
+    return {
+        "message": "Calendar selection updated", 
+        "selected": newly_selected,
+        "eventsDeleted": deleted_count
+    }
 
 
 @router.get("/events")
@@ -418,8 +496,34 @@ async def get_events(
             else:
                 start_str = start.get("dateTime", "")
                 end_str = end.get("dateTime", "")
-                start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00")) if start_str else None
-                end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00")) if end_str else None
+                user_preferences = current_user.get("preferences", {})
+                # For events display, we need full datetime, not just date
+                if start_str:
+                    start_dt, _ = convert_event_time_to_user_tz(start_str, user_preferences)
+                    # Reconstruct full datetime by parsing again with user tz context
+                    user_tz_str = user_preferences.get("timezone", "UTC")
+                    try:
+                        user_tz = pytz.timezone(user_tz_str)
+                    except pytz.UnknownTimeZoneError:
+                        user_tz = pytz.UTC
+                    # For events endpoint, return the converted datetime
+                    if start_str.endswith('Z'):
+                        start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00")).astimezone(user_tz)
+                    elif '+' in start_str or (start_str.count('-') > 2 and 'T' in start_str):
+                        start_dt = datetime.fromisoformat(start_str).astimezone(user_tz)
+                    else:
+                        start_dt = user_tz.localize(datetime.fromisoformat(start_str))
+                else:
+                    start_dt = None
+                if end_str:
+                    if end_str.endswith('Z'):
+                        end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00")).astimezone(user_tz)
+                    elif '+' in end_str or (end_str.count('-') > 2 and 'T' in end_str):
+                        end_dt = datetime.fromisoformat(end_str).astimezone(user_tz)
+                    else:
+                        end_dt = user_tz.localize(datetime.fromisoformat(end_str))
+                else:
+                    end_dt = None
             
             if start_dt:
                 formatted_events.append({
@@ -490,8 +594,8 @@ async def import_calendar(
             else:
                 start_str = start.get("dateTime", "")
                 if start_str:
-                    start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                    due_time = start_dt.strftime("%H:%M")
+                    user_preferences = current_user.get("preferences", {})
+                    start_dt, due_time = convert_event_time_to_user_tz(start_str, user_preferences)
                 else:
                     continue
             
@@ -659,40 +763,9 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
                         else:
                             start_str = start.get("dateTime", "")
                             if start_str:
-                                # Parse the datetime with timezone awareness
-                                # Google Calendar returns times in the calendar's timezone
-                                # Format examples: "2026-01-09T14:30:00-07:00" or "2026-01-09T14:30:00Z"
-                                
-                                # Get user's configured timezone (default to UTC if not set)
+                                # Use shared helper for timezone conversion
                                 user_preferences = current_user.get("preferences", {})
-                                user_tz_str = user_preferences.get("timezone", "UTC")
-                                try:
-                                    user_tz = pytz.timezone(user_tz_str)
-                                except pytz.UnknownTimeZoneError:
-                                    logger.warning(f"[SYNC] Unknown timezone '{user_tz_str}', falling back to UTC")
-                                    user_tz = pytz.UTC
-                                
-                                # Parse the datetime from Google Calendar
-                                if start_str.endswith('Z'):
-                                    # UTC timezone
-                                    start_dt_utc = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-                                elif '+' in start_str or (start_str.count('-') > 2 and 'T' in start_str):
-                                    # Has timezone offset (e.g., -07:00 or +05:30)
-                                    start_dt_utc = datetime.fromisoformat(start_str)
-                                else:
-                                    # No timezone info, assume UTC
-                                    start_dt_utc = datetime.fromisoformat(start_str).replace(tzinfo=pytz.UTC)
-                                
-                                # Convert to USER's timezone (not server timezone)
-                                start_dt_user = start_dt_utc.astimezone(user_tz)
-                                logger.debug(f"[SYNC] Converted {start_str} -> {start_dt_user} (user tz: {user_tz_str})")
-                                
-                                # Extract time from the converted datetime (now in user's timezone)
-                                # This ensures events show correct time in user's timezone
-                                due_time = start_dt_user.strftime("%H:%M")
-                                
-                                # Store date part only (user's local date, midnight)
-                                start_dt = start_dt_user.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+                                start_dt, due_time = convert_event_time_to_user_tz(start_str, user_preferences)
                             else:
                                 continue
                         
