@@ -633,6 +633,43 @@ textarea {
     z-index: 100;
     overflow-y: auto;
     overflow-x: hidden;
+    transition: width 0.1s ease;
+}
+
+/* Sidebar Resize Handle */
+.sidebar-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: ew-resize;
+    background: transparent;
+    z-index: 101;
+    transition: background var(--transition-fast);
+}
+
+.sidebar-resize-handle:hover {
+    background: var(--accent-primary);
+}
+
+.sidebar-resize-handle.resizing {
+    background: var(--accent-primary);
+}
+
+/* Prevent text selection during resize */
+body.sidebar-resizing {
+    cursor: ew-resize !important;
+    user-select: none;
+}
+
+body.sidebar-resizing * {
+    cursor: ew-resize !important;
+}
+
+/* Main content transition for smooth resize */
+.main-content {
+    transition: margin-left 0.1s ease;
 }
 
 .sidebar-header {
@@ -2192,13 +2229,57 @@ textarea {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Completed status */
+/* Completed status - Match month view styling */
 .week-task-positioned.status-completed {
-    opacity: 0.5;
+    background: var(--event-success-bg) !important;
+    border-color: var(--event-success-border) !important;
+    color: var(--event-success-text) !important;
 }
 
 .week-task-positioned.status-completed .week-task-title {
-    text-decoration: line-through;
+    color: var(--event-success-text) !important;
+    text-decoration: none !important;
+}
+
+.week-task-positioned.status-completed .week-task-time {
+    color: var(--event-success-text) !important;
+    background: rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Skipped status - Match month view styling */
+.week-task-positioned.status-skipped {
+    background: var(--event-error-bg) !important;
+    border-color: var(--event-error-border) !important;
+    color: var(--event-error-text) !important;
+}
+
+.week-task-positioned.status-skipped .week-task-title {
+    color: var(--event-error-text) !important;
+    text-decoration: none !important;
+}
+
+.week-task-positioned.status-skipped .week-task-time {
+    color: var(--event-error-text) !important;
+    background: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* In Progress status - Match month view styling */
+.week-task-positioned.status-in-progress,
+.week-task-positioned.status-in_progress {
+    background: var(--event-warning-bg) !important;
+    border-color: var(--event-warning-border) !important;
+    color: var(--event-warning-text) !important;
+}
+
+.week-task-positioned.status-in-progress .week-task-title,
+.week-task-positioned.status-in_progress .week-task-title {
+    color: var(--event-warning-text) !important;
+}
+
+.week-task-positioned.status-in-progress .week-task-time,
+.week-task-positioned.status-in_progress .week-task-time {
+    color: var(--event-warning-text) !important;
+    background: rgba(245, 158, 11, 0.2) !important;
 }
 
 /* Agenda View */
@@ -3279,24 +3360,95 @@ textarea {
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 0;
 }
 
 .modal-content {
     position: relative;
+    z-index: 10;
     width: 100%;
     max-width: 480px;
     max-height: 85vh;
     overflow-y: auto;
     background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius-xl);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     animation: modalIn 0.25s ease-out;
+}
+
+/* Light theme modal */
+[data-theme="light"] .modal-content,
+[data-theme="classic-productivity"] .modal-content,
+[data-theme="pastel-calm"] .modal-content,
+[data-theme="warm-earth"] .modal-content,
+[data-theme="crisp-nordic"] .modal-content,
+[data-theme="energetic-sunrise"] .modal-content {
+    background: #ffffff;
+    border-color: #e5e7eb;
+}
+
+/* Dark theme modal */
+[data-theme="dark"] .modal-content,
+[data-theme="midnight-minimal"] .modal-content {
+    background: #1a1a1a;
+    border-color: #333333;
+}
+
+/* Deep Ocean theme modal */
+[data-theme="deep-ocean"] .modal-content {
+    background: #0F1D32;
+    border-color: #1E3A5F;
+}
+
+/* Charcoal Elegance theme modal */
+[data-theme="charcoal-elegance"] .modal-content {
+    background: #1C1C24;
+    border-color: #38384A;
+}
+
+/* Neon Pulse theme modal */
+[data-theme="neon-pulse"] .modal-content {
+    background: #18181B;
+    border-color: #3F3F46;
+}
+
+/* Forest Dusk theme modal */
+[data-theme="forest-dusk"] .modal-content {
+    background: #141F18;
+    border-color: #2A4032;
+}
+
+/* Stormy Void theme modal */
+[data-theme="stormy-void"] .modal-content {
+    background: #1A1A1E;
+    border-color: #32323A;
+}
+
+/* Warm Ember theme modal */
+[data-theme="warm-ember"] .modal-content {
+    background: #1F1A15;
+    border-color: #382F25;
+}
+
+/* Cyber Twilight theme modal */
+[data-theme="cyber-twilight"] .modal-content {
+    background: #151527;
+    border-color: #2A2A50;
+}
+
+/* Hacker theme modal */
+[data-theme="hacker"] .modal-content {
+    background: #050505;
+    border-color: #004400;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
 }
 
 @keyframes modalIn {
     from {
         opacity: 0;
-        transform: scale(0.9) translateY(-30px);
+        transform: scale(0.95) translateY(-20px);
     }
 
     to {
@@ -3315,11 +3467,13 @@ textarea {
     justify-content: space-between;
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
 }
 
 .modal-header h2 {
     font-size: 1.25rem;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
 .modal-content form {
@@ -3327,6 +3481,7 @@ textarea {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    background: var(--bg-primary);
 }
 
 .modal-actions {
@@ -3334,6 +3489,8 @@ textarea {
     justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
 }
 
 /* AI Chat Interface */
@@ -4710,7 +4867,7 @@ textarea {
         inset: 0;
         background: rgba(0, 0, 0, 0.5);
         z-index: -1;
-        backdrop-filter: blur(2px);
+        /* Removed backdrop-filter blur */
     }
 
     .main-content {
@@ -6301,8 +6458,6 @@ textarea {
 #day-agenda-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6310,7 +6465,18 @@ textarea {
     animation: fadeIn 0.2s ease;
 }
 
+#day-agenda-modal .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 0;
+}
+
 .day-agenda-content {
+    position: relative;
+    z-index: 10;
     width: 90%;
     max-width: 500px;
     max-height: 80vh;
@@ -7317,10 +7483,21 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
 
 .nav-item.drag-over {
     background: var(--accent-light);
-    border-top: 2px solid var(--accent-primary);
-    margin-top: 0.5rem;
+    border-top: 3px solid var(--accent-primary) !important;
+    padding-top: calc(0.5rem + 3px);
     transform: translateX(4px);
     transition: all var(--transition-fast);
+}
+
+.nav-item.drag-over::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0.5rem;
+    right: 0.5rem;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
 }
 
 /* Enhanced drag feedback for different themes */
@@ -7329,10 +7506,23 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
     border-color: var(--accent-secondary);
 }
 
+[data-theme="dark"] .nav-item.drag-over {
+    background: rgba(99, 102, 241, 0.15);
+}
+
 [data-theme="hacker"] .nav-item.dragging {
     background: rgba(0, 255, 0, 0.15);
     border-color: #00ff00;
     box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+[data-theme="hacker"] .nav-item.drag-over {
+    background: rgba(0, 255, 0, 0.1);
+    border-top-color: #00ff00 !important;
+}
+
+[data-theme="hacker"] .nav-item.drag-over::before {
+    background: #00ff00;
 }
 
 /* ============================================

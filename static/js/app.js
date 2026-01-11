@@ -163,6 +163,7 @@ async function init() {
     try {
         setupEventListeners();
         initSidebarDragDrop(); // Enable drag-drop reordering
+        initSidebarResize(); // Enable sidebar resizing
         checkGoogleAuthCallback(); // Check for Google OAuth callback
         await checkAuth();
     } catch (error) {
@@ -1345,14 +1346,11 @@ function openDayAgenda(date, tasks) {
     let modal = document.getElementById('day-agenda-modal');
     if (modal) modal.remove();
 
-    // Create modal
+    // Create modal with correct structure (overlay and content as siblings)
     modal = document.createElement('div');
     modal.id = 'day-agenda-modal';
-    modal.className = 'modal-overlay';
-    modal.onclick = (e) => {
-        if (e.target === modal) modal.remove();
-    };
-
+    modal.className = 'modal';
+    
     const dateStr = date.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -1368,11 +1366,12 @@ function openDayAgenda(date, tasks) {
     });
 
     modal.innerHTML = `
+        <div class="modal-overlay" onclick="document.getElementById('day-agenda-modal').remove()"></div>
         <div class="day-agenda-content">
             <div class="day-agenda-header">
                 <h2>${dateStr}</h2>
                 <span class="task-count">${tasks.length} task${tasks.length !== 1 ? 's' : ''}</span>
-                <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+                <button class="close-btn" onclick="document.getElementById('day-agenda-modal').remove()">×</button>
             </div>
             <div class="day-agenda-list">
                 ${sortedTasks.length === 0 ? '<p class="no-tasks">No tasks for this day</p>' : ''}
@@ -1829,15 +1828,27 @@ function handleSidebarDragOver(e) {
     const afterElement = getDragAfterElement(e.currentTarget, e.clientY);
     const dragging = document.querySelector('.nav-item.dragging');
 
+    // Remove drag-over class from all items
+    e.currentTarget.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+
     if (dragging && afterElement === null) {
         e.currentTarget.appendChild(dragging);
     } else if (dragging && afterElement) {
         e.currentTarget.insertBefore(dragging, afterElement);
+        // Add visual indicator to the element we're inserting before
+        afterElement.classList.add('drag-over');
     }
 }
 
 function handleSidebarDrop(e) {
     e.preventDefault();
+
+    // Remove all drag-over indicators
+    document.querySelectorAll('.nav-item.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
 
     // Save the new order
     const container = e.currentTarget;
@@ -1845,7 +1856,7 @@ function handleSidebarDrop(e) {
     const config = getSidebarConfig();
 
     if (container.id === 'smart-lists') {
-        const newOrder = items.map(item => item.dataset.list);
+        const newOrder = items.map(item => item.dataset.list).filter(Boolean);
         const reordered = [];
         newOrder.forEach(id => {
             const found = config.smartLists.find(i => i.id === id);
@@ -1857,7 +1868,7 @@ function handleSidebarDrop(e) {
         });
         config.smartLists = reordered;
     } else if (container.id === 'tools-list') {
-        const newOrder = items.map(item => item.dataset.view);
+        const newOrder = items.map(item => item.dataset.view).filter(Boolean);
         const reordered = [];
         newOrder.forEach(view => {
             const found = config.tools.find(i => i.view === view);
@@ -1867,6 +1878,12 @@ function handleSidebarDrop(e) {
             if (!reordered.find(r => r.id === i.id)) reordered.push(i);
         });
         config.tools = reordered;
+    } else if (container.id === 'custom-lists') {
+        // Custom lists are stored in state.lists, reorder based on DOM order
+        const newOrder = items.map(item => item.dataset.customList || item.dataset.listId).filter(Boolean);
+        // Custom lists order is visual only - the backend doesn't support ordering
+        // Just ensure the DOM reflects the user's preference
+        console.log('Custom lists reordered:', newOrder);
     }
 
     saveSidebarConfig(config);
@@ -1877,6 +1894,11 @@ function handleSidebarDragEnd(e) {
         draggedSidebarItem.classList.remove('dragging');
         draggedSidebarItem = null;
     }
+
+    // Remove all drag-over indicators
+    document.querySelectorAll('.nav-item.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
 
     // Remove any leftover drag styling
     document.querySelectorAll('.nav-item.dragging').forEach(el => {
@@ -1897,6 +1919,94 @@ function getDragAfterElement(container, y) {
             return closest;
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// ============================================
+// SIDEBAR RESIZE FUNCTIONALITY
+// ============================================
+
+const sidebarResizeState = {
+    isResizing: false,
+    startX: 0,
+    startWidth: 0,
+    minWidth: 200,
+    maxWidth: 400
+};
+
+function initSidebarResize() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    // Create resize handle
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'sidebar-resize-handle';
+    sidebar.appendChild(resizeHandle);
+
+    // Load saved width
+    const savedWidth = localStorage.getItem('sidebarWidth');
+    if (savedWidth) {
+        const width = parseInt(savedWidth, 10);
+        if (width >= sidebarResizeState.minWidth && width <= sidebarResizeState.maxWidth) {
+            setSidebarWidth(width);
+        }
+    }
+
+    // Event listeners
+    resizeHandle.addEventListener('mousedown', handleResizeStart);
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+}
+
+function handleResizeStart(e) {
+    e.preventDefault();
+    sidebarResizeState.isResizing = true;
+    sidebarResizeState.startX = e.clientX;
+    const sidebar = document.querySelector('.sidebar');
+    sidebarResizeState.startWidth = sidebar.offsetWidth;
+    
+    document.body.classList.add('sidebar-resizing');
+    document.querySelector('.sidebar-resize-handle')?.classList.add('resizing');
+}
+
+function handleResizeMove(e) {
+    if (!sidebarResizeState.isResizing) return;
+    
+    const deltaX = e.clientX - sidebarResizeState.startX;
+    let newWidth = sidebarResizeState.startWidth + deltaX;
+    
+    // Clamp to bounds
+    newWidth = Math.max(sidebarResizeState.minWidth, Math.min(sidebarResizeState.maxWidth, newWidth));
+    
+    setSidebarWidth(newWidth);
+}
+
+function handleResizeEnd() {
+    if (!sidebarResizeState.isResizing) return;
+    
+    sidebarResizeState.isResizing = false;
+    document.body.classList.remove('sidebar-resizing');
+    document.querySelector('.sidebar-resize-handle')?.classList.remove('resizing');
+    
+    // Save width to localStorage
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        localStorage.setItem('sidebarWidth', sidebar.offsetWidth.toString());
+    }
+}
+
+function setSidebarWidth(width) {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    
+    if (sidebar) {
+        sidebar.style.width = `${width}px`;
+    }
+    if (mainContent) {
+        mainContent.style.marginLeft = `${width}px`;
+    }
+    
+    // Update CSS variable for consistency
+    document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
 }
 
 function openAddSidebarModal(section) {
@@ -3120,8 +3230,9 @@ function setTheme(theme) {
     // Add transition class for smooth theme switching
     document.body.dataset.themeTransitioning = 'true';
 
-    // Set the theme
+    // Set the theme on both body and documentElement for CSS variable inheritance
     document.body.dataset.theme = theme;
+    document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
 
     // Update theme cards UI
@@ -4700,9 +4811,13 @@ function getEventColor(id) {
 // ALL events use the same unified styling - no Google Calendar color overrides
 function getEnhancedEventCardStyles(event, theme, view = 'month') {
     const isShort = event.duration && event.duration < 30; // minutes
+    const status = event.status || 'scheduled';
 
     // Base unified classes - all cards inherit from event-card-base
     let unifiedClasses = ['event-card-base'];
+
+    // Add status class for consistent styling across all views
+    unifiedClasses.push(`status-${status}`);
 
     // Add view-specific classes
     if (view === 'week') {

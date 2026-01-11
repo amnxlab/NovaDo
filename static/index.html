@@ -5,9 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NovaDo - Smart Task Management</title>
-    <link rel="stylesheet" href="css/themes.css?v=1">
-    <link rel="stylesheet" href="css/style.css?v=9">
-    <link rel="stylesheet" href="css/taskMatrix.css?v=1">
+    <!-- Early theme application to prevent flash of unstyled content -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+    <link rel="stylesheet" href="css/themes.css?v=4">
+    <link rel="stylesheet" href="css/style.css?v=17">
+    <link rel="stylesheet" href="css/taskMatrix.css?v=10">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -806,6 +813,22 @@
 
                 <!-- Task Matrix View -->
                 <div id="matrix-view" class="view hidden">
+                    <!-- Banner Section -->
+                    <div id="matrix-banner" class="matrix-banner">
+                        <div class="banner-image-container">
+                            <img id="matrix-banner-image" class="banner-image" src="" alt="Banner" style="display: none;">
+                            <div id="matrix-banner-default" class="banner-default"></div>
+                        </div>
+                        <div class="banner-actions">
+                            <button class="banner-btn" id="banner-edit-btn" title="Edit Banner">
+                                <i data-lucide="image"></i>
+                            </button>
+                            <button class="banner-btn banner-btn-remove" id="banner-remove-btn" title="Remove Banner" style="display: none;">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                        <input type="file" id="banner-file-input" accept="image/jpeg,image/png,image/webp,image/gif" style="display: none;">
+                    </div>
                     <div id="matrix-header"></div>
                     <div id="matrix-filter-bar"></div>
                     <div id="matrix-view-container"></div>

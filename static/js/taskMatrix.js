@@ -64,6 +64,7 @@ const PRIORITY_COLORS = {
 // Initialize Task Matrix
 function initTaskMatrix() {
     loadMatrixPreferences();
+    initMatrixBanner(); // Initialize banner
     renderMatrixHeader();
     renderFilterBar();
     renderCurrentView();
@@ -1712,20 +1713,17 @@ function showKeyboardShortcutsHelp() {
                     </div>
                 `).join('')}
             </div>
-            <button class="matrix-btn matrix-btn-primary" onclick="this.closest('.keyboard-shortcuts-modal').remove()">
+            <button class="matrix-btn matrix-btn-primary" onclick="this.closest('.modal').remove()">
                 Got it!
             </button>
         </div>
     `;
 
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = html;
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.remove();
-    });
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `<div class="modal-overlay" onclick="this.parentElement.remove()"></div>${html}`;
 
-    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
 }
 
 function focusQuadrant(num) {
@@ -1780,7 +1778,7 @@ function showAISuggestions() {
                         <p>${s.text}</p>
                         <div class="suggestion-actions">
                             <button class="matrix-btn matrix-btn-primary matrix-btn-small" 
-                                    onclick="applyAISuggestion('${s.action}'); this.closest('.modal-overlay').remove();">
+                                    onclick="applyAISuggestion('${s.action}'); this.closest('.modal').remove();">
                                 Apply
                             </button>
                             <button class="matrix-btn matrix-btn-text matrix-btn-small" 
@@ -1791,20 +1789,17 @@ function showAISuggestions() {
                     </div>
                 `).join('')}
             </div>
-            <button class="matrix-btn matrix-btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+            <button class="matrix-btn matrix-btn-secondary" onclick="this.closest('.modal').remove()">
                 Close
             </button>
         </div>
     `;
 
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = html;
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.remove();
-    });
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `<div class="modal-overlay" onclick="this.parentElement.remove()"></div>${html}`;
 
-    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -2102,9 +2097,377 @@ async function clearQuadrant(quadrantId) {
     }
 }
 
+// ============================================
+// Matrix Banner Functions
+// ============================================
+
+// Banner state
+const bannerState = {
+    imageUrl: null,
+    focalPointX: 50,
+    focalPointY: 50,
+    isEditing: false
+};
+
+// Initialize Matrix Banner
+async function initMatrixBanner() {
+    await loadBannerSettings();
+    renderBanner();
+    setupBannerEventListeners();
+}
+
+// Load banner settings from server
+async function loadBannerSettings() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('/api/user/banner/', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            bannerState.imageUrl = data.bannerUrl;
+            bannerState.focalPointX = data.focalPointX || 50;
+            bannerState.focalPointY = data.focalPointY || 50;
+        }
+    } catch (error) {
+        console.error('Failed to load banner settings:', error);
+    }
+}
+
+// Render banner display
+function renderBanner() {
+    const bannerImage = document.getElementById('matrix-banner-image');
+    const bannerDefault = document.getElementById('matrix-banner-default');
+    const removeBtn = document.getElementById('banner-remove-btn');
+
+    if (!bannerImage || !bannerDefault) return;
+
+    if (bannerState.imageUrl) {
+        bannerImage.src = bannerState.imageUrl;
+        bannerImage.style.display = 'block';
+        bannerImage.style.objectPosition = `${bannerState.focalPointX}% ${bannerState.focalPointY}%`;
+        bannerDefault.style.display = 'none';
+        if (removeBtn) removeBtn.style.display = 'flex';
+    } else {
+        bannerImage.style.display = 'none';
+        bannerDefault.style.display = 'block';
+        if (removeBtn) removeBtn.style.display = 'none';
+    }
+
+    // Refresh Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+// Setup banner event listeners
+function setupBannerEventListeners() {
+    const editBtn = document.getElementById('banner-edit-btn');
+    const removeBtn = document.getElementById('banner-remove-btn');
+    const fileInput = document.getElementById('banner-file-input');
+
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            if (bannerState.imageUrl) {
+                openFocalPointEditor();
+            } else {
+                fileInput?.click();
+            }
+        });
+    }
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', removeBanner);
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', handleBannerUpload);
+    }
+
+    // Double-click on banner to upload new image
+    const banner = document.getElementById('matrix-banner');
+    if (banner) {
+        banner.addEventListener('dblclick', () => {
+            fileInput?.click();
+        });
+    }
+}
+
+// Handle banner file upload
+async function handleBannerUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        if (typeof showToast === 'function') {
+            showToast('Please upload a JPEG, PNG, WebP, or GIF image', 'error');
+        }
+        return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        if (typeof showToast === 'function') {
+            showToast('Image must be less than 5MB', 'error');
+        }
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/user/banner/', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            bannerState.imageUrl = data.bannerUrl;
+            bannerState.focalPointX = 50;
+            bannerState.focalPointY = 50;
+            renderBanner();
+            
+            if (typeof showToast === 'function') {
+                showToast('Banner uploaded successfully!', 'success');
+            }
+
+            // Open focal point editor after upload
+            setTimeout(() => openFocalPointEditor(), 300);
+        } else {
+            const error = await response.json();
+            if (typeof showToast === 'function') {
+                showToast(error.detail || 'Failed to upload banner', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Banner upload error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Failed to upload banner', 'error');
+        }
+    }
+
+    // Clear file input
+    event.target.value = '';
+}
+
+// Remove banner
+async function removeBanner() {
+    if (!confirm('Remove your banner image?')) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/user/banner/', {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            bannerState.imageUrl = null;
+            bannerState.focalPointX = 50;
+            bannerState.focalPointY = 50;
+            renderBanner();
+            
+            if (typeof showToast === 'function') {
+                showToast('Banner removed', 'success');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to remove banner:', error);
+        if (typeof showToast === 'function') {
+            showToast('Failed to remove banner', 'error');
+        }
+    }
+}
+
+// Open focal point editor modal
+function openFocalPointEditor() {
+    if (!bannerState.imageUrl) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'banner-edit-modal';
+    modal.id = 'banner-edit-modal';
+
+    modal.innerHTML = `
+        <div class="banner-edit-overlay" onclick="closeFocalPointEditor()"></div>
+        <div class="banner-edit-content">
+            <div class="banner-edit-header">
+                <h3>Adjust Banner Position</h3>
+                <button class="banner-edit-close" onclick="closeFocalPointEditor()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="banner-edit-body">
+                <div class="banner-edit-preview" id="focal-point-preview">
+                    <img src="${bannerState.imageUrl}" alt="Banner preview" id="focal-point-image">
+                    <div class="focal-point-indicator" id="focal-point-indicator" 
+                         style="left: ${bannerState.focalPointX}%; top: ${bannerState.focalPointY}%;">
+                    </div>
+                </div>
+                <p class="banner-edit-hint">Click or drag to set the focal point. This determines which part of the image stays visible.</p>
+                <div class="banner-edit-actions">
+                    <button class="matrix-btn matrix-btn-secondary" onclick="document.getElementById('banner-file-input').click(); closeFocalPointEditor();">
+                        <i data-lucide="upload"></i> Upload New
+                    </button>
+                    <button class="matrix-btn matrix-btn-primary" onclick="saveFocalPoint()">
+                        <i data-lucide="check"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Setup focal point interaction
+    setupFocalPointInteraction();
+}
+
+// Close focal point editor
+function closeFocalPointEditor() {
+    const modal = document.getElementById('banner-edit-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Setup focal point drag interaction
+function setupFocalPointInteraction() {
+    const preview = document.getElementById('focal-point-preview');
+    const indicator = document.getElementById('focal-point-indicator');
+    const image = document.getElementById('focal-point-image');
+
+    if (!preview || !indicator || !image) return;
+
+    let isDragging = false;
+
+    const updateFocalPoint = (e) => {
+        const rect = preview.getBoundingClientRect();
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        let y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Clamp to 0-100
+        x = Math.max(0, Math.min(100, x));
+        y = Math.max(0, Math.min(100, y));
+
+        indicator.style.left = `${x}%`;
+        indicator.style.top = `${y}%`;
+
+        // Update preview
+        image.style.objectPosition = `${x}% ${y}%`;
+
+        // Store temporarily
+        bannerState.focalPointX = Math.round(x);
+        bannerState.focalPointY = Math.round(y);
+    };
+
+    preview.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        updateFocalPoint(e);
+    });
+
+    preview.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            updateFocalPoint(e);
+        }
+    });
+
+    preview.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    preview.addEventListener('mouseleave', () => {
+        isDragging = false;
+    });
+
+    // Touch support
+    preview.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        const touch = e.touches[0];
+        updateFocalPoint(touch);
+    });
+
+    preview.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            updateFocalPoint(touch);
+        }
+    });
+
+    preview.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+
+    // Click to set
+    preview.addEventListener('click', updateFocalPoint);
+}
+
+// Save focal point settings
+async function saveFocalPoint() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/user/banner/settings', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                focalPointX: bannerState.focalPointX,
+                focalPointY: bannerState.focalPointY
+            })
+        });
+
+        if (response.ok) {
+            renderBanner();
+            closeFocalPointEditor();
+            
+            if (typeof showToast === 'function') {
+                showToast('Banner position saved!', 'success');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to save focal point:', error);
+        if (typeof showToast === 'function') {
+            showToast('Failed to save position', 'error');
+        }
+    }
+}
+
 // Export for global access
 window.taskMatrix = {
     init: initTaskMatrix,
     render: renderCurrentView,
-    state: matrixState
+    state: matrixState,
+    banner: {
+        load: loadBannerSettings,
+        render: renderBanner,
+        upload: handleBannerUpload,
+        remove: removeBanner,
+        openEditor: openFocalPointEditor
+    }
 };
+
+// Make focal point functions globally accessible
+window.closeFocalPointEditor = closeFocalPointEditor;
+window.saveFocalPoint = saveFocalPoint;
