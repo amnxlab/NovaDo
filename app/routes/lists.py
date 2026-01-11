@@ -20,15 +20,16 @@ async def get_lists(current_user: dict = Depends(get_current_user)):
         "isArchived": False
     }).sort("order", 1).to_list(None)
     
-    # Get task counts
+    # Get task counts - use original ObjectId before converting
     for list_item in lists:
-        list_item["_id"] = str(list_item["_id"])
-        list_item["user"] = str(list_item["user"])
         task_count = await db.tasks.count_documents({
-            "list": ObjectId(list_item["_id"]),
-            "status": "active"
+            "list": list_item["_id"],  # Use original ObjectId
+            "status": {"$nin": ["completed", "skipped"]}  # Count non-completed tasks
         })
         list_item["taskCount"] = task_count
+        # Now convert IDs to strings
+        list_item["_id"] = str(list_item["_id"])
+        list_item["user"] = str(list_item["user"])
     
     return {"lists": lists}
 

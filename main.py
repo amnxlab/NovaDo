@@ -3,7 +3,23 @@ NovaDo - FastAPI Backend Server
 Main application entry point
 """
 import os
+import sys
+from pathlib import Path
 from dotenv import load_dotenv
+
+# Handle PyInstaller bundled app vs running as script
+if getattr(sys, 'frozen', False):
+    # Running as compiled executable - use _MEIPASS for bundled files
+    BASE_DIR = Path(sys._MEIPASS)
+    # Work directory is where the exe resides (for data, uploads)
+    WORK_DIR = Path(os.path.dirname(sys.executable))
+else:
+    # Running as script
+    BASE_DIR = Path(__file__).parent
+    WORK_DIR = BASE_DIR
+
+# Change to work directory
+os.chdir(WORK_DIR)
 
 # Load environment variables FIRST, before any other imports
 load_dotenv()
@@ -18,9 +34,12 @@ from contextlib import asynccontextmanager
 from app.database import connect_db, close_db
 from app.routes import auth, tasks, lists, habits, calendar, llm, user, pomodoro, stats, uploads, notifications, focus, banner
 
-# Create directories if they don't exist
-os.makedirs("uploads", exist_ok=True)
-os.makedirs("static", exist_ok=True)
+# Create directories if they don't exist (in work directory)
+os.makedirs(WORK_DIR / "uploads", exist_ok=True)
+os.makedirs(WORK_DIR / "data", exist_ok=True)
+
+# Static directory is in BASE_DIR (bundled with app)
+STATIC_DIR = BASE_DIR / "static"
 
 
 @asynccontextmanager
@@ -75,27 +94,27 @@ async def health_check():
     }
 
 
-# Mount static files
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-app.mount("/css", StaticFiles(directory="static/css"), name="css")
-app.mount("/js", StaticFiles(directory="static/js"), name="js")
+# Mount static files using resolved paths
+app.mount("/uploads", StaticFiles(directory=str(WORK_DIR / "uploads")), name="uploads")
+app.mount("/css", StaticFiles(directory=str(STATIC_DIR / "css")), name="css")
+app.mount("/js", StaticFiles(directory=str(STATIC_DIR / "js")), name="js")
 
 
 @app.get("/")
 async def serve_index():
     """Serve the main frontend page"""
-    return FileResponse("static/index.html")
+    return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
     """Serve static files or fall back to index.html for SPA routing"""
     # Check if file exists in static directory
-    file_path = f"static/{full_path}"
-    if os.path.isfile(file_path):
-        return FileResponse(file_path)
+    file_path = STATIC_DIR / full_path
+    if file_path.is_file():
+        return FileResponse(str(file_path))
     # Fall back to index.html for SPA routing
-    return FileResponse("static/index.html")
+    return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 def kill_port_process(port: int):
@@ -247,4 +266,7 @@ if __name__ == "__main__":
         print(f"\n  ❌ Error: {e}")
     finally:
         kill_all_app_processes()
+else:
+    # When imported (e.g., by GUI launcher), don't run cleanup on import
+    pass
 

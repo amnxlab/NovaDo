@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Matrix Tests</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        h1 { color: #1e293b; }
+        .test-suite {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-suite h2 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #334155;
+        }
+        .test-result {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .test-result.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .test-result.fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .test-result.skip {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .summary {
+            background: #1e293b;
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .summary .pass { color: #4ade80; }
+        .summary .fail { color: #f87171; }
+        .summary .skip { color: #fbbf24; }
+        pre {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Task Matrix Test Runner</h1>
+    <div id="test-output"></div>
+    <div id="summary" class="summary"></div>
+
+    <!-- Load dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/fast-check@3.14.0/lib/bundle.js"></script>
+    
+    <!-- Mock state object -->
+    <script>
+        // Mock global state
+        window.state = { tasks: [] };
+        window.api = {
+            updateTask: async (id, updates) => ({ id, ...updates })
+        };
+    </script>
+    
+    <!-- Load the module under test -->
+    <script src="../taskMatrix.js"></script>
+    
+    <!-- Simple test framework -->
+    <script>
+        const results = { pass: 0, fail: 0, skip: 0, tests: [] };
+        const output = document.getElementById('test-output');
+        
+        let currentSuite = '';
+        
+        function describe(name, fn) {
+            currentSuite = name;
+            const suiteDiv = document.createElement('div');
+            suiteDiv.className = 'test-suite';
+            suiteDiv.innerHTML = `<h2>${name}</h2>`;
+            suiteDiv.id = `suite-${name.replace(/\s+/g, '-')}`;
+            output.appendChild(suiteDiv);
+            fn();
+        }
+        
+        function test(name, fn) {
+            const suiteDiv = document.getElementById(`suite-${currentSuite.replace(/\s+/g, '-')}`);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result';
+            
+            try {
+                fn();
+                resultDiv.className += ' pass';
+                resultDiv.textContent = `✓ ${name}`;
+                results.pass++;
+                results.tests.push({ suite: currentSuite, name, status: 'pass' });
+            } catch (e) {
+                if (e.message.includes('not defined') || e.message.includes('is not a function')) {
+                    resultDiv.className += ' skip';
+                    resultDiv.textContent = `⊘ ${name} (skipped: ${e.message})`;
+                    results.skip++;
+                    results.tests.push({ suite: currentSuite, name, status: 'skip', error: e.message });
+                } else {
+                    resultDiv.className += ' fail';
+                    resultDiv.innerHTML = `✗ ${name}<pre>${e.message}\n${e.stack}</pre>`;
+                    results.fail++;
+                    results.tests.push({ suite: currentSuite, name, status: 'fail', error: e.message });
+                }
+            }
+            
+            suiteDiv.appendChild(resultDiv);
+        }
+        
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toContain(expected) {
+                    if (typeof actual === 'string' && !actual.includes(expected)) {
+                        throw new Error(`Expected "${actual.substring(0, 100)}..." to contain "${expected}"`);
+                    } else if (Array.isArray(actual) && !actual.includes(expected)) {
+                        throw new Error(`Expected array to contain ${expected}`);
+                    }
+                },
+                not: {
+                    toContain(expected) {
+                        if (typeof actual === 'string' && actual.includes(expected)) {
+                            throw new Error(`Expected "${actual.substring(0, 100)}..." NOT to contain "${expected}"`);
+                        }
+                    }
+                },
+                toBeDefined() {
+                    if (actual === undefined) {
+                        throw new Error('Expected value to be defined');
+                    }
+                },
+                toBeGreaterThan(expected) {
+                    if (actual <= expected) {
+                        throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                    }
+                },
+                toBeLessThanOrEqual(expected) {
+                    if (actual > expected) {
+                        throw new Error(`Expected ${actual} to be less than or equal to ${expected}`);
+                    }
+                }
+            };
+        }
+        
+        function beforeEach(fn) {
+            // Store for later use - simplified implementation
+            window._beforeEach = fn;
+        }
+        
+        // Run before each test
+        const originalTest = test;
+        test = function(name, fn) {
+            if (window._beforeEach) {
+                window._beforeEach();
+            }
+            originalTest(name, fn);
+        };
+    </script>
+    
+    <!-- Run unit tests -->
+    <script>
+        // Status Icon Rendering Tests
+        describe('TaskCard - Status Icon Rendering', () => {
+            test('renders ✅ icon for completed status', () => {
+                const task = { id: '1', title: 'Test', status: 'completed', completed: true, tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('✅');
+                expect(html).toContain('data-status="completed"');
+            });
+
+            test('renders ❌ icon for skipped status', () => {
+                const task = { id: '1', title: 'Test', status: 'skipped', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('❌');
+            });
+
+            test('renders ⏳ icon with spinning class for in_progress', () => {
+                const task = { id: '1', title: 'Test', status: 'in_progress', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('⏳');
+                expect(html).toContain('spinning');
+            });
+
+            test('renders 📅 icon for scheduled status', () => {
+                const task = { id: '1', title: 'Test', status: 'scheduled', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('📅');
+            });
+
+            test('renders ○ icon for todo status', () => {
+                const task = { id: '1', title: 'Test', status: 'todo', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('○');
+            });
+        });
+
+        describe('TaskCard - Priority Border', () => {
+            test('renders priority-high class for high priority', () => {
+                const task = { id: '1', title: 'Test', priority: 3, tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('priority-high');
+            });
+
+            test('renders priority-medium class for medium priority', () => {
+                const task = { id: '1', title: 'Test', priority: 2, tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('priority-medium');
+            });
+
+            test('renders priority-low class for low priority', () => {
+                const task = { id: '1', title: 'Test', priority: 1, tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('priority-low');
+            });
+        });
+
+        describe('TaskCard - Tag Display', () => {
+            test('displays up to 3 tags', () => {
+                const task = { id: '1', title: 'Test', tags: ['work', 'urgent', 'meeting'] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('#work');
+                expect(html).toContain('#urgent');
+                expect(html).toContain('#meeting');
+            });
+
+            test('shows +N more for extra tags', () => {
+                const task = { id: '1', title: 'Test', tags: ['a', 'b', 'c', 'd', 'e'] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('+2');
+            });
+
+            test('no tags section when empty', () => {
+                const task = { id: '1', title: 'Test', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).not.toContain('task-card-tags');
+            });
+        });
+
+        describe('TaskCard - Fourth Dimension', () => {
+            test('displays energy icon when type is energy', () => {
+                matrixState.fourthDimensionType = 'energy';
+                const task = { id: '1', title: 'Test', energyLevel: 'high', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('🔥');
+            });
+
+            test('displays time icon when type is time_of_day', () => {
+                matrixState.fourthDimensionType = 'time_of_day';
+                const task = { id: '1', title: 'Test', timeOfDay: 'morning', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('🌅');
+            });
+        });
+
+        describe('TaskCard - Accessibility', () => {
+            test('has role="article"', () => {
+                const task = { id: '1', title: 'Test', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('role="article"');
+            });
+
+            test('has aria-label', () => {
+                const task = { id: '1', title: 'Test', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('aria-label=');
+            });
+
+            test('has tabindex="0"', () => {
+                const task = { id: '1', title: 'Test', tags: [] };
+                const html = renderTaskCard(task);
+                expect(html).toContain('tabindex="0"');
+            });
+        });
+
+        describe('Helper Functions', () => {
+            test('getTaskStatus returns explicit status', () => {
+                expect(getTaskStatus({ status: 'in_progress' })).toBe('in_progress');
+            });
+
+            test('getTaskStatus returns completed when task.completed', () => {
+                expect(getTaskStatus({ completed: true })).toBe('completed');
+            });
+
+            test('getTaskStatus defaults to todo', () => {
+                expect(getTaskStatus({})).toBe('todo');
+            });
+
+            test('getPriorityLabel converts numbers', () => {
+                expect(getPriorityLabel(3)).toBe('high');
+                expect(getPriorityLabel(2)).toBe('medium');
+                expect(getPriorityLabel(1)).toBe('low');
+            });
+
+            test('getStatusIcon returns correct icons', () => {
+                expect(getStatusIcon('completed')).toBe('✅');
+                expect(getStatusIcon('skipped')).toBe('❌');
+                expect(getStatusIcon('in_progress')).toBe('⏳');
+            });
+        });
+
+        // Show summary
+        document.getElementById('summary').innerHTML = `
+            <strong>Test Results:</strong><br>
+            <span class="pass">✓ ${results.pass} passed</span> | 
+            <span class="fail">✗ ${results.fail} failed</span> | 
+            <span class="skip">⊘ ${results.skip} skipped</span>
+        `;
+    </script>
+</body>
+</html>

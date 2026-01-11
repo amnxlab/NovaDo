@@ -1,70 +1,117 @@
-# NovaDo
-**A smart, AI-powered task management application with seamless Google Calendar integration.**
+# NovaDo v0.5
 
-NovaDo allows you to organize your life with ease, offering intelligent task creation, habit tracking, and two-way calendar synchronization. Built with a robust FastAPI backend and a responsive vanilla JavaScript frontend.
+**Smart Task Management with AI & Google Calendar Integration**
 
-![NovaDo Logo](logo.png)
+![NovaDo](banner.png)
 
-## 🌟 Key Features
+---
 
-*   **🤖 AI Assistant**: Create tasks using natural language ("Remind me to buy milk tomorrow at 5pm"). Supports Google Gemini and Groq.
-*   **📅 Google Calendar Sync**: Two-way synchronization. Import events as tasks, or view tasks on your calendar.
-*   **✅ Smart Task Management**: Organize with lists, tags, priorities, and smart filters (Today, Next 7 Days).
-*   **🔥 Habit Tracking**: Keep your streaks alive with a dedicated habit tracker.
-*   **🌗 Adaptive UI**: Beautiful Light and Dark modes.
-*   **🔒 Privacy First**: Works with a local database (Mongita) by default, data stays yours.
+## ✨ Features
 
-## 🚀 Getting Started
+- **🤖 AI Assistant** – Create tasks with natural language ("Meeting with John tomorrow at 3pm")
+- **📅 Google Calendar Sync** – Two-way sync with multiple calendars
+- **✅ Smart Task Management** – Lists, tags, priorities, smart filters
+- **📊 Task Matrix** – Eisenhower Matrix for prioritization
+- **🔥 Habit Tracking** – Build streaks and track progress
+- **🍅 Pomodoro Timer** – Focus mode with break reminders
+- **📈 Statistics** – Productivity insights and analytics
+- **🌙 Dark Mode** – Beautiful dark and light themes
+- **🔒 Local Storage** – Your data stays on your machine
 
-Quick start guide to get NovaDo running on your machine.
+---
 
-### Prerequisites
-*   Python 3.10+
-*   pip
+## 🚀 Quick Start
 
-### Installation
+### Option 1: Run the Executable (Windows)
+1. Download `app-release` folder
+2. Double-click `NovaDo.exe`
+3. App opens automatically at `http://localhost:5000`
 
-1.  **Clone and Setup**:
-    ```bash
-    git clone https://github.com/yourusername/Planner.git
-    cd Planner
-    python -m venv venv
-    # Windows:
-    .\venv\Scripts\Activate.ps1
-    # Mac/Linux:
-    source venv/bin/activate
-    ```
+### Option 2: Run from Source
+```bash
+# Clone & setup
+git clone https://github.com/amnxlab/NovaDo.git
+cd NovaDo
+python -m venv venv
+.\venv\Scripts\Activate.ps1  # Windows
+pip install -r requirements.txt
 
-2.  **Install Dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
+# Run
+python launcher_gui.py  # GUI launcher
+# or
+python main.py          # Direct server
+```
 
-3.  **Run**:
-    ```bash
-    python main.py
-    ```
-    Access at `http://localhost:5000`.
+---
 
-## 📚 Documentation
+## ⚙️ Configuration
 
-Detailed documentation is available in the `docs/` directory:
+Edit `.env` file for optional features:
 
--   **[Deployment Guide](docs/deployment/README.md)**: Detailed setup, environment variables, and production deployment.
--   **[Board Architecture](docs/architecture/README.md)**: Understanding the backend and frontend structure.
--   **[Feature Guides](docs/features/)**: Deep dives into specific features like [Calendar Drag-and-Drop](docs/features/calendar_drag_drop.md).
+```ini
+# AI Assistant (choose one)
+GEMINI_API_KEY=your-key          # Google Gemini (free)
+GROQ_API_KEY=your-key            # Groq (free)
 
-## 🛠️ Project Structure
+# Google Calendar Sync
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-secret
+GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/callback
 
-The project is organized as follows:
--   `app/`: FastAPI application (Routes, Models, Auth).
--   `static/`: Frontend assets (HTML, CSS, JS).
--   `scripts/`: Utility and maintenance scripts.
--   `docs/`: Comprehensive project documentation.
--   `data/`: Local database storage.
+# Security
+SECRET_KEY=change-this-in-production
+JWT_SECRET_KEY=change-this-too
+```
 
-## 🤝 Contributing
-Contributions are welcome! Please check the issues tab.
+---
+
+## 📁 Project Structure
+
+```
+NovaDo/
+├── app/                 # FastAPI backend
+│   ├── routes/          # API endpoints
+│   ├── models/          # Data models
+│   └── auth.py          # Authentication
+├── static/              # Frontend (HTML/CSS/JS)
+│   ├── css/             # Stylesheets
+│   └── js/              # Application logic
+├── launcher_gui.py      # Desktop app launcher
+├── main.py              # Server entry point
+├── data/                # Local database
+└── uploads/             # User uploads
+```
+
+---
+
+## 🔧 Requirements
+
+- **Python 3.10+** (for source)
+- **Windows 10+** (for executable)
+- Internet connection (for Google Calendar & AI features)
+
+---
+
+## 📝 Changelog v0.5
+
+- ✅ Desktop GUI launcher with dark mode
+- ✅ Google Calendar multi-calendar sync
+- ✅ Timezone-aware event handling
+- ✅ Task Matrix (Eisenhower) view
+- ✅ Pomodoro timer with statistics
+- ✅ Profile picture upload
+- ✅ Kanban board view
+- ✅ Calendar drag & drop
+
+---
+
+## 👤 Author
+
+**Ahmed Amin**  
+[amnxlab.site](https://amnxlab.site) • [GitHub](https://github.com/amnxlab)
+
+---
 
 ## 📄 License
-MIT License.
+
+MIT License © 2026 Ahmed Amin
