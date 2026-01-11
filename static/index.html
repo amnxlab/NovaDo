@@ -45,6 +45,10 @@
             align-items: center !important;
             justify-content: center !important;
         }
+        /* Allow hidden class to override display */
+        #loading-screen.hidden {
+            display: none !important;
+        }
         /* Apply theme-based background once theme is detected */
         [data-theme="light"] #loading-screen,
         [data-theme="classic-productivity"] #loading-screen,
