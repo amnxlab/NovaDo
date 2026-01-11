@@ -6,7 +6,7 @@
 
 // Task Matrix State
 const matrixState = {
-    currentView: 'eisenhower', // 'eisenhower', 'kanban', 'list', 'dashboard'
+    currentView: 'kanban', // 'kanban', 'list', 'dashboard'
     fourthDimensionType: 'energy', // 'energy' or 'time_of_day'
     focusModeEnabled: false,
     filters: {
@@ -111,11 +111,6 @@ function renderMatrixHeader() {
 
     header.innerHTML = `
         <div class="matrix-view-switcher">
-            <button class="matrix-view-btn ${matrixState.currentView === 'eisenhower' ? 'active' : ''}" 
-                    data-view="eisenhower" title="Eisenhower Matrix">
-                <i data-lucide="grid-2x2"></i>
-                <span>Matrix</span>
-            </button>
             <button class="matrix-view-btn ${matrixState.currentView === 'kanban' ? 'active' : ''}" 
                     data-view="kanban" title="Kanban Board">
                 <i data-lucide="columns-3"></i>
@@ -418,9 +413,6 @@ function renderCurrentView() {
 
     setTimeout(() => {
         switch (matrixState.currentView) {
-            case 'eisenhower':
-                renderEisenhowerView(container);
-                break;
             case 'kanban':
                 renderKanbanView(container);
                 break;
@@ -429,6 +421,11 @@ function renderCurrentView() {
                 break;
             case 'dashboard':
                 renderDashboardView(container);
+                break;
+            default:
+                // Fallback to kanban if unknown view
+                matrixState.currentView = 'kanban';
+                renderKanbanView(container);
                 break;
         }
 
@@ -731,13 +728,13 @@ function formatDueDate(dateStr) {
 function renderKanbanView(container) {
     const tasks = getFilteredTasks();
 
-    // Group tasks by status
+    // Group tasks by status - Scheduled moved to far right
     const columns = {
         todo: [],
         in_progress: [],
-        scheduled: [],
         completed: [],
-        skipped: []
+        skipped: [],
+        scheduled: []
     };
 
     tasks.forEach(task => {
@@ -752,17 +749,20 @@ function renderKanbanView(container) {
         columns[key].sort((a, b) => (b.priority || 0) - (a.priority || 0));
     });
 
+    // All columns rendered equally
+    const allColumns = ['todo', 'in_progress', 'completed', 'skipped', 'scheduled'];
+
     container.innerHTML = `
         <div class="kanban-board ${matrixState.focusModeEnabled ? 'focus-mode' : ''}">
-            ${Object.entries(columns).map(([status, statusTasks]) => `
+            ${allColumns.map(status => `
                 <div class="kanban-column" data-status="${status}">
                     <div class="kanban-column-header">
                         <span class="status-icon">${STATUS_ICONS[status]}</span>
                         <h3>${formatStatusLabel(status)}</h3>
-                        <span class="column-count">${statusTasks.length}</span>
+                        <span class="column-count">${(columns[status] || []).length}</span>
                     </div>
                     <div class="kanban-column-tasks" data-droppable="${status}">
-                        ${renderKanbanTasks(statusTasks)}
+                        ${renderKanbanTasks(columns[status] || [])}
                     </div>
                 </div>
             `).join('')}
@@ -1579,10 +1579,6 @@ async function handleDrop(e) {
     if (matrixState.currentView === 'kanban') {
         // Update status
         await updateTaskFromDrop(taskId, { status: destination });
-    } else if (matrixState.currentView === 'eisenhower') {
-        // Update urgency/importance based on quadrant
-        const updates = getQuadrantUpdates(destination);
-        await updateTaskFromDrop(taskId, updates);
     }
 }
 
@@ -1657,14 +1653,6 @@ function setupKeyboardShortcuts() {
         if (e.key === '?') {
             e.preventDefault();
             showKeyboardShortcutsHelp();
-        }
-
-        // Ctrl+1-4 - Switch quadrants in Eisenhower view (Requirement 14.1)
-        if (e.ctrlKey && ['1', '2', '3', '4'].includes(e.key)) {
-            e.preventDefault();
-            if (matrixState.currentView === 'eisenhower') {
-                focusQuadrant(parseInt(e.key));
-            }
         }
 
         // Arrow keys - Navigate tasks (Requirement 14.2)
@@ -2239,7 +2227,7 @@ async function handleBannerUpload(event) {
             bannerState.focalPointX = 50;
             bannerState.focalPointY = 50;
             renderBanner();
-            
+
             if (typeof showToast === 'function') {
                 showToast('Banner uploaded successfully!', 'success');
             }
@@ -2281,7 +2269,7 @@ async function removeBanner() {
             bannerState.focalPointX = 50;
             bannerState.focalPointY = 50;
             renderBanner();
-            
+
             if (typeof showToast === 'function') {
                 showToast('Banner removed', 'success');
             }
@@ -2441,7 +2429,7 @@ async function saveFocalPoint() {
         if (response.ok) {
             renderBanner();
             closeFocalPointEditor();
-            
+
             if (typeof showToast === 'function') {
                 showToast('Banner position saved!', 'success');
             }

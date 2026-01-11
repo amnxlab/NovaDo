@@ -309,6 +309,19 @@ html[data-theme="midnight-minimal"] {
     background: var(--matrix-bg);
     padding: var(--matrix-spacing-lg);
     overflow: hidden;
+    position: relative;
+    isolation: isolate;
+}
+
+/* Ensure matrix view is completely hidden when not active */
+#matrix-view.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    z-index: -1 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
 }
 
 /* Matrix Header */
@@ -324,10 +337,10 @@ html[data-theme="midnight-minimal"] {
 .matrix-view-switcher {
     display: flex;
     gap: var(--matrix-spacing-xs);
-    background: var(--matrix-card-bg);
+    background: var(--bg-secondary);
     padding: 4px;
     border-radius: 12px;
-    border: 1px solid var(--matrix-border);
+    border: 1px solid var(--border-color);
 }
 
 .matrix-view-btn {
@@ -337,7 +350,7 @@ html[data-theme="midnight-minimal"] {
     padding: var(--matrix-spacing-sm) var(--matrix-spacing-md);
     border: none;
     background: transparent;
-    color: var(--matrix-text-secondary);
+    color: var(--text-secondary);
     border-radius: 8px;
     cursor: pointer;
     transition: var(--matrix-transition);
@@ -346,12 +359,12 @@ html[data-theme="midnight-minimal"] {
 }
 
 .matrix-view-btn:hover {
-    background: var(--matrix-bg);
-    color: var(--matrix-text);
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 .matrix-view-btn.active {
-    background: var(--primary, #3b82f6);
+    background: var(--accent-primary);
     color: white;
 }
 
@@ -429,13 +442,31 @@ html[data-theme="midnight-minimal"] {
     border: 1px solid var(--matrix-border);
     margin-bottom: var(--matrix-spacing-md);
     flex-shrink: 0;
-    overflow-x: auto;
+    overflow: hidden;
+    flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
+    /* Hide scrollbars completely */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+/* Hide scrollbar for WebKit browsers */
+#matrix-filter-bar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 .filter-group {
     display: flex;
     align-items: center;
     gap: var(--matrix-spacing-sm);
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .filter-label {
@@ -449,6 +480,7 @@ html[data-theme="midnight-minimal"] {
 .filter-chips {
     display: flex;
     gap: var(--matrix-spacing-xs);
+    flex-wrap: wrap;
 }
 
 .filter-chip {
@@ -463,6 +495,8 @@ html[data-theme="midnight-minimal"] {
     color: var(--matrix-text-secondary);
     cursor: pointer;
     transition: var(--matrix-transition);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .filter-chip:hover {
@@ -503,6 +537,7 @@ html[data-theme="midnight-minimal"] {
     align-items: center;
     gap: var(--matrix-spacing-sm);
     margin-left: auto;
+    flex-shrink: 0;
 }
 
 .filter-count {
@@ -971,62 +1006,216 @@ html[data-theme="midnight-minimal"] {
     gap: var(--matrix-spacing-md);
     height: 100%;
     overflow-x: auto;
-    padding-bottom: var(--matrix-spacing-md);
+    padding: var(--matrix-spacing-md) var(--matrix-spacing-lg);
 }
 
 .kanban-column {
-    flex: 0 0 300px;
+    flex: 1 1 0;
+    min-width: 200px;
     background: var(--matrix-card-bg);
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid var(--matrix-border);
     display: flex;
     flex-direction: column;
     max-height: 100%;
+    transition: var(--matrix-transition);
+}
+
+.kanban-column:hover {
+    border-color: var(--primary, #3b82f6);
+}
+
+/* Status column color accents */
+.kanban-column[data-status="todo"] {
+    border-top: 3px solid #6b7280;
+}
+
+.kanban-column[data-status="in_progress"] {
+    border-top: 3px solid #3b82f6;
+}
+
+.kanban-column[data-status="completed"] {
+    border-top: 3px solid #10b981;
+}
+
+.kanban-column[data-status="skipped"] {
+    border-top: 3px solid #ef4444;
+}
+
+.kanban-column[data-status="scheduled"] {
+    border-top: 3px solid #8b5cf6;
 }
 
 .kanban-column-header {
     display: flex;
     align-items: center;
-    gap: var(--matrix-spacing-sm);
-    padding: var(--matrix-spacing-md);
+    gap: var(--matrix-spacing-xs);
+    padding: var(--matrix-spacing-sm) var(--matrix-spacing-md);
     border-bottom: 1px solid var(--matrix-border);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .kanban-column-header .status-icon {
-    font-size: 18px;
+    font-size: 14px;
 }
 
 .kanban-column-header h3 {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--matrix-text);
     margin: 0;
     flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .column-count {
     background: var(--matrix-bg);
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--matrix-text-secondary);
+    min-width: 20px;
+    text-align: center;
 }
 
 .kanban-column-tasks {
     flex: 1;
-    padding: var(--matrix-spacing-md);
+    padding: var(--matrix-spacing-sm);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--matrix-spacing-sm);
+    gap: 6px;
+}
+
+/* Compact Kanban task cards - Calendar-inspired design */
+.kanban-board .matrix-task-card {
+    padding: 10px 12px;
+    border-radius: 8px;
+    gap: 8px;
+    min-height: auto;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.kanban-board .matrix-task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Status-based card backgrounds - Calendar style */
+.kanban-column[data-status="todo"] .matrix-task-card {
+    background: rgba(55, 65, 81, 0.6);
+    border-left: 4px solid #6b7280;
+}
+
+.kanban-column[data-status="in_progress"] .matrix-task-card {
+    background: rgba(245, 158, 11, 0.15);
+    border-left: 4px solid #f59e0b;
+}
+
+.kanban-column[data-status="completed"] .matrix-task-card {
+    background: rgba(16, 185, 129, 0.2);
+    border-left: 4px solid #10b981;
+}
+
+.kanban-column[data-status="skipped"] .matrix-task-card {
+    background: rgba(239, 68, 68, 0.2);
+    border-left: 4px solid #ef4444;
+}
+
+.kanban-column[data-status="scheduled"] .matrix-task-card {
+    background: rgba(139, 92, 246, 0.25);
+    border-left: 4px solid #8b5cf6;
+}
+
+/* Priority accent glow */
+.kanban-board .matrix-task-card.priority-high {
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15), inset 0 0 0 1px rgba(239, 68, 68, 0.1);
+}
+
+.kanban-board .matrix-task-card.priority-medium {
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15), inset 0 0 0 1px rgba(245, 158, 11, 0.1);
+}
+
+.kanban-board .matrix-task-card.priority-low {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.08);
+}
+
+.kanban-board .task-card-status .status-icon {
+    font-size: 14px;
+}
+
+.kanban-board .task-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.kanban-board .task-card-tags {
+    margin-top: 6px;
+}
+
+.kanban-board .tag-pill {
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.kanban-board .task-card-meta {
+    gap: 4px;
+}
+
+.kanban-board .fourth-dim-icon {
+    font-size: 12px;
+}
+
+.kanban-board .due-date {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--priority-high);
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.kanban-board .task-card-actions {
+    top: 6px;
+    right: 6px;
+}
+
+.kanban-board .task-action-btn {
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+.kanban-board .task-action-btn:hover {
+    background: var(--status-completed);
+    color: white;
+}
+
+.kanban-board .task-action-btn i {
+    width: 12px;
+    height: 12px;
 }
 
 .column-empty {
     text-align: center;
     color: var(--matrix-text-secondary);
-    padding: var(--matrix-spacing-xl);
-    font-size: 14px;
+    padding: var(--matrix-spacing-lg);
+    font-size: 12px;
+    opacity: 0.6;
 }
 
 /* Smart List View (Requirement 6.1-6.9) */
@@ -1523,13 +1712,13 @@ html[data-theme="midnight-minimal"] {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 999;
+    z-index: 0;
 }
 
 /* Ensure modal content appears above overlay */
@@ -2050,37 +2239,37 @@ html[data-theme="midnight-minimal"] {
 .banner-default {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, 
-        var(--accent-primary, #4772fa) 0%, 
-        var(--accent-secondary, #6366f1) 50%,
-        #8b5cf6 100%);
+    background: linear-gradient(135deg,
+            var(--accent-primary, #4772fa) 0%,
+            var(--accent-secondary, #6366f1) 50%,
+            #8b5cf6 100%);
     opacity: 0.8;
 }
 
 /* Dark theme banner default */
 [data-theme="dark"] .banner-default,
 [data-theme="midnight-minimal"] .banner-default {
-    background: linear-gradient(135deg, 
-        #1e3a5f 0%, 
-        #2d2d30 50%,
-        #3f3f46 100%);
+    background: linear-gradient(135deg,
+            #1e3a5f 0%,
+            #2d2d30 50%,
+            #3f3f46 100%);
 }
 
 /* Hacker theme banner default */
 [data-theme="hacker"] .banner-default {
-    background: linear-gradient(135deg, 
-        #001100 0%, 
-        #002200 50%,
-        #003300 100%);
+    background: linear-gradient(135deg,
+            #001100 0%,
+            #002200 50%,
+            #003300 100%);
     border: 1px solid rgba(0, 255, 0, 0.2);
 }
 
 /* Deep Ocean theme banner default */
 [data-theme="deep-ocean"] .banner-default {
-    background: linear-gradient(135deg, 
-        #0A1628 0%, 
-        #0F1D32 50%,
-        #1E3A5F 100%);
+    background: linear-gradient(135deg,
+            #0A1628 0%,
+            #0F1D32 50%,
+            #1E3A5F 100%);
 }
 
 .banner-actions {
@@ -2267,16 +2456,16 @@ html[data-theme="midnight-minimal"] {
         min-height: 120px;
         border-radius: 12px;
     }
-    
+
     .banner-actions {
         opacity: 1;
     }
-    
+
     .banner-btn {
         width: 32px;
         height: 32px;
     }
-    
+
     .banner-btn i,
     .banner-btn svg {
         width: 16px;
@@ -2290,5 +2479,4 @@ html[data-theme="midnight-minimal"] {
         max-height: 150px;
         min-height: 80px;
     }
-}
 }

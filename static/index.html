@@ -7,11 +7,55 @@
     <title>NovaDo - Smart Task Management</title>
     <!-- Early theme application to prevent flash of unstyled content -->
     <script>
-        (function() {
+        (function () {
             var theme = localStorage.getItem('theme') || 'dark';
             document.documentElement.dataset.theme = theme;
+            
+            // Determine if light theme
+            var isLightTheme = ['light', 'classic-productivity', 'pastel-calm', 'warm-earth', 'crisp-nordic', 'energetic-sunrise'].includes(theme);
+            var bgColor = isLightTheme ? '#ffffff' : '#0f172a';
+            
+            // Immediately set loading screen background based on theme
+            var loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.style.backgroundColor = bgColor;
+                loadingScreen.style.background = bgColor;
+            }
+            
+            // Set body and html background immediately
+            document.body.style.backgroundColor = bgColor;
+            document.documentElement.style.backgroundColor = bgColor;
         })();
     </script>
+    <!-- Critical CSS to prevent white flash on loading screen -->
+    <style>
+        /* Prevent white flash - set immediately before other CSS loads */
+        html, body {
+            background-color: #0f172a !important;
+            margin: 0;
+            padding: 0;
+        }
+        #loading-screen {
+            background-color: #0f172a !important;
+            background: #0f172a !important;
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 2000 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        /* Apply theme-based background once theme is detected */
+        [data-theme="light"] #loading-screen,
+        [data-theme="classic-productivity"] #loading-screen,
+        [data-theme="pastel-calm"] #loading-screen,
+        [data-theme="warm-earth"] #loading-screen,
+        [data-theme="crisp-nordic"] #loading-screen,
+        [data-theme="energetic-sunrise"] #loading-screen {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+        }
+    </style>
     <link rel="stylesheet" href="css/themes.css?v=4">
     <link rel="stylesheet" href="css/style.css?v=17">
     <link rel="stylesheet" href="css/taskMatrix.css?v=10">
@@ -30,7 +74,7 @@
 <body>
     <div id="app">
         <!-- Loading Screen -->
-        <div id="loading-screen" class="screen">
+        <div id="loading-screen" class="screen" style="background-color: #0f172a; background: #0f172a;">
             <div class="loading-content">
                 <div class="loading-logo">
                     <img src="logo.png" alt="NovaDo" class="logo-icon-img">
@@ -128,7 +172,11 @@
                     </div>
 
                     <div class="nav-section" data-section="task-status">
-                        <h3>Task Status</h3>
+                        <h3>
+                            Task Status
+                            <button class="btn-icon section-add-btn" data-section="task-status"
+                                title="Add Status">+</button>
+                        </h3>
                         <ul id="task-status-list"></ul>
                     </div>
                 </nav>
@@ -816,18 +864,21 @@
                     <!-- Banner Section -->
                     <div id="matrix-banner" class="matrix-banner">
                         <div class="banner-image-container">
-                            <img id="matrix-banner-image" class="banner-image" src="" alt="Banner" style="display: none;">
+                            <img id="matrix-banner-image" class="banner-image" src="" alt="Banner"
+                                style="display: none;">
                             <div id="matrix-banner-default" class="banner-default"></div>
                         </div>
                         <div class="banner-actions">
                             <button class="banner-btn" id="banner-edit-btn" title="Edit Banner">
                                 <i data-lucide="image"></i>
                             </button>
-                            <button class="banner-btn banner-btn-remove" id="banner-remove-btn" title="Remove Banner" style="display: none;">
+                            <button class="banner-btn banner-btn-remove" id="banner-remove-btn" title="Remove Banner"
+                                style="display: none;">
                                 <i data-lucide="x"></i>
                             </button>
                         </div>
-                        <input type="file" id="banner-file-input" accept="image/jpeg,image/png,image/webp,image/gif" style="display: none;">
+                        <input type="file" id="banner-file-input" accept="image/jpeg,image/png,image/webp,image/gif"
+                            style="display: none;">
                     </div>
                     <div id="matrix-header"></div>
                     <div id="matrix-filter-bar"></div>

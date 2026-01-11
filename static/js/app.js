@@ -1157,8 +1157,8 @@ function createTaskElement(task) {
         'skipped': { icon: '❌', label: 'Skipped', class: 'skipped', ariaLabel: 'Task was skipped' }
     };
     const statusInfo = statusConfig[status] || statusConfig['scheduled'];
-    // Hide badge for completed tasks as requested (removed green true emoji)
-    const statusBadgeHTML = status === 'completed' ? '' : `<span class="task-status-badge ${statusInfo.class}" 
+    // Hide badge for completed and skipped (won't do) tasks
+    const statusBadgeHTML = (status === 'completed' || status === 'skipped') ? '' : `<span class="task-status-badge ${statusInfo.class}" 
                                    title="${statusInfo.label}" 
                                    aria-label="${statusInfo.ariaLabel}" 
                                    role="status">${statusInfo.icon}</span>`;
@@ -1350,7 +1350,7 @@ function openDayAgenda(date, tasks) {
     modal = document.createElement('div');
     modal.id = 'day-agenda-modal';
     modal.className = 'modal';
-    
+
     const dateStr = date.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -1963,30 +1963,30 @@ function handleResizeStart(e) {
     sidebarResizeState.startX = e.clientX;
     const sidebar = document.querySelector('.sidebar');
     sidebarResizeState.startWidth = sidebar.offsetWidth;
-    
+
     document.body.classList.add('sidebar-resizing');
     document.querySelector('.sidebar-resize-handle')?.classList.add('resizing');
 }
 
 function handleResizeMove(e) {
     if (!sidebarResizeState.isResizing) return;
-    
+
     const deltaX = e.clientX - sidebarResizeState.startX;
     let newWidth = sidebarResizeState.startWidth + deltaX;
-    
+
     // Clamp to bounds
     newWidth = Math.max(sidebarResizeState.minWidth, Math.min(sidebarResizeState.maxWidth, newWidth));
-    
+
     setSidebarWidth(newWidth);
 }
 
 function handleResizeEnd() {
     if (!sidebarResizeState.isResizing) return;
-    
+
     sidebarResizeState.isResizing = false;
     document.body.classList.remove('sidebar-resizing');
     document.querySelector('.sidebar-resize-handle')?.classList.remove('resizing');
-    
+
     // Save width to localStorage
     const sidebar = document.querySelector('.sidebar');
     if (sidebar) {
@@ -1997,14 +1997,14 @@ function handleResizeEnd() {
 function setSidebarWidth(width) {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
-    
+
     if (sidebar) {
         sidebar.style.width = `${width}px`;
     }
     if (mainContent) {
         mainContent.style.marginLeft = `${width}px`;
     }
-    
+
     // Update CSS variable for consistency
     document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
 }
@@ -2039,6 +2039,17 @@ function openAddSidebarModal(section) {
                 customLabel: current?.customLabel
             };
         });
+    } else if (section === 'task-status') {
+        title.textContent = 'Manage Status Items';
+        // Get current visibility state from config or default to visible
+        const statusConfig = config.taskStatus || taskStatusItems.map(s => ({ ...s, visible: true }));
+        items = taskStatusItems.map(def => {
+            const current = statusConfig.find(i => i.id === def.id);
+            return {
+                ...def,
+                visible: current ? current.visible : true
+            };
+        });
     }
 
     itemsList.innerHTML = items.map(item => `
@@ -2069,12 +2080,20 @@ function addSidebarItem(section, itemId) {
     } else if (section === 'tools') {
         const item = config.tools.find(i => i.id === itemId);
         if (item) item.visible = true;
+    } else if (section === 'task-status') {
+        // Initialize taskStatus config if not present
+        if (!config.taskStatus) {
+            config.taskStatus = taskStatusItems.map(s => ({ ...s, visible: true }));
+        }
+        const item = config.taskStatus.find(i => i.id === itemId);
+        if (item) item.visible = true;
     }
 
     saveSidebarConfig(config);
     closeAddSidebarModal();
     renderSmartLists();
     renderTools();
+    renderTaskStatus();
     showToast('Item added!', 'success');
 }
 

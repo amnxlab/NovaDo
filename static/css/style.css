@@ -196,11 +196,14 @@
 html {
     font-size: 16px;
     scroll-behavior: smooth;
+    background-color: #0f172a; /* Dark fallback to prevent white flash */
+    background-color: var(--bg-primary, #0f172a);
 }
 
 body {
     font-family: var(--font-sans);
-    background: var(--bg-primary);
+    background: #0f172a; /* Dark fallback to prevent white flash */
+    background: var(--bg-primary, #0f172a);
     color: var(--text-primary);
     line-height: 1.5;
     min-height: 100vh;
@@ -836,6 +839,8 @@ body.sidebar-resizing * {
     display: flex;
     flex-direction: column;
     background: var(--bg-secondary);
+    position: relative;
+    isolation: isolate;
 }
 
 .main-header {
@@ -892,16 +897,12 @@ body.sidebar-resizing * {
 
 .search-box input {
     width: 240px;
-    padding-left: 2.5rem;
+    padding-left: 1rem;
 }
 
 .search-box::before {
-    content: '🔍';
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.875rem;
+    content: none;
+    display: none;
 }
 
 /* Views */
@@ -909,6 +910,18 @@ body.sidebar-resizing * {
     flex: 1;
     padding: 1.5rem 2rem;
     overflow-y: auto;
+    position: relative;
+    isolation: isolate;
+}
+
+/* Ensure hidden views are completely isolated */
+.view.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    z-index: -1 !important;
+    opacity: 0 !important;
 }
 
 #calendar-view {
@@ -3358,15 +3371,15 @@ body.sidebar-resizing * {
 .modal-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     z-index: 0;
 }
 
 .modal-content {
     position: relative;
-    z-index: 10;
+    z-index: 1001;
     width: 100%;
     max-width: 480px;
     max-height: 85vh;
@@ -3374,8 +3387,9 @@ body.sidebar-resizing * {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-xl);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
     animation: modalIn 0.25s ease-out;
+    isolation: isolate;
 }
 
 /* Light theme modal */
@@ -8089,7 +8103,9 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-primary);
+    /* Default dark background to prevent white flash */
+    background: #0f172a;
+    background-color: var(--bg-primary, #0f172a);
     /* Animated gradient background */
     background-image:
         radial-gradient(at 0% 0%, hsla(242, 69%, 12%, 1) 0, transparent 50%),
@@ -8102,11 +8118,36 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
     inset: 0;
 }
 
-[data-theme="light"] #loading-screen {
+/* Light theme */
+[data-theme="light"] #loading-screen,
+[data-theme="classic-productivity"] #loading-screen,
+[data-theme="pastel-calm"] #loading-screen,
+[data-theme="warm-earth"] #loading-screen,
+[data-theme="crisp-nordic"] #loading-screen,
+[data-theme="energetic-sunrise"] #loading-screen {
+    background-color: var(--bg-primary, #ffffff);
     background-image:
         radial-gradient(at 0% 0%, hsla(225, 100%, 94%, 1) 0, transparent 50%),
         radial-gradient(at 50% 100%, hsla(242, 100%, 96%, 1) 0, transparent 50%),
         radial-gradient(at 100% 0%, hsla(210, 100%, 92%, 1) 0, transparent 50%);
+}
+
+/* Dark themes - use theme's bg-primary */
+[data-theme="dark"] #loading-screen,
+[data-theme="midnight-minimal"] #loading-screen,
+[data-theme="deep-ocean"] #loading-screen,
+[data-theme="charcoal-elegance"] #loading-screen,
+[data-theme="neon-pulse"] #loading-screen,
+[data-theme="forest-dusk"] #loading-screen,
+[data-theme="stormy-void"] #loading-screen,
+[data-theme="warm-ember"] #loading-screen,
+[data-theme="cyber-twilight"] #loading-screen,
+[data-theme="hacker"] #loading-screen {
+    background-color: var(--bg-primary, #1e1e1e);
+    background-image:
+        radial-gradient(at 0% 0%, hsla(242, 69%, 12%, 1) 0, transparent 50%),
+        radial-gradient(at 50% 100%, hsla(234, 73%, 20%, 1) 0, transparent 50%),
+        radial-gradient(at 100% 0%, hsla(220, 50%, 15%, 1) 0, transparent 50%);
 }
 
 .loading-content {
@@ -8115,7 +8156,9 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
     align-items: center;
     gap: 2rem;
     padding: 3rem;
+    /* Default dark theme background */
     background: rgba(15, 23, 42, 0.6);
+    background-color: var(--bg-secondary, rgba(15, 23, 42, 0.6));
     border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: 24px;
     backdrop-filter: blur(20px);
@@ -8124,10 +8167,35 @@ body.focus-mode .stats-header .stats-view-tabs:not(:has(.active)) {
         0 0 100px rgba(99, 102, 241, 0.1);
 }
 
-[data-theme="light"] .loading-content {
+/* Light themes */
+[data-theme="light"] .loading-content,
+[data-theme="classic-productivity"] .loading-content,
+[data-theme="pastel-calm"] .loading-content,
+[data-theme="warm-earth"] .loading-content,
+[data-theme="crisp-nordic"] .loading-content,
+[data-theme="energetic-sunrise"] .loading-content {
     background: rgba(255, 255, 255, 0.8);
+    background-color: var(--bg-secondary, rgba(255, 255, 255, 0.8));
     border-color: rgba(99, 102, 241, 0.15);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark themes */
+[data-theme="dark"] .loading-content,
+[data-theme="midnight-minimal"] .loading-content,
+[data-theme="deep-ocean"] .loading-content,
+[data-theme="charcoal-elegance"] .loading-content,
+[data-theme="neon-pulse"] .loading-content,
+[data-theme="forest-dusk"] .loading-content,
+[data-theme="stormy-void"] .loading-content,
+[data-theme="warm-ember"] .loading-content,
+[data-theme="cyber-twilight"] .loading-content,
+[data-theme="hacker"] .loading-content {
+    background: rgba(15, 23, 42, 0.6);
+    background-color: var(--bg-secondary, rgba(15, 23, 42, 0.6));
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3),
+        0 0 100px rgba(99, 102, 241, 0.1);
 }
 
 .loading-logo {
