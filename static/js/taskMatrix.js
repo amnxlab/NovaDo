@@ -618,79 +618,100 @@ function renderQuadrantTasks(tasks) {
 function renderTaskCard(task) {
     const status = getTaskStatus(task);
     const priority = getPriorityLabel(task.priority);
-    const energyLevel = task.energyLevel || 'medium';
-    const timeOfDay = task.timeOfDay || 'morning';
-    const fourthDimValue = matrixState.fourthDimensionType === 'energy' ? energyLevel : timeOfDay;
-    const fourthDimIcon = matrixState.fourthDimensionType === 'energy'
-        ? ENERGY_ICONS[energyLevel]
-        : TIME_ICONS[timeOfDay];
-
     const isCompleted = status === 'completed';
     const isSkipped = status === 'skipped';
     const isInProgress = status === 'in_progress';
     const tags = task.tags || [];
 
-    // Status labels for accessibility (Requirement 20.2)
-    const statusLabels = {
-        completed: 'Completed',
-        skipped: 'Skipped',
-        in_progress: 'In Progress',
-        scheduled: 'Scheduled',
-        todo: 'To Do'
-    };
+    // Format start date
+    let startDateDisplay = '';
+    if (task.startDate) {
+        const start = new Date(task.startDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startDay = new Date(start);
+        startDay.setHours(0, 0, 0, 0);
 
-    // Priority labels for accessibility
-    const priorityLabels = {
-        high: 'High priority',
-        medium: 'Medium priority',
-        low: 'Low priority'
-    };
+        if (startDay.getTime() === today.getTime()) {
+            startDateDisplay = 'Today';
+        } else {
+            startDateDisplay = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        // Add time if present
+        if (task.startTime || (start.getHours() !== 0 || start.getMinutes() !== 0)) {
+            const timeStr = task.startTime || start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            startDateDisplay += ` ${timeStr}`;
+        }
+    }
 
-    // Fourth dimension labels
-    const fourthDimLabels = matrixState.fourthDimensionType === 'energy'
-        ? { high: 'High energy', medium: 'Medium energy', low: 'Low energy' }
-        : { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' };
+    // Format end/due date
+    let endDateDisplay = '';
+    if (task.dueDate) {
+        const due = new Date(task.dueDate);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        today.setHours(0, 0, 0, 0);
+        tomorrow.setHours(0, 0, 0, 0);
+        const dueDay = new Date(due);
+        dueDay.setHours(0, 0, 0, 0);
+
+        if (dueDay.getTime() === today.getTime()) {
+            endDateDisplay = 'Today';
+        } else if (dueDay.getTime() === tomorrow.getTime()) {
+            endDateDisplay = 'Tomorrow';
+        } else {
+            endDateDisplay = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Add time if present
+        if (task.dueTime || (due.getHours() !== 0 || due.getMinutes() !== 0)) {
+            const timeStr = task.dueTime || due.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            endDateDisplay += ` ${timeStr}`;
+        }
+    }
+
+    // Build date range display
+    let dateRangeHtml = '';
+    if (startDateDisplay || endDateDisplay) {
+        if (startDateDisplay && endDateDisplay) {
+            dateRangeHtml = `
+                <div class="task-date-range">
+                    <span class="date-start"><i class="date-icon">▶</i>${startDateDisplay}</span>
+                    <span class="date-separator">→</span>
+                    <span class="date-end"><i class="date-icon">◼</i>${endDateDisplay}</span>
+                </div>
+            `;
+        } else if (endDateDisplay) {
+            dateRangeHtml = `<span class="task-due-badge"><i class="date-icon">📅</i>${endDateDisplay}</span>`;
+        } else if (startDateDisplay) {
+            dateRangeHtml = `<span class="task-start-badge"><i class="date-icon">▶</i>${startDateDisplay}</span>`;
+        }
+    }
+
+    // Status indicator for visual feedback
+    const statusIndicator = STATUS_ICONS[status] || '○';
 
     return `
-        <div class="matrix-task-card ${isCompleted ? 'completed' : ''} ${isSkipped ? 'skipped' : ''} priority-${priority}" 
+        <div class="matrix-task-card ${isCompleted ? 'completed' : ''} ${isSkipped ? 'skipped' : ''} ${isInProgress ? 'in-progress' : ''} priority-${priority} status-${status}" 
              data-task-id="${task._id || task.id}"
              data-status="${status}"
              data-priority="${priority}"
              draggable="true"
              tabindex="0"
-             role="article"
-             aria-label="${escapeHtml(task.title)}, ${statusLabels[status]}, ${priorityLabels[priority]}">
-            <div class="task-card-status" aria-hidden="true">
-                <span class="status-icon ${isInProgress ? 'spinning' : ''}" 
-                      role="img" 
-                      aria-label="${statusLabels[status]}"
-                      data-status="${status}">${STATUS_ICONS[status]}</span>
+             role="article">
+            <div class="task-card-header">
+                <span class="task-status-indicator" title="${status}">${statusIndicator}</span>
+                <span class="task-card-title">${escapeHtml(task.title)}</span>
             </div>
-            <div class="task-card-content">
-                <div class="task-card-title">${escapeHtml(task.title)}</div>
-                ${tags.length > 0 ? `
-                    <div class="task-card-tags" aria-label="Tags: ${tags.slice(0, 3).join(', ')}${tags.length > 3 ? ` and ${tags.length - 3} more` : ''}">
-                        ${tags.slice(0, 3).map(tag => `<span class="tag-pill" aria-hidden="true">#${escapeHtml(tag)}</span>`).join('')}
-                        ${tags.length > 3 ? `<span class="tag-more" aria-hidden="true">+${tags.length - 3}</span>` : ''}
-                    </div>
-                ` : ''}
-            </div>
-            <div class="task-card-meta">
-                <span class="fourth-dim-icon" 
-                      title="${fourthDimLabels[fourthDimValue]}"
-                      role="img"
-                      aria-label="${fourthDimLabels[fourthDimValue]}"
-                      data-fourth-dim="${fourthDimValue}">${fourthDimIcon}</span>
-                ${task.dueDate ? `<span class="due-date" aria-label="Due ${formatDueDate(task.dueDate)}">${formatDueDate(task.dueDate)}</span>` : ''}
-            </div>
-            <div class="task-card-actions">
-                <button class="task-action-btn complete-btn" 
-                        data-task-id="${task._id || task.id}" 
-                        title="${isCompleted ? 'Reopen task' : 'Complete task'}"
-                        aria-label="${isCompleted ? 'Reopen task' : 'Mark task as complete'}">
-                    <i data-lucide="${isCompleted ? 'rotate-ccw' : 'check'}"></i>
-                </button>
-            </div>
+            ${dateRangeHtml ? `<div class="task-card-dates">${dateRangeHtml}</div>` : ''}
+            ${tags.length > 0 ? `
+                <div class="task-card-tags">
+                    ${tags.slice(0, 3).map(tag => `<span class="tag-pill">${escapeHtml(tag)}</span>`).join('')}
+                    ${tags.length > 3 ? `<span class="tag-pill tag-more">+${tags.length - 3}</span>` : ''}
+                </div>
+            ` : ''}
         </div>
     `;
 }
@@ -737,16 +758,43 @@ function renderKanbanView(container) {
         scheduled: []
     };
 
+    // Calculate date range for scheduled filtering (next 7 days)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    sevenDaysFromNow.setHours(23, 59, 59, 999);
+
     tasks.forEach(task => {
         const status = getTaskStatus(task);
         if (columns[status]) {
-            columns[status].push(task);
+            // For scheduled tasks, only include those within the next 7 days
+            if (status === 'scheduled' && task.dueDate) {
+                const dueDate = new Date(task.dueDate);
+                if (dueDate >= today && dueDate <= sevenDaysFromNow) {
+                    columns[status].push(task);
+                }
+            } else if (status !== 'scheduled') {
+                columns[status].push(task);
+            } else {
+                // Scheduled task without dueDate - still show it
+                columns[status].push(task);
+            }
         }
     });
 
     // Sort by priority within each column (Requirement 5.2)
+    // For scheduled, also sort by due date
     Object.keys(columns).forEach(key => {
-        columns[key].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+        if (key === 'scheduled') {
+            columns[key].sort((a, b) => {
+                const dateA = a.dueDate ? new Date(a.dueDate) : new Date('9999-12-31');
+                const dateB = b.dueDate ? new Date(b.dueDate) : new Date('9999-12-31');
+                return dateA - dateB;
+            });
+        } else {
+            columns[key].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+        }
     });
 
     // All columns rendered equally
@@ -758,11 +806,11 @@ function renderKanbanView(container) {
                 <div class="kanban-column" data-status="${status}">
                     <div class="kanban-column-header">
                         <span class="status-icon">${STATUS_ICONS[status]}</span>
-                        <h3>${formatStatusLabel(status)}</h3>
+                        <h3>${formatStatusLabel(status)}${status === 'scheduled' ? ' (7 days)' : ''}</h3>
                         <span class="column-count">${(columns[status] || []).length}</span>
                     </div>
-                    <div class="kanban-column-tasks" data-droppable="${status}">
-                        ${renderKanbanTasks(columns[status] || [])}
+                    <div class="kanban-column-tasks" data-droppable="${status}" data-status="${status}">
+                        ${renderKanbanTasks(columns[status] || [], status)}
                     </div>
                 </div>
             `).join('')}
@@ -771,10 +819,11 @@ function renderKanbanView(container) {
     `;
 
     setupDragAndDrop();
+    setupShowMoreButtons();
 }
 
-function renderKanbanTasks(tasks) {
-    const maxVisible = matrixState.focusModeEnabled ? 3 : 15;
+function renderKanbanTasks(tasks, status = '') {
+    const maxVisible = matrixState.focusModeEnabled ? 3 : 5;
     const visibleTasks = tasks.slice(0, maxVisible);
     const hiddenCount = tasks.length - maxVisible;
 
@@ -785,12 +834,66 @@ function renderKanbanTasks(tasks) {
     let html = visibleTasks.map(task => renderTaskCard(task)).join('');
 
     if (hiddenCount > 0) {
-        html += `<button class="show-more-btn" data-count="${hiddenCount}">
+        // Store the hidden tasks as a data attribute for the show-more button
+        const hiddenTaskIds = tasks.slice(maxVisible).map(t => t._id || t.id).join(',');
+        html += `<button class="show-more-btn" data-count="${hiddenCount}" data-status="${status}" data-task-ids="${hiddenTaskIds}">
             Show ${hiddenCount} more
         </button>`;
     }
 
     return html;
+}
+
+// Setup click handlers for show-more buttons
+function setupShowMoreButtons() {
+    document.querySelectorAll('.show-more-btn').forEach(btn => {
+        btn.addEventListener('click', handleShowMore);
+    });
+}
+
+function handleShowMore(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const btn = e.currentTarget;
+    const status = btn.dataset.status;
+    const taskIdsStr = btn.dataset.taskIds;
+    const columnTasks = btn.closest('.kanban-column-tasks');
+
+    if (!columnTasks || !taskIdsStr) {
+        console.warn('[ShowMore] No column or task IDs found');
+        return;
+    }
+
+    const taskIds = taskIdsStr.split(',');
+    console.log('[ShowMore] Looking for task IDs:', taskIds);
+
+    // Find the tasks and render them - use string comparison
+    const allTasks = getFilteredTasks();
+    console.log('[ShowMore] Filtered tasks count:', allTasks.length);
+
+    const tasksToShow = allTasks.filter(t => {
+        const taskId = String(t._id || t.id);
+        return taskIds.includes(taskId);
+    });
+
+    console.log('[ShowMore] Found tasks to show:', tasksToShow.length);
+
+    if (tasksToShow.length === 0) {
+        console.warn('[ShowMore] No matching tasks found');
+        btn.remove();
+        return;
+    }
+
+    // Insert the new cards before the button
+    const newCardsHtml = tasksToShow.map(task => renderTaskCard(task)).join('');
+    btn.insertAdjacentHTML('beforebegin', newCardsHtml);
+
+    // Remove the button
+    btn.remove();
+
+    // Re-setup drag and drop for new cards
+    setupDragAndDrop();
 }
 
 // Smart List View (Requirement 6.1-6.9)
@@ -1217,9 +1320,10 @@ function setupMatrixEventListeners() {
             }
         }
 
-        // Task completion
-        const completeBtn = e.target.closest('.complete-btn, .complete-action');
+        // Task completion (checkbox or complete button)
+        const completeBtn = e.target.closest('.complete-btn, .complete-action, .task-checkbox');
         if (completeBtn) {
+            e.stopPropagation(); // Prevent card click
             const taskId = completeBtn.dataset.taskId;
             toggleTaskCompletion(taskId);
         }
@@ -1506,37 +1610,37 @@ function setupDragAndDrop() {
     const droppables = document.querySelectorAll('[data-droppable]');
 
     draggables.forEach(draggable => {
-        draggable.addEventListener('dragstart', handleDragStart);
-        draggable.addEventListener('dragend', handleDragEnd);
+        draggable.addEventListener('dragstart', handleMatrixDragStart);
+        draggable.addEventListener('dragend', handleMatrixDragEnd);
     });
 
     droppables.forEach(droppable => {
-        droppable.addEventListener('dragover', handleDragOver);
-        droppable.addEventListener('dragleave', handleDragLeave);
-        droppable.addEventListener('drop', handleDrop);
+        droppable.addEventListener('dragover', handleMatrixDragOver);
+        droppable.addEventListener('dragleave', handleMatrixDragLeave);
+        droppable.addEventListener('drop', handleMatrixDrop);
     });
 }
 
-let draggedElement = null;
+let matrixDraggedElement = null;
 
-function handleDragStart(e) {
-    draggedElement = e.target.closest('.matrix-task-card, .list-task-card');
-    if (!draggedElement) return;
+function handleMatrixDragStart(e) {
+    matrixDraggedElement = e.target.closest('.matrix-task-card, .list-task-card');
+    if (!matrixDraggedElement) return;
 
-    draggedElement.classList.add('dragging');
+    matrixDraggedElement.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', draggedElement.dataset.taskId);
+    e.dataTransfer.setData('text/plain', matrixDraggedElement.dataset.taskId);
 
     // Add glow effect (Requirement 9.3)
     if (matrixState.preferences.animationsEnabled) {
-        draggedElement.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
+        matrixDraggedElement.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
     }
 }
 
-function handleDragEnd(e) {
-    if (draggedElement) {
-        draggedElement.classList.remove('dragging');
-        draggedElement.style.boxShadow = '';
+function handleMatrixDragEnd(e) {
+    if (matrixDraggedElement) {
+        matrixDraggedElement.classList.remove('dragging');
+        matrixDraggedElement.style.boxShadow = '';
     }
 
     // Remove all drop zone highlights
@@ -1544,89 +1648,121 @@ function handleDragEnd(e) {
         el.classList.remove('drop-zone-active');
     });
 
-    draggedElement = null;
+    matrixDraggedElement = null;
 }
 
-function handleDragOver(e) {
+function handleMatrixDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drop-zone-active');
+}
 
-    const dropZone = e.target.closest('[data-droppable]');
-    if (dropZone) {
-        dropZone.classList.add('drop-zone-active');
+function handleMatrixDragLeave(e) {
+    // Use bounding rect to check if mouse actually left the drop zone
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    // Only remove highlight if mouse is truly outside the drop zone
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+        e.currentTarget.classList.remove('drop-zone-active');
     }
 }
 
-function handleDragLeave(e) {
-    const dropZone = e.target.closest('[data-droppable]');
-    if (dropZone && !dropZone.contains(e.relatedTarget)) {
-        dropZone.classList.remove('drop-zone-active');
-    }
-}
-
-async function handleDrop(e) {
+async function handleMatrixDrop(e) {
     e.preventDefault();
-
-    const dropZone = e.target.closest('[data-droppable]');
-    if (!dropZone || !draggedElement) return;
-
-    dropZone.classList.remove('drop-zone-active');
+    e.currentTarget.classList.remove('drop-zone-active');
 
     const taskId = e.dataTransfer.getData('text/plain');
-    const destination = dropZone.dataset.droppable;
+    const destination = e.currentTarget.dataset.droppable;
+
+    console.log('[Matrix Drop] taskId:', taskId, 'destination:', destination, 'view:', matrixState.currentView);
+
+    if (!taskId || !destination) {
+        console.warn('[Matrix Drop] Missing taskId or destination');
+        return;
+    }
 
     // Determine what property to update based on view
     if (matrixState.currentView === 'kanban') {
         // Update status
         await updateTaskFromDrop(taskId, { status: destination });
+    } else if (matrixState.currentView === 'eisenhower') {
+        // Update priority based on quadrant (Eisenhower matrix)
+        const updates = getQuadrantUpdates(destination);
+        console.log('[Matrix Drop] Eisenhower updates:', updates);
+        await updateTaskFromDrop(taskId, updates);
+
+        if (typeof showToast === 'function') {
+            const quadrantNames = {
+                doFirst: 'Do First',
+                schedule: 'Schedule',
+                delegate: 'Delegate',
+                eliminate: 'Eliminate'
+            };
+            showToast(`Moved to ${quadrantNames[destination] || destination}`, 'success');
+        }
     }
 }
 
 async function updateTaskFromDrop(taskId, updates) {
     try {
+        console.log('[Matrix Drop] Updating task:', taskId, 'with:', updates);
         await api.updateTask(taskId, updates);
 
         // Update local state
         const task = state.tasks.find(t => (t._id || t.id) === taskId);
         if (task) {
             Object.assign(task, updates);
+            // Also update completed flag for status changes
+            if (updates.status) {
+                task.completed = updates.status === 'completed';
+            }
         }
 
-        // Animate card into position (Requirement 12.5)
-        if (matrixState.preferences.animationsEnabled) {
-            renderCurrentView();
-        } else {
-            renderCurrentView();
-        }
+        renderCurrentView();
 
         if (typeof updateCounts === 'function') {
             updateCounts();
         }
     } catch (error) {
-        console.error('Failed to update task:', error);
+        console.error('[Matrix Drop] Failed to update task:', error);
         if (typeof showToast === 'function') {
             showToast('Failed to move task', 'error');
         }
     }
+
 }
 
 function getQuadrantUpdates(quadrant) {
-    // Map quadrant to priority and urgency
+    // Map quadrant to priority and urgency (Eisenhower Matrix)
+    // Urgent = due today/tomorrow, Important = high priority
     const updates = {};
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
 
     switch (quadrant) {
         case 'doFirst':
+            // Urgent & Important: High priority, due today
             updates.priority = 3; // High
-            // Set due date to today if not set (urgent)
+            updates.dueDate = today.toISOString();
             break;
         case 'schedule':
+            // Important but Not Urgent: High priority, due next week
             updates.priority = 3; // High
+            updates.dueDate = nextWeek.toISOString();
             break;
         case 'delegate':
+            // Urgent but Not Important: Low priority, due tomorrow
             updates.priority = 1; // Low
+            updates.dueDate = tomorrow.toISOString();
             break;
         case 'eliminate':
+            // Not Urgent & Not Important: None priority, no due date
             updates.priority = 0; // None
+            updates.dueDate = null;
             break;
     }
 

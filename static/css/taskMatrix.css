@@ -834,39 +834,46 @@ html[data-theme="midnight-minimal"] {
     font-size: 14px;
 }
 
-/* Task Card (Requirement 2.1-2.7) */
+/* Task Card - Modern Glassmorphic Design */
 .matrix-task-card {
     display: flex;
-    align-items: flex-start;
-    gap: var(--matrix-spacing-sm);
-    padding: var(--matrix-spacing-md);
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
     background: var(--matrix-card-bg);
     border-radius: 12px;
     border: 1px solid var(--matrix-border);
     cursor: pointer;
-    transition: var(--matrix-transition);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .matrix-task-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: var(--accent-primary, #8b5cf6);
 }
 
 .matrix-task-card:focus {
-    outline: 2px solid var(--primary, #3b82f6);
+    outline: 2px solid var(--accent-primary, #8b5cf6);
     outline-offset: 2px;
 }
 
 .matrix-task-card.completed {
-    opacity: 0.6;
-    background: rgba(16, 185, 129, 0.1);
+    opacity: 0.65;
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.matrix-task-card.completed .task-card-title {
+    text-decoration: line-through;
+    color: var(--matrix-text-secondary);
 }
 
 .matrix-task-card.skipped {
     opacity: 0.5;
-    background: rgba(239, 68, 68, 0.05);
-    text-decoration: line-through;
+    background: rgba(239, 68, 68, 0.08);
 }
 
 .matrix-task-card.skipped .task-card-title {
@@ -874,13 +881,20 @@ html[data-theme="midnight-minimal"] {
     color: var(--matrix-text-secondary);
 }
 
-.matrix-task-card.dragging {
-    opacity: 0.8;
-    transform: rotate(2deg);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+.matrix-task-card.in-progress {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border-color: rgba(245, 158, 11, 0.3);
 }
 
-/* Priority border */
+/* Drag states */
+.matrix-task-card.dragging {
+    opacity: 0.95;
+    transform: rotate(2deg) scale(1.03);
+    box-shadow: 0 16px 40px rgba(139, 92, 246, 0.3);
+    z-index: 1000;
+}
+
+/* Priority left border - thicker and more prominent */
 .matrix-task-card.priority-high {
     border-left: 4px solid var(--priority-high);
 }
@@ -893,31 +907,18 @@ html[data-theme="midnight-minimal"] {
     border-left: 4px solid var(--priority-low);
 }
 
-.task-card-status {
+/* Card Header: Status indicator + Title */
+.task-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.task-status-indicator {
     flex-shrink: 0;
-}
-
-.task-card-status .status-icon {
-    font-size: 20px;
-}
-
-.task-card-status .status-icon.spinning {
-    animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.task-card-content {
-    flex: 1;
-    min-width: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    opacity: 0.9;
 }
 
 .task-card-title {
@@ -926,82 +927,124 @@ html[data-theme="midnight-minimal"] {
     color: var(--matrix-text);
     line-height: 1.4;
     word-break: break-word;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.task-card-tags {
+/* Date section */
+.task-card-dates {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: var(--matrix-spacing-xs);
+    align-items: center;
+    gap: 6px;
+    padding-left: 24px;
 }
 
-.tag-pill {
-    display: inline-block;
-    padding: 2px 8px;
-    background: var(--matrix-bg);
-    border-radius: 12px;
+.task-date-range {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 11px;
     color: var(--matrix-text-secondary);
 }
 
-.tag-pill.small {
-    padding: 1px 6px;
+.date-start,
+.date-end {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 8px;
+    font-weight: 500;
+    color: var(--accent-primary, #8b5cf6);
+}
+
+.date-end {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--priority-high);
+}
+
+.date-separator {
+    color: var(--matrix-text-secondary);
     font-size: 10px;
 }
 
-.tag-more {
-    font-size: 11px;
-    color: var(--matrix-text-secondary);
+.date-icon {
+    font-size: 9px;
+    font-style: normal;
 }
 
-.task-card-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+.task-due-badge,
+.task-start-badge {
+    display: inline-flex;
+    align-items: center;
     gap: 4px;
-    flex-shrink: 0;
-}
-
-.fourth-dim-icon {
-    font-size: 16px;
-}
-
-.due-date {
     font-size: 11px;
-    color: var(--matrix-text-secondary);
+    padding: 3px 10px;
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--accent-primary, #8b5cf6);
+    border-radius: 10px;
+    white-space: nowrap;
+    font-weight: 500;
 }
 
-.task-card-actions {
-    position: absolute;
-    top: var(--matrix-spacing-sm);
-    right: var(--matrix-spacing-sm);
-    opacity: 0;
-    transition: var(--matrix-transition);
+.task-start-badge {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--status-completed);
 }
 
-.matrix-task-card:hover .task-card-actions {
-    opacity: 1;
+/* Tags section - Pill design */
+.task-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding-left: 24px;
 }
 
-.task-action-btn {
-    padding: 4px;
+.tag-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--accent-primary, #8b5cf6);
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tag-pill:hover {
+    background: rgba(139, 92, 246, 0.2);
+}
+
+.tag-pill.tag-more {
     background: var(--matrix-bg);
-    border: none;
-    border-radius: 4px;
     color: var(--matrix-text-secondary);
-    cursor: pointer;
-    transition: var(--matrix-transition);
 }
 
-.task-action-btn:hover {
-    background: var(--status-completed);
-    color: white;
+.tag-mini {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--matrix-bg);
+    color: var(--matrix-text-secondary);
+    border-radius: 6px;
+}
+
+/* Drop zone styling - enhanced */
+.drop-zone-active {
+    background: rgba(139, 92, 246, 0.12) !important;
+    border: 2px dashed var(--accent-primary, #8b5cf6) !important;
+    box-shadow: inset 0 0 20px rgba(139, 92, 246, 0.1);
 }
 
 .task-action-btn i {
     width: 14px;
     height: 14px;
 }
+
+
 
 
 /* Kanban View (Requirement 5.1-5.8) */
@@ -1151,8 +1194,13 @@ html[data-theme="midnight-minimal"] {
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.08);
 }
 
-.kanban-board .task-card-status .status-icon {
-    font-size: 14px;
+/* Kanban card header with status indicator */
+.kanban-board .task-card-header {
+    gap: 8px;
+}
+
+.kanban-board .task-status-indicator {
+    font-size: 12px;
 }
 
 .kanban-board .task-card-title {
@@ -1166,15 +1214,45 @@ html[data-theme="midnight-minimal"] {
     overflow: hidden;
 }
 
+/* Kanban card dates section */
+.kanban-board .task-card-dates {
+    padding-left: 20px;
+}
+
+.kanban-board .task-date-range {
+    font-size: 10px;
+}
+
+.kanban-board .date-start,
+.kanban-board .date-end {
+    padding: 2px 6px;
+    font-size: 10px;
+}
+
+.kanban-board .task-due-badge,
+.kanban-board .task-start-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+}
+
+/* Kanban card tags - Pill design */
 .kanban-board .task-card-tags {
-    margin-top: 6px;
+    padding-left: 20px;
+    margin-top: 4px;
 }
 
 .kanban-board .tag-pill {
     padding: 2px 6px;
-    font-size: 10px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.1);
+    font-size: 9px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Dragging state enhancement */
+.kanban-board .matrix-task-card.dragging {
+    box-shadow: 0 12px 32px rgba(139, 92, 246, 0.4);
+    border-color: var(--accent-primary, #8b5cf6);
 }
 
 .kanban-board .task-card-meta {
