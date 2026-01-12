@@ -192,3 +192,18 @@ class PasswordChange(BaseModel):
     currentPassword: str
     newPassword: str = Field(..., min_length=6)
 
+
+# Tag Models
+class TagCreate(BaseModel):
+    name: str
+    parentId: Optional[str] = None
+    color: str = "#8B5CF6"
+    icon: str = "📁"
+
+
+class TagUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
+    order: Optional[int] = None
+

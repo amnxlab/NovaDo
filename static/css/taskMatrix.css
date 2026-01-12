@@ -318,10 +318,38 @@ html[data-theme="midnight-minimal"] {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
-    position: absolute !important;
-    z-index: -1 !important;
+    position: fixed !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    z-index: -9999 !important;
     opacity: 0 !important;
     overflow: hidden !important;
+    contain: strict !important;
+}
+
+/* CRITICAL: Ensure all matrix children are hidden when parent is hidden */
+#matrix-view.hidden * {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Individual element hiding for extra safety - defense in depth */
+#matrix-view.hidden #matrix-banner,
+#matrix-view.hidden #matrix-header,
+#matrix-view.hidden #matrix-filter-bar,
+#matrix-view.hidden #matrix-view-container {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 /* Matrix Header */

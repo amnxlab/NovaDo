@@ -32,7 +32,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 from app.database import connect_db, close_db
-from app.routes import auth, tasks, lists, habits, calendar, llm, user, pomodoro, stats, uploads, notifications, focus, banner
+from app.routes import auth, tasks, lists, habits, calendar, llm, user, pomodoro, stats, uploads, notifications, focus, banner, tags
 
 # Create directories if they don't exist (in work directory)
 os.makedirs(WORK_DIR / "uploads", exist_ok=True)
@@ -83,6 +83,7 @@ app.include_router(uploads.router, prefix="/api/uploads", tags=["Uploads"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(focus.router, prefix="/api/focus", tags=["Focus"])
 app.include_router(banner.router, prefix="/api/user/banner", tags=["Banner"])
+app.include_router(tags.router, prefix="/api/tags", tags=["Tags"])
 
 
 @app.get("/api/health")

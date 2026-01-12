@@ -903,9 +903,104 @@ function renderCalendar() {
 }
 
 // Views
+// Helper function to clear all Matrix containers (Task 4 from spec)
+function clearMatrixContainers() {
+    const containers = ['matrix-view-container', 'matrix-header', 'matrix-filter-bar'];
+    containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = '';
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+        }
+    });
+    
+    // Hide banner but don't clear it (it has user settings)
+    const banner = document.getElementById('matrix-banner');
+    if (banner) {
+        banner.style.display = 'none';
+        banner.style.visibility = 'hidden';
+    }
+}
+
+// Comprehensive list of Matrix-specific CSS selectors for cleanup
+const MATRIX_SELECTORS = [
+    '.kanban-board', '.kanban-column', '.matrix-task-card', '.smart-list-view',
+    '.list-task-card', '.dashboard-view', '.eisenhower-grid', '.matrix-view-container',
+    '.matrix-banner', '.matrix-header', '.matrix-filter-bar', '.matrix-view-switcher',
+    '.matrix-header-actions', '.matrix-btn', '.filter-bar', '.filter-chip',
+    '.matrix-banner-default', '.banner-image-container', '.banner-actions',
+    '.quadrant', '.quadrant-tasks', '.quadrant-header', '.kanban-column-tasks',
+    '.kanban-column-header', '.filter-group', '.filter-chips', '.filter-label'
+];
+
+// Helper function to aggressively clean up matrix elements from wrong locations
+function cleanupMatrixElements() {
+    const matrixView = document.getElementById('matrix-view');
+    const matrixBanner = document.getElementById('matrix-banner');
+    const matrixHeader = document.getElementById('matrix-header');
+    const matrixFilterBar = document.getElementById('matrix-filter-bar');
+    const matrixContainer = document.getElementById('matrix-view-container');
+    
+    // CRITICAL: If matrix view is hidden, ensure ALL its elements are hidden and cleared
+    if (matrixView && matrixView.classList.contains('hidden')) {
+        // Clear all content containers with inline style fallback
+        [matrixHeader, matrixFilterBar, matrixContainer].forEach(el => {
+            if (el) {
+                el.innerHTML = '';
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+            }
+        });
+        
+        // Hide banner (but don't clear it - it has user settings)
+        if (matrixBanner) {
+            matrixBanner.style.display = 'none';
+            matrixBanner.style.visibility = 'hidden';
+        }
+        
+        // Force hide ALL children recursively
+        const allChildren = matrixView.querySelectorAll('*');
+        allChildren.forEach(child => {
+            child.style.display = 'none';
+            child.style.visibility = 'hidden';
+        });
+    }
+    
+    // CRITICAL: Remove matrix elements from ALL non-matrix views
+    const allViews = document.querySelectorAll('.view:not(#matrix-view)');
+    
+    allViews.forEach(view => {
+        if (!view) return;
+        
+        // Remove any matrix elements that shouldn't be here using comprehensive selector list
+        const orphanedElements = view.querySelectorAll(MATRIX_SELECTORS.join(', '));
+        orphanedElements.forEach(el => {
+            // Only remove if it's not a core element by ID
+            if (el.id !== 'matrix-banner' && el.id !== 'matrix-header' && 
+                el.id !== 'matrix-filter-bar' && el.id !== 'matrix-view-container') {
+                el.remove();
+            }
+        });
+    });
+    
+    // CRITICAL: Verify Matrix elements are inside Matrix_View (containment check)
+    // If they're outside, remove them - they will be recreated when needed
+    if (matrixView) {
+        [matrixBanner, matrixHeader, matrixFilterBar, matrixContainer].forEach(el => {
+            if (el && el.parentElement && el.parentElement.id !== 'matrix-view') {
+                // Element is outside matrix-view - remove it
+                console.warn('[Matrix Cleanup] Removing orphaned element:', el.id);
+                el.remove();
+            }
+        });
+    }
+}
+
 function showView(view) {
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
+    // CRITICAL: Hide all views first to ensure isolation
     elements.tasksView.classList.add('hidden');
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
@@ -913,16 +1008,72 @@ function showView(view) {
     elements.pomodoroView.classList.add('hidden');
     elements.statsView.classList.add('hidden');
 
-    // Hide matrix view
+    // CRITICAL: Hide matrix view and clear ALL its containers to prevent content bleeding
     const matrixView = document.getElementById('matrix-view');
-    if (matrixView) matrixView.classList.add('hidden');
+    if (matrixView) {
+        matrixView.classList.add('hidden');
+        // Use helper to clear all matrix containers
+        clearMatrixContainers();
+    }
+    
+    // CRITICAL: Aggressively clean up any matrix elements from wrong locations
+    cleanupMatrixElements();
+    
+    // CRITICAL: Clear tasks list container when switching away from tasks view
+    // This prevents matrix content from appearing in tasks view
+    if (view !== 'inbox' && view !== 'today' && view !== 'week' && view !== 'all' && view !== 'completed' && view !== 'wont-do' && view !== 'custom') {
+        if (elements.tasksList) {
+            elements.tasksList.innerHTML = '';
+        }
+    }
 
     state.currentView = view;
 
     switch (view) {
         case 'matrix':
             if (matrixView) {
+                // CRITICAL: First ensure matrix view is properly isolated
+                cleanupMatrixElements();
+                
+                // CRITICAL: Clear ALL matrix containers before showing to prevent content bleeding
+                const matrixContainer = document.getElementById('matrix-view-container');
+                const matrixHeader = document.getElementById('matrix-header');
+                const matrixFilterBar = document.getElementById('matrix-filter-bar');
+                const matrixBanner = document.getElementById('matrix-banner');
+                
+                if (matrixContainer) {
+                    matrixContainer.innerHTML = '';
+                    matrixContainer.style.display = '';
+                    matrixContainer.style.visibility = '';
+                }
+                if (matrixHeader) {
+                    matrixHeader.innerHTML = '';
+                    matrixHeader.style.display = '';
+                    matrixHeader.style.visibility = '';
+                }
+                if (matrixFilterBar) {
+                    matrixFilterBar.innerHTML = '';
+                    matrixFilterBar.style.display = '';
+                    matrixFilterBar.style.visibility = '';
+                }
+                // Show banner when showing matrix view
+                if (matrixBanner) {
+                    matrixBanner.style.display = '';
+                    matrixBanner.style.visibility = '';
+                }
+                
+                // Remove hidden class and ensure proper display
                 matrixView.classList.remove('hidden');
+                matrixView.style.display = '';
+                matrixView.style.visibility = '';
+                matrixView.style.position = '';
+                matrixView.style.left = '';
+                matrixView.style.top = '';
+                matrixView.style.width = '';
+                matrixView.style.height = '';
+                matrixView.style.zIndex = '';
+                matrixView.style.opacity = '';
+                
                 elements.currentViewTitle.textContent = 'Task Matrix';
                 document.querySelector('[data-view="matrix"]')?.classList.add('active');
                 // Initialize Task Matrix
@@ -967,6 +1118,10 @@ function showView(view) {
             loadGoogleCalendarStatus(); // Load Google Calendar status
             break;
         default:
+            // CRITICAL: Clear tasks list container before showing to prevent content bleeding
+            if (elements.tasksList) {
+                elements.tasksList.innerHTML = '';
+            }
             elements.tasksView.classList.remove('hidden');
             selectSmartList(view);
     }
@@ -990,12 +1145,30 @@ function selectSmartList(listId) {
 
     elements.currentViewTitle.textContent = titles[listId] || listId;
 
-    elements.tasksView.classList.remove('hidden');
+    // CRITICAL: Ensure all other views are hidden and their containers cleared
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
     elements.settingsView.classList.add('hidden');
     elements.pomodoroView.classList.add('hidden');
     elements.statsView.classList.add('hidden');
+    
+    // CRITICAL: Clear matrix view and ALL its containers to prevent content bleeding
+    const matrixView = document.getElementById('matrix-view');
+    if (matrixView) {
+        matrixView.classList.add('hidden');
+        // Use helper to clear all matrix containers
+        clearMatrixContainers();
+    }
+    
+    // CRITICAL: Aggressively clean up any matrix elements from wrong locations
+    cleanupMatrixElements();
+    
+    // CRITICAL: Clear tasks list container before rendering to ensure isolation
+    if (elements.tasksList) {
+        elements.tasksList.innerHTML = '';
+    }
+
+    elements.tasksView.classList.remove('hidden');
 
     renderTasks();
 }
@@ -1010,18 +1183,48 @@ function selectCustomList(listId) {
     const list = state.lists.find(l => l._id === listId || l.id === listId);
     elements.currentViewTitle.textContent = list?.name || 'List';
 
-    elements.tasksView.classList.remove('hidden');
+    // CRITICAL: Ensure all other views are hidden and their containers cleared
     elements.habitsView.classList.add('hidden');
     elements.calendarView.classList.add('hidden');
     elements.settingsView.classList.add('hidden');
     elements.pomodoroView.classList.add('hidden');
     elements.statsView.classList.add('hidden');
+    
+    // CRITICAL: Clear matrix view and ALL its containers to prevent content bleeding
+    const matrixView = document.getElementById('matrix-view');
+    if (matrixView) {
+        matrixView.classList.add('hidden');
+        // Use helper to clear all matrix containers
+        clearMatrixContainers();
+    }
+    
+    // CRITICAL: Aggressively clean up any matrix elements from wrong locations
+    cleanupMatrixElements();
+    
+    // CRITICAL: Clear tasks list container before rendering to ensure isolation
+    if (elements.tasksList) {
+        elements.tasksList.innerHTML = '';
+    }
+
+    elements.tasksView.classList.remove('hidden');
 
     renderTasks();
 }
 
 // Tasks
 function renderTasks() {
+    // CRITICAL: Aggressively clean up any matrix elements from wrong locations FIRST
+    cleanupMatrixElements();
+    
+    // CRITICAL: Validate and clear tasks list container to ensure isolation
+    if (!elements.tasksList || elements.tasksList.id !== 'tasks-list') {
+        console.warn('[Tasks] Invalid tasks list container');
+        return;
+    }
+    
+    // CRITICAL: Clear container completely before rendering to prevent content bleeding
+    elements.tasksList.innerHTML = '';
+    
     let tasks = [...state.tasks];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1083,6 +1286,11 @@ function renderTasks() {
         return 0;
     });
 
+    // Double-check container is still valid and clear
+    if (!elements.tasksList || elements.tasksList.id !== 'tasks-list') {
+        console.warn('[Tasks] Container invalidated during render');
+        return;
+    }
     elements.tasksList.innerHTML = '';
 
     if (tasks.length === 0) {

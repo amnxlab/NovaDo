@@ -405,6 +405,10 @@ function renderCurrentView() {
     const container = document.getElementById('matrix-view-container');
     if (!container) return;
 
+    // CRITICAL: Clear container completely before rendering to prevent content bleeding
+    // This ensures no page content from other views appears in the matrix view
+    container.innerHTML = '';
+
     // Apply fade transition if animations enabled
     if (matrixState.preferences.animationsEnabled) {
         container.style.opacity = '0';
@@ -412,6 +416,12 @@ function renderCurrentView() {
     }
 
     setTimeout(() => {
+        // Double-check container is still valid and clear
+        if (!container || container.id !== 'matrix-view-container') return;
+        
+        // Ensure container is completely empty before rendering
+        container.innerHTML = '';
+
         switch (matrixState.currentView) {
             case 'kanban':
                 renderKanbanView(container);
@@ -495,6 +505,13 @@ function getTaskStatus(task) {
 
 // Eisenhower Matrix View (Requirement 4.1-4.9)
 function renderEisenhowerView(container) {
+    // Ensure container is isolated - clear any existing content
+    if (!container || container.id !== 'matrix-view-container') {
+        console.warn('[Matrix] Invalid container for Eisenhower view');
+        return;
+    }
+    container.innerHTML = '';
+    
     const tasks = getFilteredTasks();
 
     // Categorize tasks into quadrants
@@ -747,6 +764,13 @@ function formatDueDate(dateStr) {
 
 // Kanban View (Requirement 5.1-5.8)
 function renderKanbanView(container) {
+    // Ensure container is isolated - clear any existing content
+    if (!container || container.id !== 'matrix-view-container') {
+        console.warn('[Matrix] Invalid container for Kanban view');
+        return;
+    }
+    container.innerHTML = '';
+    
     const tasks = getFilteredTasks();
 
     // Group tasks by status - Scheduled moved to far right
@@ -898,6 +922,13 @@ function handleShowMore(e) {
 
 // Smart List View (Requirement 6.1-6.9)
 function renderListView(container) {
+    // Ensure container is isolated - clear any existing content
+    if (!container || container.id !== 'matrix-view-container') {
+        console.warn('[Matrix] Invalid container for List view');
+        return;
+    }
+    container.innerHTML = '';
+    
     let tasks = getFilteredTasks();
 
     // Auto-sort by composite algorithm (Requirement 6.2)
@@ -1029,6 +1060,13 @@ function renderListTaskCard(task, index) {
 
 // Dashboard View (Requirement 7.1-7.6)
 function renderDashboardView(container) {
+    // Ensure container is isolated - clear any existing content
+    if (!container || container.id !== 'matrix-view-container') {
+        console.warn('[Matrix] Invalid container for Dashboard view');
+        return;
+    }
+    container.innerHTML = '';
+    
     const tasks = getFilteredTasks();
 
     // Calculate stats for widgets

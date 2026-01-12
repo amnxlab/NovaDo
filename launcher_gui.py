@@ -32,8 +32,8 @@ sys.path.insert(0, str(BASE_DIR))
 
 class NovaDoLauncher:
     # Dark theme colors
-    BG_DARK = "#1a1a2e"
-    BG_CARD = "#16213e"
+    BG_DARK = "#000000"
+    BG_CARD = "#50545e"
     ACCENT = "#4f46e5"
     SUCCESS = "#10b981"
     ERROR = "#ef4444"
@@ -159,15 +159,15 @@ class NovaDoLauncher:
         
         # Buttons
         self.open_btn = tk.Button(main, text="🌐  Open in Browser", font=("Segoe UI", 11, "bold"),
-                                  bg=self.ACCENT, fg="white", relief=tk.FLAT, pady=12,
+                                  bg=self.ACCENT, fg="white", relief=tk.FLAT, pady=11,
                                   cursor="hand2", command=self.open_browser,
-                                  activebackground="#6366f1", activeforeground="white")
+                                  activebackground="#A020F0", activeforeground="white")
         self.open_btn.pack(fill=tk.X, pady=(0, 12))
         
         self.stop_btn = tk.Button(main, text="⏹  Stop Server", font=("Segoe UI", 11),
                                   bg=self.ERROR, fg="white", relief=tk.FLAT, pady=12,
                                   cursor="hand2", command=self.stop_server,
-                                  activebackground="#dc2626", activeforeground="white")
+                                  activebackground="#B80F0A", activeforeground="white")
         self.stop_btn.pack(fill=tk.X)
         
         # Footer
