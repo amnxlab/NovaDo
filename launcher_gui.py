@@ -32,21 +32,31 @@ sys.path.insert(0, str(BASE_DIR))
 
 class NovaDoLauncher:
     # Dark theme colors
-    BG_DARK = "#000000"
-    BG_CARD = "#50545e"
-    ACCENT = "#4f46e5"
-    SUCCESS = "#10b981"
-    ERROR = "#ef4444"
-    WARNING = "#f59e0b"
-    TEXT_PRIMARY = "#ffffff"
-    TEXT_SECONDARY = "#94a3b8"
+    BG_DARK = "#101014"
+    BG_CARD = "#23232a"
+    GLASS_BG = "#23232a"
+    GLASS_ALPHA = 0.85
+    ACCENT = "#00ffe7"
+    ACCENT_HOVER = "#00b3ff"
+    NEON = "#00ffe7"
+    SUCCESS = "#00ff99"
+    ERROR = "#ff3571"
+    WARNING = "#ffe066"
+    TEXT_PRIMARY = "#e0e7ef"
+    TEXT_SECONDARY = "#7dd3fc"
+    FONT_FAMILY = "Cascadia Mono"
+    TITLE_FONT = ("Cascadia Mono", 28, "bold")
+    SUB_FONT = ("Fira Mono", 12)
+    TERMINAL_FONT = ("Cascadia Mono", 10)
     
     def __init__(self, root):
         self.root = root
         self.root.title("NovaDo")
-        self.root.geometry("450x460")
+        self.root.geometry("500x520")
         self.root.resizable(False, False)
         self.root.configure(bg=self.BG_DARK)
+        # Do not set a global '*Font' option to avoid issues with multi-word font families
+        self.bg_anim = None
         
         self.base_dir = BASE_DIR
         self.work_dir = WORK_DIR
@@ -103,76 +113,126 @@ class NovaDoLauncher:
                 return tk.Label(parent, image=self.logo_image, bg=self.BG_DARK)
             except:
                 pass
-        # Fallback: emoji
-        return tk.Label(parent, text="✨", font=("Segoe UI", 32), bg=self.BG_DARK, fg=self.ACCENT)
-    
+        # Fallback: emoji (use safe font fallback to avoid Tkinter font parsing issues)
+        try:
+            return tk.Label(parent, text="✨", font=("Segoe UI", 32), bg=self.BG_DARK, fg=self.ACCENT)
+        except Exception:
+            return tk.Label(parent, text="✨", bg=self.BG_DARK, fg=self.ACCENT)
+
     def build_ui(self):
+        # Animated matrix background
+        self.bg_canvas = tk.Canvas(self.root, width=500, height=520, bg=self.BG_DARK, highlightthickness=0, bd=0)
+        self.bg_canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        self.matrix_drops = [0 for _ in range(50)]
+        self.animate_matrix()
+
         main = tk.Frame(self.root, bg=self.BG_DARK, padx=35, pady=30)
         main.pack(fill=tk.BOTH, expand=True)
-        
+
         # Header with logo and title side by side
         header = tk.Frame(main, bg=self.BG_DARK)
         header.pack(pady=(0, 25))
-        
+
         logo_label = self.load_logo(header)
         logo_label.pack(side=tk.LEFT, padx=(0, 15))
-        
+
         title_container = tk.Frame(header, bg=self.BG_DARK)
         title_container.pack(side=tk.LEFT)
-        
-        tk.Label(title_container, text="NovaDo", font=("Segoe UI", 26, "bold"),
-                bg=self.BG_DARK, fg=self.TEXT_PRIMARY).pack(anchor=tk.W)
-        tk.Label(title_container, text="Smart Task Management", font=("Segoe UI", 11),
+
+        tk.Label(title_container, text="NovaDo", font=self.TITLE_FONT,
+                bg=self.BG_DARK, fg=self.NEON).pack(anchor=tk.W)
+        tk.Label(title_container, text="Smart Task Management", font=self.SUB_FONT if isinstance(self.SUB_FONT, tuple) else (self.SUB_FONT, 12),
                 bg=self.BG_DARK, fg=self.TEXT_SECONDARY).pack(anchor=tk.W)
-        
-        # Status card
-        status_card = tk.Frame(main, bg=self.BG_CARD, padx=16, pady=14)
+        # Status card (glassmorphism)
+        status_card = tk.Frame(main, bg=self.GLASS_BG, padx=16, pady=14, bd=0, relief=tk.FLAT)
         status_card.pack(fill=tk.X, pady=(0, 15))
-        
-        self.status_dot = tk.Label(status_card, text="●", font=("Segoe UI", 14),
-                                   bg=self.BG_CARD, fg=self.WARNING)
+        status_card.configure(highlightbackground=self.NEON, highlightthickness=2)
+        status_card.bind("<Enter>", lambda e: status_card.configure(bg="#23233a"))
+        status_card.bind("<Leave>", lambda e: status_card.configure(bg=self.GLASS_BG))
+
+        # Animated status dot
+        self.status_dot = tk.Canvas(status_card, width=22, height=22, bg=self.GLASS_BG, highlightthickness=0, bd=0)
         self.status_dot.pack(side=tk.LEFT)
-        
+        self.status_dot_id = self.status_dot.create_oval(5, 5, 17, 17, fill=self.WARNING, outline=self.NEON, width=2)
+        self.status_anim_phase = 0
+        self.animate_status_dot()
+
         self.status_label = tk.Label(status_card, text="Starting server...",
-                                     font=("Segoe UI", 11), bg=self.BG_CARD, fg=self.TEXT_SECONDARY)
+                                     font=self.SUB_FONT, bg=self.GLASS_BG, fg=self.TEXT_SECONDARY)
         self.status_label.pack(side=tk.LEFT, padx=(10, 0))
-        
-        # URL card
-        url_card = tk.Frame(main, bg=self.BG_CARD, padx=16, pady=14)
+
+        # URL card (glassmorphism)
+        url_card = tk.Frame(main, bg=self.GLASS_BG, padx=16, pady=14, bd=0, relief=tk.FLAT)
         url_card.pack(fill=tk.X, pady=(0, 20))
-        
-        tk.Label(url_card, text="Server URL", font=("Segoe UI", 9),
-                bg=self.BG_CARD, fg=self.TEXT_SECONDARY).pack(anchor=tk.W)
-        
-        url_row = tk.Frame(url_card, bg=self.BG_CARD)
+        url_card.configure(highlightbackground=self.NEON, highlightthickness=2)
+
+        tk.Label(url_card, text="Server URL", font=(self.FONT_FAMILY, 9),
+            bg=self.GLASS_BG, fg=self.TEXT_SECONDARY).pack(anchor=tk.W)
+
+        url_row = tk.Frame(url_card, bg=self.GLASS_BG)
         url_row.pack(fill=tk.X, pady=(6, 0))
-        
-        self.url_label = tk.Label(url_row, text=self.server_url, font=("Consolas", 13),
-                                  bg=self.BG_CARD, fg=self.ACCENT, cursor="hand2")
+
+        self.url_label = tk.Label(url_row, text=self.server_url, font=("Cascadia Mono", 13, "bold"),
+                      bg=self.GLASS_BG, fg=self.ACCENT, cursor="hand2")
         self.url_label.pack(side=tk.LEFT)
         self.url_label.bind("<Button-1>", lambda e: self.open_browser())
-        
-        copy_btn = tk.Label(url_row, text="📋", font=("Segoe UI", 14),
-                           bg=self.BG_CARD, fg=self.TEXT_SECONDARY, cursor="hand2")
+        self.url_label.bind("<Enter>", lambda e: self.url_label.config(fg=self.ACCENT_HOVER, underline=True))
+        self.url_label.bind("<Leave>", lambda e: self.url_label.config(fg=self.ACCENT, underline=False))
+
+        copy_btn = tk.Label(url_row, text="🗒️", font=(self.FONT_FAMILY, 14),
+                   bg=self.GLASS_BG, fg=self.TEXT_SECONDARY, cursor="hand2")
         copy_btn.pack(side=tk.RIGHT)
         copy_btn.bind("<Button-1>", lambda e: self.copy_url())
-        
-        # Buttons
-        self.open_btn = tk.Button(main, text="🌐  Open in Browser", font=("Segoe UI", 11, "bold"),
-                                  bg=self.ACCENT, fg="white", relief=tk.FLAT, pady=11,
-                                  cursor="hand2", command=self.open_browser,
-                                  activebackground="#A020F0", activeforeground="white")
+        copy_btn.bind("<Enter>", lambda e: copy_btn.config(fg=self.ACCENT_HOVER))
+        copy_btn.bind("<Leave>", lambda e: copy_btn.config(fg=self.TEXT_SECONDARY))
+
+        # Buttons with neon glow
+        self.open_btn = tk.Button(main, text="🧑‍💻  Open in Browser", font=(self.FONT_FAMILY, 12, "bold"),
+                      bg=self.ACCENT, fg="#101014", relief=tk.FLAT, pady=13,
+                      cursor="hand2", command=self.open_browser,
+                      activebackground=self.ACCENT_HOVER, activeforeground="#101014",
+                      bd=0, highlightthickness=0)
         self.open_btn.pack(fill=tk.X, pady=(0, 12))
-        
-        self.stop_btn = tk.Button(main, text="⏹  Stop Server", font=("Segoe UI", 11),
-                                  bg=self.ERROR, fg="white", relief=tk.FLAT, pady=12,
-                                  cursor="hand2", command=self.stop_server,
-                                  activebackground="#B80F0A", activeforeground="white")
+        self.open_btn.bind("<Enter>", lambda e: self.open_btn.config(bg=self.ACCENT_HOVER))
+        self.open_btn.bind("<Leave>", lambda e: self.open_btn.config(bg=self.ACCENT))
+
+        self.stop_btn = tk.Button(main, text="🛑  Stop Server", font=(self.FONT_FAMILY, 12),
+                      bg=self.ERROR, fg="#101014", relief=tk.FLAT, pady=13,
+                      cursor="hand2", command=self.stop_server,
+                      activebackground="#b91c1c", activeforeground="#101014",
+                      bd=0, highlightthickness=0)
         self.stop_btn.pack(fill=tk.X)
-        
-        # Footer
-        tk.Label(main, text="Keep this window open while using NovaDo",
-                font=("Segoe UI", 9), bg=self.BG_DARK, fg=self.TEXT_SECONDARY).pack(pady=(20, 0))
+        self.stop_btn.bind("<Enter>", lambda e: self.stop_btn.config(bg="#b91c1c"))
+        self.stop_btn.bind("<Leave>", lambda e: self.stop_btn.config(bg=self.ERROR))
+
+        # Terminal-style footer
+        self.terminal_footer = tk.Label(self.root, text="[NovaDo] :: Awaiting server...",
+            font=self.TERMINAL_FONT, bg="#18181b", fg="#00ffe7", anchor="w")
+        self.terminal_footer.place(relx=0, rely=1, anchor="sw", relwidth=1, y=-2)
+
+    def animate_matrix(self):
+        import random
+        self.bg_canvas.delete("matrix")
+        chars = "01"
+        for i in range(len(self.matrix_drops)):
+            x = i * 10
+            y = self.matrix_drops[i] * 18
+            color = "#00ffe7" if random.random() > 0.85 else "#00b3ff"
+            self.bg_canvas.create_text(x+10, y, text=random.choice(chars), fill=color, font=("Cascadia Mono", 14), tags="matrix")
+            if y > 520 and random.random() > 0.975:
+                self.matrix_drops[i] = 0
+            else:
+                self.matrix_drops[i] += 1
+        self.bg_anim = self.root.after(60, self.animate_matrix)
+
+    def animate_status_dot(self):
+        # Animate the status dot with a pulsing glow
+        import math
+        self.status_anim_phase = (self.status_anim_phase + 1) % 60
+        glow = int(8 + 4 * math.sin(self.status_anim_phase * math.pi / 30))
+        self.status_dot.coords(self.status_dot_id, 5-glow/8, 5-glow/8, 17+glow/8, 17+glow/8)
+        self.status_dot.itemconfig(self.status_dot_id, outline=self.NEON, width=2+glow//6)
+        self.root.after(60, self.animate_status_dot)
     
     def check_port(self, port, timeout=1):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -237,13 +297,15 @@ class NovaDoLauncher:
     
     def on_server_ready(self):
         self.is_running = True
-        self.status_dot.config(fg=self.SUCCESS)
+        self.status_dot.itemconfig(self.status_dot_id, fill=self.SUCCESS)
         self.status_label.config(text="Server is running", fg=self.SUCCESS)
+        self.terminal_footer.config(text="[NovaDo] :: Server running at {}".format(self.server_url), fg=self.SUCCESS)
         self.root.after(500, self.open_browser)
     
     def on_server_error(self, error=""):
-        self.status_dot.config(fg=self.ERROR)
+        self.status_dot.itemconfig(self.status_dot_id, fill=self.ERROR)
         self.status_label.config(text="Failed to start", fg=self.ERROR)
+        self.terminal_footer.config(text="[NovaDo] :: Server failed to start", fg=self.ERROR)
         if error:
             messagebox.showerror("Server Error", f"Failed:\n{error[:400]}")
     
@@ -255,19 +317,33 @@ class NovaDoLauncher:
         self.root.clipboard_clear()
         self.root.clipboard_append(self.server_url)
         self.status_label.config(text="URL copied!", fg=self.ACCENT)
-        self.root.after(2000, lambda: self.status_label.config(
-            text="Server is running" if self.is_running else "Starting...",
-            fg=self.SUCCESS if self.is_running else self.TEXT_SECONDARY))
+        self.status_dot.itemconfig(self.status_dot_id, fill=self.ACCENT)
+        self.terminal_footer.config(text="[NovaDo] :: URL copied to clipboard", fg=self.ACCENT)
+        self.root.after(1200, lambda: [
+            self.status_label.config(
+                text="Server is running" if self.is_running else "Starting...",
+                fg=self.SUCCESS if self.is_running else self.TEXT_SECONDARY),
+            self.status_dot.itemconfig(self.status_dot_id, fill=self.SUCCESS if self.is_running else self.WARNING),
+            self.terminal_footer.config(
+                text="[NovaDo] :: Server running at {}".format(self.server_url) if self.is_running else "[NovaDo] :: Awaiting server...",
+                fg=self.SUCCESS if self.is_running else self.ACCENT)
+        ])
     
     def stop_server(self):
         if messagebox.askyesno("Stop", "Stop the server and quit?"):
+            if self.bg_anim:
+                self.root.after_cancel(self.bg_anim)
             os._exit(0)
     
     def on_closing(self):
         if self.is_running:
             if messagebox.askyesno("Quit", "Stop the server and quit?"):
+                if self.bg_anim:
+                    self.root.after_cancel(self.bg_anim)
                 os._exit(0)
         else:
+            if self.bg_anim:
+                self.root.after_cancel(self.bg_anim)
             os._exit(0)
 
 

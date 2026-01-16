@@ -11,8 +11,10 @@ const state = {
     tasks: [],
     lists: [],
     habits: [],
+    tags: [],  // Hierarchical tag system
     currentView: 'inbox',
     currentList: null,
+    currentTag: null,  // Currently selected tag for filtering
     calendarDate: new Date(),
     calendarViewMode: 'month' // 'day', 'week', 'month', 'agenda'
 };
@@ -96,39 +98,39 @@ function saveSidebarConfig(config) {
     localStorage.setItem('sidebarConfig', JSON.stringify(config));
 }
 
-// DOM Elements
+// DOM Elements - Use getters for lazy loading to handle any DOM timing issues
 const elements = {
-    loadingScreen: document.getElementById('loading-screen'),
-    authScreen: document.getElementById('auth-screen'),
-    mainScreen: document.getElementById('main-screen'),
-    loginForm: document.getElementById('login-form'),
-    registerForm: document.getElementById('register-form'),
-    loginError: document.getElementById('login-error'),
-    registerError: document.getElementById('register-error'),
-    tabBtns: document.querySelectorAll('.tab-btn'),
-    userName: document.querySelector('.user-name'),
-    currentViewTitle: document.getElementById('current-view-title'),
-    tasksList: document.getElementById('tasks-list'),
-    emptyState: document.getElementById('empty-state'),
-    customLists: document.getElementById('custom-lists'),
-    smartLists: document.getElementById('smart-lists'),
-    habitsView: document.getElementById('habits-view'),
-    habitsList: document.getElementById('habits-list'),
-    calendarView: document.getElementById('calendar-view'),
-    calendarGrid: document.getElementById('calendar-grid'),
-    calendarMonth: document.getElementById('calendar-month'),
-    calendarDayView: document.getElementById('calendar-day-view'),
-    calendarWeekView: document.getElementById('calendar-week-view'),
-    calendarAgendaView: document.getElementById('calendar-agenda-view'),
-    settingsView: document.getElementById('settings-view'),
-    tasksView: document.getElementById('tasks-view'),
-    taskModal: document.getElementById('task-modal'),
-    listModal: document.getElementById('list-modal'),
-    habitModal: document.getElementById('habit-modal'),
-    smartModal: document.getElementById('smart-input-modal'),
-    searchInput: document.getElementById('search-input'),
-    pomodoroView: document.getElementById('pomodoro-view'),
-    statsView: document.getElementById('stats-view')
+    get loadingScreen() { return document.getElementById('loading-screen'); },
+    get authScreen() { return document.getElementById('auth-screen'); },
+    get mainScreen() { return document.getElementById('main-screen'); },
+    get loginForm() { return document.getElementById('login-form'); },
+    get registerForm() { return document.getElementById('register-form'); },
+    get loginError() { return document.getElementById('login-error'); },
+    get registerError() { return document.getElementById('register-error'); },
+    get tabBtns() { return document.querySelectorAll('.tab-btn'); },
+    get userName() { return document.querySelector('.user-name'); },
+    get currentViewTitle() { return document.getElementById('current-view-title'); },
+    get tasksList() { return document.getElementById('tasks-list'); },
+    get emptyState() { return document.getElementById('empty-state'); },
+    get customLists() { return document.getElementById('custom-lists'); },
+    get smartLists() { return document.getElementById('smart-lists'); },
+    get habitsView() { return document.getElementById('habits-view'); },
+    get habitsList() { return document.getElementById('habits-list'); },
+    get calendarView() { return document.getElementById('calendar-view'); },
+    get calendarGrid() { return document.getElementById('calendar-grid'); },
+    get calendarMonth() { return document.getElementById('calendar-month'); },
+    get calendarDayView() { return document.getElementById('calendar-day-view'); },
+    get calendarWeekView() { return document.getElementById('calendar-week-view'); },
+    get calendarAgendaView() { return document.getElementById('calendar-agenda-view'); },
+    get settingsView() { return document.getElementById('settings-view'); },
+    get tasksView() { return document.getElementById('tasks-view'); },
+    get taskModal() { return document.getElementById('task-modal'); },
+    get listModal() { return document.getElementById('list-modal'); },
+    get habitModal() { return document.getElementById('habit-modal'); },
+    get smartModal() { return document.getElementById('smart-input-modal'); },
+    get searchInput() { return document.getElementById('search-input'); },
+    get pomodoroView() { return document.getElementById('pomodoro-view'); },
+    get statsView() { return document.getElementById('stats-view'); }
 };
 
 // Subtasks state for current task being edited
@@ -161,15 +163,21 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
     try {
-        setupEventListeners();
-        initSidebarDragDrop(); // Enable drag-drop reordering
-        initSidebarResize(); // Enable sidebar resizing
-        checkGoogleAuthCallback(); // Check for Google OAuth callback
+        try { setupEventListeners(); } catch (e) { console.error('[init] setupEventListeners failed:', e); }
+        try { initSidebarDragDrop(); } catch (e) { console.error('[init] initSidebarDragDrop failed:', e); }
+        try { initSidebarResize(); } catch (e) { console.error('[init] initSidebarResize failed:', e); }
+        try { checkGoogleAuthCallback(); } catch (e) { console.error('[init] checkGoogleAuthCallback failed:', e); }
         await checkAuth();
     } catch (error) {
         console.error('Init error:', error);
-        if (typeof showToast === 'function') {
-            showToast('Application initialization failed', 'error');
+        // Direct DOM manipulation as fallback - no function calls that could fail
+        try {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) loadingScreen.classList.add('hidden');
+            const authScreen = document.getElementById('auth-screen');
+            if (authScreen) authScreen.classList.remove('hidden');
+        } catch (e) {
+            console.error('Fallback also failed:', e);
         }
     }
 }
@@ -633,57 +641,153 @@ function hideLoadingScreen() {
 }
 
 function showAuthScreen() {
-    elements.authScreen.classList.remove('hidden');
-    elements.loadingScreen.classList.add('hidden');
-    elements.mainScreen.classList.add('hidden');
+    if (elements.authScreen) elements.authScreen.classList.remove('hidden');
+    if (elements.loadingScreen) elements.loadingScreen.classList.add('hidden');
+    if (elements.mainScreen) elements.mainScreen.classList.add('hidden');
 }
 
 function showMainScreen() {
-    elements.authScreen.classList.add('hidden');
-    elements.mainScreen.classList.remove('hidden');
-    elements.userName.textContent = state.user?.name || 'User';
-    document.getElementById('settings-name').value = state.user?.name || '';
-    document.getElementById('settings-email').value = state.user?.email || '';
+    if (elements.authScreen) elements.authScreen.classList.add('hidden');
+    if (elements.mainScreen) elements.mainScreen.classList.remove('hidden');
+    if (elements.userName) elements.userName.textContent = state.user?.name || 'User';
+    const settingsName = document.getElementById('settings-name');
+    const settingsEmail = document.getElementById('settings-email');
+    if (settingsName) settingsName.value = state.user?.name || '';
+    if (settingsEmail) settingsEmail.value = state.user?.email || '';
     // Load user avatar if available
     if (state.user?.avatar) {
-        updateSidebarAvatar(state.user.avatar);
+        try { updateSidebarAvatar(state.user.avatar); } catch (e) { console.error('updateSidebarAvatar failed:', e); }
     } else {
         // Try loading from localStorage
-        loadSavedAvatar();
+        try { loadSavedAvatar(); } catch (e) { console.error('loadSavedAvatar failed:', e); }
     }
 }
 
 // Data Loading
 async function loadData() {
     try {
-        // Render sidebar first (from local config)
-        renderSmartLists();
-        renderTools();
-        renderTaskStatus();
+        // Render sidebar first (from local config) - with error handling
+        try { renderSmartLists(); } catch (e) { console.error('[loadData] renderSmartLists failed:', e); }
+        try { renderTools(); } catch (e) { console.error('[loadData] renderTools failed:', e); }
+        try { renderTaskStatus(); } catch (e) { console.error('[loadData] renderTaskStatus failed:', e); }
 
-        const [tasks, lists, habits] = await Promise.all([
-            api.getTasks(),
-            api.getLists(),
-            api.getHabits()
+        // Fetch data with individual error handling for each API call
+        const [tasks, lists, habits, tags] = await Promise.all([
+            api.getTasks().catch(e => { console.error('[loadData] getTasks failed:', e); return []; }),
+            api.getLists().catch(e => { console.error('[loadData] getLists failed:', e); return []; }),
+            api.getHabits().catch(e => { console.error('[loadData] getHabits failed:', e); return []; }),
+            api.getTags().catch(e => { console.error('[loadData] getTags failed:', e); return []; })
         ]);
 
         state.tasks = Array.isArray(tasks) ? tasks : [];
         state.lists = Array.isArray(lists) ? lists : [];
         state.habits = Array.isArray(habits) ? habits : [];
+        state.tags = Array.isArray(tags) ? tags : [];
 
-        console.log('[loadData] Loaded:', state.tasks.length, 'tasks,', state.lists.length, 'lists,', state.habits.length, 'habits');
+        console.log('[loadData] Loaded:', state.tasks.length, 'tasks,', state.lists.length, 'lists,', state.habits.length, 'habits,', state.tags.length, 'tags');
 
-        renderLists();
-        renderTasks();
-        updateCounts();
+        // Render with error handling
+        try { renderLists(); } catch (e) { console.error('[loadData] renderLists failed:', e); }
+        try { renderTags(); } catch (e) { console.error('[loadData] renderTags failed:', e); }
+        try { renderTasks(); } catch (e) { console.error('[loadData] renderTasks failed:', e); }
+        try { updateCounts(); } catch (e) { console.error('[loadData] updateCounts failed:', e); }
 
         // Load timezone settings now that user is authenticated
-        loadTimezone();
+        try { loadTimezone(); } catch (e) { console.error('[loadData] loadTimezone failed:', e); }
+
+        // URL-based navigation: Check URL path and navigate to appropriate view
+        try { navigateFromUrl(); } catch (e) { console.error('[loadData] navigateFromUrl failed:', e); }
     } catch (error) {
-        console.error('[loadData] Error:', error);
-        showToast('Failed to load data', 'error');
+        console.error('[loadData] Critical error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Failed to load data', 'error');
+        }
     }
 }
+
+// URL-based view navigation
+function navigateFromUrl() {
+    const path = window.location.pathname.toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+
+    // Map URL paths to views
+    const pathToView = {
+        '/calendar': 'calendar',
+        '/matrix': 'matrix',
+        '/habits': 'habits',
+        '/pomodoro': 'pomodoro',
+        '/stats': 'stats',
+        '/settings': 'settings',
+        '/today': 'today',
+        '/week': 'week',
+        '/inbox': 'inbox',
+        '/dashboard': 'inbox'
+    };
+
+    // Check for view in path
+    for (const [urlPath, viewName] of Object.entries(pathToView)) {
+        if (path.includes(urlPath)) {
+            console.log('[navigateFromUrl] Navigating to view:', viewName, 'from path:', path);
+            showView(viewName);
+            return;
+        }
+    }
+
+    // Check for view query param (?view=calendar)
+    if (viewParam && pathToView['/' + viewParam]) {
+        console.log('[navigateFromUrl] Navigating to view from query param:', viewParam);
+        showView(viewParam);
+        return;
+    }
+
+    // Check for window.NOVADO_DEFAULT_VIEW (set by separate page templates)
+    if (window.NOVADO_DEFAULT_VIEW) {
+        console.log('[navigateFromUrl] Using default view:', window.NOVADO_DEFAULT_VIEW);
+        showView(window.NOVADO_DEFAULT_VIEW);
+        return;
+    }
+
+    // Default to inbox
+    console.log('[navigateFromUrl] Defaulting to inbox view');
+    showView('inbox');
+}
+
+// Update URL when view changes (for back/forward navigation)
+function updateUrlForView(view) {
+    const viewToPath = {
+        'calendar': '/calendar',
+        'matrix': '/matrix',
+        'habits': '/habits',
+        'pomodoro': '/pomodoro',
+        'stats': '/stats',
+        'settings': '/settings',
+        'today': '/?view=today',
+        'week': '/?view=week',
+        'inbox': '/',
+        'all': '/?view=all',
+        'completed': '/?view=completed',
+        'wont-do': '/?view=wont-do'
+    };
+
+    const newPath = viewToPath[view] || '/';
+
+    // Only update if path is different to avoid loop
+    if (window.location.pathname !== newPath && !newPath.startsWith('/?')) {
+        window.history.pushState({ view }, '', newPath);
+    } else if (newPath.startsWith('/?')) {
+        window.history.pushState({ view }, '', newPath);
+    }
+}
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.view) {
+        showView(event.state.view);
+    } else {
+        navigateFromUrl();
+    }
+});
 
 // Calendar View
 function renderCalendar() {
@@ -914,7 +1018,7 @@ function clearMatrixContainers() {
             el.style.visibility = 'hidden';
         }
     });
-    
+
     // Hide banner but don't clear it (it has user settings)
     const banner = document.getElementById('matrix-banner');
     if (banner) {
@@ -941,7 +1045,7 @@ function cleanupMatrixElements() {
     const matrixHeader = document.getElementById('matrix-header');
     const matrixFilterBar = document.getElementById('matrix-filter-bar');
     const matrixContainer = document.getElementById('matrix-view-container');
-    
+
     // CRITICAL: If matrix view is hidden, ensure ALL its elements are hidden and cleared
     if (matrixView && matrixView.classList.contains('hidden')) {
         // Clear all content containers with inline style fallback
@@ -952,13 +1056,13 @@ function cleanupMatrixElements() {
                 el.style.visibility = 'hidden';
             }
         });
-        
+
         // Hide banner (but don't clear it - it has user settings)
         if (matrixBanner) {
             matrixBanner.style.display = 'none';
             matrixBanner.style.visibility = 'hidden';
         }
-        
+
         // Force hide ALL children recursively
         const allChildren = matrixView.querySelectorAll('*');
         allChildren.forEach(child => {
@@ -966,24 +1070,24 @@ function cleanupMatrixElements() {
             child.style.visibility = 'hidden';
         });
     }
-    
+
     // CRITICAL: Remove matrix elements from ALL non-matrix views
     const allViews = document.querySelectorAll('.view:not(#matrix-view)');
-    
+
     allViews.forEach(view => {
         if (!view) return;
-        
+
         // Remove any matrix elements that shouldn't be here using comprehensive selector list
         const orphanedElements = view.querySelectorAll(MATRIX_SELECTORS.join(', '));
         orphanedElements.forEach(el => {
             // Only remove if it's not a core element by ID
-            if (el.id !== 'matrix-banner' && el.id !== 'matrix-header' && 
+            if (el.id !== 'matrix-banner' && el.id !== 'matrix-header' &&
                 el.id !== 'matrix-filter-bar' && el.id !== 'matrix-view-container') {
                 el.remove();
             }
         });
     });
-    
+
     // CRITICAL: Verify Matrix elements are inside Matrix_View (containment check)
     // If they're outside, remove them - they will be recreated when needed
     if (matrixView) {
@@ -1000,13 +1104,13 @@ function cleanupMatrixElements() {
 function showView(view) {
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
-    // CRITICAL: Hide all views first to ensure isolation
-    elements.tasksView.classList.add('hidden');
-    elements.habitsView.classList.add('hidden');
-    elements.calendarView.classList.add('hidden');
-    elements.settingsView.classList.add('hidden');
-    elements.pomodoroView.classList.add('hidden');
-    elements.statsView.classList.add('hidden');
+    // CRITICAL: Hide all views first to ensure isolation (with null checks)
+    if (elements.tasksView) elements.tasksView.classList.add('hidden');
+    if (elements.habitsView) elements.habitsView.classList.add('hidden');
+    if (elements.calendarView) elements.calendarView.classList.add('hidden');
+    if (elements.settingsView) elements.settingsView.classList.add('hidden');
+    if (elements.pomodoroView) elements.pomodoroView.classList.add('hidden');
+    if (elements.statsView) elements.statsView.classList.add('hidden');
 
     // CRITICAL: Hide matrix view and clear ALL its containers to prevent content bleeding
     const matrixView = document.getElementById('matrix-view');
@@ -1015,10 +1119,10 @@ function showView(view) {
         // Use helper to clear all matrix containers
         clearMatrixContainers();
     }
-    
+
     // CRITICAL: Aggressively clean up any matrix elements from wrong locations
     cleanupMatrixElements();
-    
+
     // CRITICAL: Clear tasks list container when switching away from tasks view
     // This prevents matrix content from appearing in tasks view
     if (view !== 'inbox' && view !== 'today' && view !== 'week' && view !== 'all' && view !== 'completed' && view !== 'wont-do' && view !== 'custom') {
@@ -1034,13 +1138,13 @@ function showView(view) {
             if (matrixView) {
                 // CRITICAL: First ensure matrix view is properly isolated
                 cleanupMatrixElements();
-                
+
                 // CRITICAL: Clear ALL matrix containers before showing to prevent content bleeding
                 const matrixContainer = document.getElementById('matrix-view-container');
                 const matrixHeader = document.getElementById('matrix-header');
                 const matrixFilterBar = document.getElementById('matrix-filter-bar');
                 const matrixBanner = document.getElementById('matrix-banner');
-                
+
                 if (matrixContainer) {
                     matrixContainer.innerHTML = '';
                     matrixContainer.style.display = '';
@@ -1061,7 +1165,7 @@ function showView(view) {
                     matrixBanner.style.display = '';
                     matrixBanner.style.visibility = '';
                 }
-                
+
                 // Remove hidden class and ensure proper display
                 matrixView.classList.remove('hidden');
                 matrixView.style.display = '';
@@ -1073,7 +1177,7 @@ function showView(view) {
                 matrixView.style.height = '';
                 matrixView.style.zIndex = '';
                 matrixView.style.opacity = '';
-                
+
                 elements.currentViewTitle.textContent = 'Task Matrix';
                 document.querySelector('[data-view="matrix"]')?.classList.add('active');
                 // Initialize Task Matrix
@@ -1151,7 +1255,7 @@ function selectSmartList(listId) {
     elements.settingsView.classList.add('hidden');
     elements.pomodoroView.classList.add('hidden');
     elements.statsView.classList.add('hidden');
-    
+
     // CRITICAL: Clear matrix view and ALL its containers to prevent content bleeding
     const matrixView = document.getElementById('matrix-view');
     if (matrixView) {
@@ -1159,10 +1263,10 @@ function selectSmartList(listId) {
         // Use helper to clear all matrix containers
         clearMatrixContainers();
     }
-    
+
     // CRITICAL: Aggressively clean up any matrix elements from wrong locations
     cleanupMatrixElements();
-    
+
     // CRITICAL: Clear tasks list container before rendering to ensure isolation
     if (elements.tasksList) {
         elements.tasksList.innerHTML = '';
@@ -1189,7 +1293,7 @@ function selectCustomList(listId) {
     elements.settingsView.classList.add('hidden');
     elements.pomodoroView.classList.add('hidden');
     elements.statsView.classList.add('hidden');
-    
+
     // CRITICAL: Clear matrix view and ALL its containers to prevent content bleeding
     const matrixView = document.getElementById('matrix-view');
     if (matrixView) {
@@ -1197,10 +1301,10 @@ function selectCustomList(listId) {
         // Use helper to clear all matrix containers
         clearMatrixContainers();
     }
-    
+
     // CRITICAL: Aggressively clean up any matrix elements from wrong locations
     cleanupMatrixElements();
-    
+
     // CRITICAL: Clear tasks list container before rendering to ensure isolation
     if (elements.tasksList) {
         elements.tasksList.innerHTML = '';
@@ -1215,16 +1319,16 @@ function selectCustomList(listId) {
 function renderTasks() {
     // CRITICAL: Aggressively clean up any matrix elements from wrong locations FIRST
     cleanupMatrixElements();
-    
+
     // CRITICAL: Validate and clear tasks list container to ensure isolation
     if (!elements.tasksList || elements.tasksList.id !== 'tasks-list') {
         console.warn('[Tasks] Invalid tasks list container');
         return;
     }
-    
+
     // CRITICAL: Clear container completely before rendering to prevent content bleeding
     elements.tasksList.innerHTML = '';
-    
+
     let tasks = [...state.tasks];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -5493,6 +5597,238 @@ function attachEventTooltips() {
         });
     });
 }
+
+// ==========================================
+// HIERARCHICAL TAG SYSTEM
+// ==========================================
+
+// Render hierarchical tag tree in sidebar
+function renderTags() {
+    const tagsTree = document.getElementById('tags-tree');
+    if (!tagsTree) return;
+
+    const tags = state.tags || [];
+
+    if (tags.length === 0) {
+        tagsTree.innerHTML = '<li class="empty-message">No tags yet</li>';
+        return;
+    }
+
+    // Separate parent and child tags
+    const parentTags = tags.filter(t => !t.parentId);
+    const childTagMap = {};
+
+    tags.filter(t => t.parentId).forEach(child => {
+        if (!childTagMap[child.parentId]) {
+            childTagMap[child.parentId] = [];
+        }
+        childTagMap[child.parentId].push(child);
+    });
+
+    // Build HTML
+    let html = '';
+    parentTags.forEach(parent => {
+        const children = childTagMap[parent._id] || [];
+        const hasChildren = children.length > 0;
+        const isExpanded = localStorage.getItem(`tag-expanded-${parent._id}`) !== 'false';
+
+        html += `
+            <li class="tag-item parent-tag ${hasChildren ? 'has-children' : ''}" data-tag-id="${parent._id}" data-full-path="${parent.fullPath}">
+                <div class="tag-row">
+                    ${hasChildren ? `<button class="tag-toggle ${isExpanded ? 'expanded' : ''}" data-parent-id="${parent._id}">▶</button>` : '<span class="tag-spacer"></span>'}
+                    <span class="tag-icon" style="color: ${parent.color || '#8B5CF6'}">#</span>
+                    <span class="tag-name" onclick="selectTag('${parent.fullPath}')">${parent.name}</span>
+                    <span class="tag-count">${parent.taskCount || 0}</span>
+                </div>
+                ${hasChildren ? `
+                    <ul class="tag-children ${isExpanded ? '' : 'collapsed'}">
+                        ${children.map(child => `
+                            <li class="tag-item child-tag" data-tag-id="${child._id}" data-full-path="${child.fullPath}">
+                                <div class="tag-row">
+                                    <span class="tag-spacer"></span>
+                                    <span class="tag-icon" style="color: ${child.color || parent.color || '#8B5CF6'}">#</span>
+                                    <span class="tag-name" onclick="selectTag('${child.fullPath}')">${child.name}</span>
+                                    <span class="tag-count">${child.taskCount || 0}</span>
+                                </div>
+                            </li>
+                        `).join('')}
+                    </ul>
+                ` : ''}
+            </li>
+        `;
+    });
+
+    tagsTree.innerHTML = html;
+
+    // Add toggle listeners
+    tagsTree.querySelectorAll('.tag-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const parentId = toggle.dataset.parentId;
+            const children = toggle.closest('.tag-item').querySelector('.tag-children');
+            const isExpanded = toggle.classList.contains('expanded');
+
+            toggle.classList.toggle('expanded');
+            if (children) {
+                children.classList.toggle('collapsed');
+            }
+            localStorage.setItem(`tag-expanded-${parentId}`, !isExpanded);
+        });
+    });
+}
+
+// Select tag for filtering
+function selectTag(fullPath) {
+    state.currentTag = fullPath;
+    state.currentList = null;
+    state.currentView = 'tag';
+
+    // Update UI
+    document.querySelectorAll('.nav-item.active').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tag-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.fullPath === fullPath);
+    });
+
+    // Update title
+    const tag = state.tags.find(t => t.fullPath === fullPath);
+    const title = tag ? `Tag: ${formatTagDisplay(fullPath)}` : 'Tags';
+    document.getElementById('current-view-title').textContent = title;
+
+    // Filter and render tasks
+    renderTasks();
+}
+
+// Format tag for display: "work:meetings" -> "Work: Meetings"
+function formatTagDisplay(fullPath) {
+    if (!fullPath) return '';
+    return fullPath.split(':').map(part =>
+        part.charAt(0).toUpperCase() + part.slice(1)
+    ).join(': ');
+}
+
+// Create new tag
+async function createTag(name, parentId = null, color = '#8B5CF6') {
+    try {
+        const newTag = await api.createTag({ name, parentId, color });
+        state.tags.push(newTag);
+        renderTags();
+        showToast(`Tag "${name}" created`, 'success');
+        return newTag;
+    } catch (error) {
+        console.error('Failed to create tag:', error);
+        showToast('Failed to create tag', 'error');
+        throw error;
+    }
+}
+
+// Delete tag
+async function deleteTag(tagId) {
+    if (!confirm('Delete this tag and all its children?')) return;
+
+    try {
+        await api.deleteTag(tagId);
+        state.tags = state.tags.filter(t => t._id !== tagId && t.parentId !== tagId);
+        renderTags();
+        showToast('Tag deleted', 'success');
+    } catch (error) {
+        console.error('Failed to delete tag:', error);
+        showToast('Failed to delete tag', 'error');
+    }
+}
+
+// Open tag creation modal
+function openTagModal(parentId = null) {
+    const parentTag = parentId ? state.tags.find(t => t._id === parentId) : null;
+    const modalHtml = `
+        <div id="tag-modal" class="modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>${parentTag ? `Add Child Tag to "${parentTag.name}"` : 'Add New Tag'}</h2>
+                    <button class="btn-icon close-modal" id="close-tag-modal">&times;</button>
+                </div>
+                <form id="tag-form">
+                    <div class="form-group">
+                        <label for="tag-name">Tag Name</label>
+                        <input type="text" id="tag-name" placeholder="e.g. Work, Personal, Projects" required>
+                    </div>
+                    ${!parentId ? `
+                    <div class="form-group">
+                        <label for="tag-parent">Parent Tag (optional)</label>
+                        <select id="tag-parent">
+                            <option value="">None (create as parent)</option>
+                            ${state.tags.filter(t => !t.parentId).map(t =>
+        `<option value="${t._id}">${t.name}</option>`
+    ).join('')}
+                        </select>
+                    </div>
+                    ` : `<input type="hidden" id="tag-parent" value="${parentId}">`}
+                    <div class="form-group">
+                        <label for="tag-color">Color</label>
+                        <input type="color" id="tag-color" value="#8B5CF6">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeTagModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Tag</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existing = document.getElementById('tag-modal');
+    if (existing) existing.remove();
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Add event listeners
+    document.getElementById('close-tag-modal').addEventListener('click', closeTagModal);
+    document.querySelector('#tag-modal .modal-overlay').addEventListener('click', closeTagModal);
+    document.getElementById('tag-form').addEventListener('submit', handleTagSubmit);
+
+    // Focus input
+    document.getElementById('tag-name').focus();
+}
+
+function closeTagModal() {
+    const modal = document.getElementById('tag-modal');
+    if (modal) modal.remove();
+}
+
+async function handleTagSubmit(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('tag-name').value.trim();
+    const parentId = document.getElementById('tag-parent')?.value || null;
+    const color = document.getElementById('tag-color').value;
+
+    if (!name) {
+        showToast('Please enter a tag name', 'error');
+        return;
+    }
+
+    try {
+        await createTag(name, parentId || null, color);
+        closeTagModal();
+    } catch (error) {
+        // Error handled in createTag
+    }
+}
+
+// Add tag button event listener
+document.addEventListener('DOMContentLoaded', () => {
+    const addTagBtn = document.getElementById('add-tag-btn');
+    if (addTagBtn) {
+        addTagBtn.addEventListener('click', () => openTagModal());
+    }
+});
+
+// Make functions globally available
+window.selectTag = selectTag;
+window.openTagModal = openTagModal;
+window.closeTagModal = closeTagModal;
+window.deleteTag = deleteTag;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize notification manager

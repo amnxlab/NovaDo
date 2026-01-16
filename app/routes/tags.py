@@ -22,24 +22,66 @@ def generate_full_path(name: str, parent_path: str = None) -> str:
 
 @router.get("/", response_model=dict)
 async def get_tags(current_user: dict = Depends(get_current_user)):
-    """Get all tags for the user with task counts"""
+    """Get all tags for the user with task counts - includes discovered tags from tasks"""
     db = get_database()
     
-    tags = await db.tags.find({
+    # Get explicitly created tags
+    explicit_tags = await db.tags.find({
         "user": ObjectId(current_user["_id"])
     }).sort("order", 1).to_list(None)
     
-    # Build a map for quick parent lookup
+    # Build a map of explicit tag fullPaths
+    explicit_paths = set()
     tag_map = {}
-    for tag in tags:
+    for tag in explicit_tags:
         tag["_id"] = str(tag["_id"])
         tag["user"] = str(tag["user"])
         if tag.get("parentId"):
             tag["parentId"] = str(tag["parentId"])
-        tag_map[tag["_id"]] = tag
+        explicit_paths.add(tag.get("fullPath", ""))
+        tag_map[tag.get("fullPath", "")] = tag
+    
+    # Discover tags from tasks that aren't explicitly created
+    all_tasks = await db.tasks.find({
+        "user": ObjectId(current_user["_id"]),
+        "tags": {"$exists": True, "$ne": []}
+    }).to_list(None)
+    
+    discovered_tags = {}
+    for task in all_tasks:
+        for tag_str in task.get("tags", []):
+            if tag_str and tag_str not in explicit_paths and tag_str not in discovered_tags:
+                # Create a virtual tag entry for this discovered tag
+                # Parse the tag string to determine hierarchy
+                parts = tag_str.split(":")
+                parent_path = None
+                if len(parts) > 1:
+                    parent_path = ":".join(parts[:-1])
+                
+                discovered_tags[tag_str] = {
+                    "_id": f"discovered_{tag_str}",  # Virtual ID
+                    "name": parts[-1].replace("-", " ").title(),  # Last part, formatted
+                    "fullPath": tag_str,
+                    "parentId": None,  # Will be linked later if parent exists
+                    "user": str(current_user["_id"]),
+                    "color": "#6B7280",  # Gray for discovered
+                    "icon": "🏷️",
+                    "order": 999,
+                    "isDiscovered": True  # Flag to indicate this wasn't explicitly created
+                }
+                
+                # Check if parent exists in explicit or discovered
+                if parent_path:
+                    if parent_path in tag_map:
+                        discovered_tags[tag_str]["parentId"] = tag_map[parent_path]["_id"]
+                    elif parent_path in discovered_tags:
+                        discovered_tags[tag_str]["parentId"] = discovered_tags[parent_path]["_id"]
+    
+    # Merge explicit and discovered tags
+    all_tags = list(explicit_tags) + list(discovered_tags.values())
     
     # Calculate task counts for each tag
-    for tag in tags:
+    for tag in all_tags:
         full_path = tag.get("fullPath", "")
         
         # Direct count: tasks with this exact tag
@@ -64,7 +106,7 @@ async def get_tags(current_user: dict = Depends(get_current_user)):
         else:
             tag["taskCount"] = direct_count
     
-    return {"tags": tags}
+    return {"tags": all_tags}
 
 
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)

@@ -103,7 +103,7 @@ app.mount("/js", StaticFiles(directory=str(STATIC_DIR / "js")), name="js")
 
 @app.get("/")
 async def serve_index():
-    """Serve the main frontend page"""
+    """Serve the main frontend page (SPA)"""
     return FileResponse(str(STATIC_DIR / "index.html"))
 
 

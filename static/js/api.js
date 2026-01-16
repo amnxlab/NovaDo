@@ -242,6 +242,36 @@ class API {
         });
     }
 
+    // Tags (Hierarchical tag system)
+    async getTags() {
+        const data = await this.request('/tags/');
+        // Backend returns {"tags": [...]}, extract the array
+        return data.tags || data;
+    }
+
+    async createTag(tag) {
+        const data = await this.request('/tags/', {
+            method: 'POST',
+            body: JSON.stringify(tag)
+        });
+        // Backend returns {"tag": {...}}, extract the tag object
+        return data.tag || data;
+    }
+
+    async updateTag(id, tag) {
+        const data = await this.request(`/tags/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(tag)
+        });
+        return data.tag || data;
+    }
+
+    async deleteTag(id) {
+        return this.request(`/tags/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
     // Habits
     async getHabits() {
         const data = await this.request('/habits/');

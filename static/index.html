@@ -10,31 +10,47 @@
         (function () {
             var theme = localStorage.getItem('theme') || 'dark';
             document.documentElement.dataset.theme = theme;
-            
+
             // Determine if light theme
             var isLightTheme = ['light', 'classic-productivity', 'pastel-calm', 'warm-earth', 'crisp-nordic', 'energetic-sunrise'].includes(theme);
             var bgColor = isLightTheme ? '#ffffff' : '#0f172a';
-            
+
             // Immediately set loading screen background based on theme
             var loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) {
                 loadingScreen.style.backgroundColor = bgColor;
                 loadingScreen.style.background = bgColor;
             }
-            
+
             // Set body and html background immediately
             document.body.style.backgroundColor = bgColor;
             document.documentElement.style.backgroundColor = bgColor;
+
+            // BULLETPROOF FAILSAFE: Force hide loading screen after 8 seconds
+            // This runs immediately and will work even if all other JS fails
+            setTimeout(function () {
+                var ls = document.getElementById('loading-screen');
+                if (ls && !ls.classList.contains('hidden')) {
+                    console.error('[FAILSAFE] Force hiding loading screen after 8 seconds');
+                    ls.style.display = 'none';
+                    ls.classList.add('hidden');
+                    // Show auth screen as fallback
+                    var auth = document.getElementById('auth-screen');
+                    if (auth) auth.classList.remove('hidden');
+                }
+            }, 8000);
         })();
     </script>
     <!-- Critical CSS to prevent white flash on loading screen -->
     <style>
         /* Prevent white flash - set immediately before other CSS loads */
-        html, body {
+        html,
+        body {
             background-color: #0f172a !important;
             margin: 0;
             padding: 0;
         }
+
         #loading-screen {
             background-color: #0f172a !important;
             background: #0f172a !important;
@@ -45,10 +61,12 @@
             align-items: center !important;
             justify-content: center !important;
         }
+
         /* Allow hidden class to override display */
         #loading-screen.hidden {
             display: none !important;
         }
+
         /* Apply theme-based background once theme is detected */
         [data-theme="light"] #loading-screen,
         [data-theme="classic-productivity"] #loading-screen,
@@ -77,16 +95,8 @@
 
 <body>
     <div id="app">
-        <!-- Loading Screen -->
-        <div id="loading-screen" class="screen" style="background-color: #0f172a; background: #0f172a;">
-            <div class="loading-content">
-                <div class="loading-logo">
-                    <img src="logo.png" alt="NovaDo" class="logo-icon-img">
-                </div>
-                <div class="loading-loader"></div>
-                <div class="loading-text">NovaDo</div>
-            </div>
-        </div>
+        <!-- Loading Screen removed - was causing freeze issues -->
+        <div id="loading-screen" class="hidden"></div>
 
         <!-- Auth Screen -->
         <div id="auth-screen" class="screen hidden">
@@ -159,17 +169,9 @@
                         <ul id="smart-lists"></ul>
                     </div>
 
-                    <div class="nav-section" data-section="my-lists">
+                    <div class="nav-section" data-section="workspace">
                         <h3>
-                            My Workspace
-                            <button class="btn-icon" id="add-list-btn" title="Add List">+</button>
-                        </h3>
-                        <ul id="custom-lists"></ul>
-                    </div>
-
-                    <div class="nav-section" data-section="my-tags">
-                        <h3>
-                            My Tags
+                            Workspace
                             <button class="btn-icon" id="add-tag-btn" title="Add Tag">+</button>
                         </h3>
                         <ul id="tags-tree"></ul>
@@ -1175,7 +1177,7 @@
     <script src="js/notifications.js"></script>
     <script src="js/statistics.js?v=1"></script>
     <script src="js/taskMatrix.js?v=1"></script>
-    <script src="js/app.js?v=8"></script>
+    <script src="js/app.js?v=9"></script>
 </body>
 
 </html>
