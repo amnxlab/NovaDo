@@ -196,16 +196,12 @@
 html {
     font-size: 16px;
     scroll-behavior: smooth;
-    background-color: #0f172a;
-    /* Dark fallback to prevent white flash */
-    background-color: var(--bg-primary, #0f172a);
+    background-color: var(--bg-primary);
 }
 
 body {
     font-family: var(--font-sans);
-    background: #0f172a;
-    /* Dark fallback to prevent white flash */
-    background: var(--bg-primary, #0f172a);
+    background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.5;
     min-height: 100vh;

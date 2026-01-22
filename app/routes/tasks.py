@@ -249,19 +249,20 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
         # User has Google Calendar connected, default to True
         sync_to_calendar = True
     
-    # Parse dueDate properly - convert string to date object
+    # Parse dueDate properly - convert string to datetime object (BSON requires datetime, not date)
     due_date_obj = None
     if task_data.dueDate:
         if isinstance(task_data.dueDate, str):
-            # Parse date string (YYYY-MM-DD format)
-            from datetime import date
-            due_date_obj = datetime.strptime(task_data.dueDate, "%Y-%m-%d").date()
+            # Parse date string (YYYY-MM-DD format) to datetime at midnight
+            due_date_obj = datetime.strptime(task_data.dueDate, "%Y-%m-%d")
         elif isinstance(task_data.dueDate, datetime):
-            # Already a datetime, extract date
-            due_date_obj = task_data.dueDate.date()
-        elif isinstance(task_data.dueDate, date):
-            # Already a date object
+            # Already a datetime, use as-is
             due_date_obj = task_data.dueDate
+        else:
+            # Handle date object by converting to datetime
+            from datetime import date
+            if isinstance(task_data.dueDate, date):
+                due_date_obj = datetime.combine(task_data.dueDate, datetime.min.time())
     
     task_doc = {
         "title": task_data.title,

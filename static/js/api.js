@@ -35,7 +35,20 @@ class API {
                 headers
             });
 
-            const data = await response.json();
+            // Check if response is JSON before parsing
+            const contentType = response.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                // Non-JSON response (likely an error page)
+                const text = await response.text();
+                if (!response.ok) {
+                    throw new Error(text || `Server error: ${response.status}`);
+                }
+                data = { message: text };
+            }
 
             if (!response.ok) {
                 console.error('[API] Error response:', response.status, data);

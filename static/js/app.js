@@ -10,20 +10,20 @@ const api = window.api;
 function parseDateString(dateStr) {
     if (!dateStr) return null;
     if (typeof dateStr !== 'string') return null;
-    
+
     // Extract just the date part if datetime string
     let dateOnlyStr = dateStr;
     if (dateStr.includes('T')) {
         dateOnlyStr = dateStr.split('T')[0];
     }
-    
+
     // Parse as local date (YYYY-MM-DD)
     const parts = dateOnlyStr.split('-');
     if (parts.length !== 3) return null;
-    
+
     const [year, month, day] = parts.map(Number);
     if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
-    
+
     return new Date(year, month - 1, day);
 }
 
@@ -379,6 +379,17 @@ function setupEventListeners() {
     document.getElementById('cancel-task').addEventListener('click', closeTaskModal);
     document.querySelector('#task-modal .modal-overlay').addEventListener('click', closeTaskModal);
     document.getElementById('task-form').addEventListener('submit', handleTaskSubmit);
+
+    // Add direct click handler on save button to ensure reliable first-click submission
+    document.getElementById('save-task-btn')?.addEventListener('click', (e) => {
+        // Trigger form submission via the form's submit method
+        const form = document.getElementById('task-form');
+        if (form.checkValidity()) {
+            form.requestSubmit();
+        } else {
+            form.reportValidity();
+        }
+    });
 
     // Make date and time inputs open picker on click
     const dateInput = document.getElementById('task-due-date');
@@ -1853,7 +1864,7 @@ function createTaskElement(task) {
     const checkbox = div.querySelector('.task-checkbox');
     const content = div.querySelector('.task-content');
     const buttons = div.querySelectorAll('.btn-icon');
-    
+
     if (checkbox) {
         checkbox.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1861,7 +1872,7 @@ function createTaskElement(task) {
             completeTask(task._id || task.id, e);
         });
     }
-    
+
     if (content) {
         content.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1869,7 +1880,7 @@ function createTaskElement(task) {
             openTaskModal(task._id || task.id);
         });
     }
-    
+
     buttons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1889,7 +1900,7 @@ function formatDueDate(dateStr) {
     // Parse date string without timezone conversion
     const taskDate = parseDateString(dateStr);
     if (!taskDate) return '';
-    
+
     const today = getTodayAtMidnight();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -2148,7 +2159,7 @@ function openTaskModal(taskId = null) {
                     dateStr = dateStr.split('T')[0];
                 }
                 document.getElementById('task-due-date').value = dateStr;
-                
+
                 // Handle time separately if available  
                 if (task.due_time) {
                     document.getElementById('task-due-time').value = task.due_time;

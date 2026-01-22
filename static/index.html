@@ -10,76 +10,122 @@
         (function () {
             var theme = localStorage.getItem('theme') || 'midnight-minimal';
             document.documentElement.dataset.theme = theme;
-
-            // Determine if light theme
-            var isLightTheme = ['light', 'classic-productivity', 'pastel-calm', 'warm-earth', 'crisp-nordic', 'energetic-sunrise'].includes(theme);
-            var bgColor = isLightTheme ? '#ffffff' : '#0f172a';
-
-            // Immediately set loading screen background based on theme
-            var loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.style.backgroundColor = bgColor;
-                loadingScreen.style.background = bgColor;
-            }
-
-            // Set body and html background immediately
-            document.body.style.backgroundColor = bgColor;
-            document.documentElement.style.backgroundColor = bgColor;
-
-            // BULLETPROOF FAILSAFE: Force hide loading screen after 8 seconds
-            // This runs immediately and will work even if all other JS fails
-            setTimeout(function () {
-                var ls = document.getElementById('loading-screen');
-                if (ls && !ls.classList.contains('hidden')) {
-                    console.error('[FAILSAFE] Force hiding loading screen after 8 seconds');
-                    ls.style.display = 'none';
-                    ls.classList.add('hidden');
-                    // Show auth screen as fallback
-                    var auth = document.getElementById('auth-screen');
-                    if (auth) auth.classList.remove('hidden');
+            
+            // Set body theme as soon as possible
+            function setBodyTheme() {
+                if (document.body) {
+                    document.body.dataset.theme = theme;
                 }
-            }, 8000);
+            }
+            
+            // Try to set immediately
+            setBodyTheme();
+            
+            // Also set when DOM is ready (in case body wasn't available yet)
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setBodyTheme);
+            } else {
+                // DOM is already ready
+                setBodyTheme();
+            }
         })();
     </script>
-    <!-- Critical CSS to prevent white flash on loading screen -->
+    <!-- Critical inline CSS - set background based on data-theme before external CSS loads -->
     <style>
-        /* Prevent white flash - set immediately before other CSS loads */
+        /* Base styles */
         html,
         body {
-            background-color: #0f172a !important;
             margin: 0;
             padding: 0;
         }
 
+        /* Default dark background to prevent white flash */
+        html {
+            background-color: #0F0F0F;
+        }
+
+        /* Theme-specific backgrounds - applied via data-theme attribute */
+        html[data-theme="light"] {
+            background-color: #FAFBFC;
+        }
+
+        html[data-theme="classic-productivity"] {
+            background-color: #FAFBFC;
+        }
+
+        html[data-theme="pastel-calm"] {
+            background-color: #FAF9F7;
+        }
+
+        html[data-theme="warm-earth"] {
+            background-color: #FFFBF5;
+        }
+
+        html[data-theme="crisp-nordic"] {
+            background-color: #F7FAFC;
+        }
+
+        html[data-theme="energetic-sunrise"] {
+            background-color: #FFFDF9;
+        }
+
+        html[data-theme="dark"] {
+            background-color: #0F0F0F;
+        }
+
+        html[data-theme="midnight-minimal"] {
+            background-color: #0F0F0F;
+        }
+
+        html[data-theme="deep-ocean"] {
+            background-color: #0A1628;
+        }
+
+        html[data-theme="charcoal-elegance"] {
+            background-color: #121217;
+        }
+
+        html[data-theme="neon-pulse"] {
+            background-color: #09090B;
+        }
+
+        html[data-theme="forest-dusk"] {
+            background-color: #0C1410;
+        }
+
+        html[data-theme="stormy-void"] {
+            background-color: #111114;
+        }
+
+        html[data-theme="warm-ember"] {
+            background-color: #151210;
+        }
+
+        html[data-theme="cyber-twilight"] {
+            background-color: #0D0D1A;
+        }
+
+        html[data-theme="hacker"] {
+            background-color: #000000;
+        }
+
+        /* Loading screen */
         #loading-screen {
-            background-color: #0f172a !important;
-            background: #0f172a !important;
             position: fixed !important;
             inset: 0 !important;
             z-index: 2000 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            background-color: inherit;
         }
 
-        /* Allow hidden class to override display */
         #loading-screen.hidden {
             display: none !important;
         }
-
-        /* Apply theme-based background once theme is detected */
-        [data-theme="light"] #loading-screen,
-        [data-theme="classic-productivity"] #loading-screen,
-        [data-theme="pastel-calm"] #loading-screen,
-        [data-theme="warm-earth"] #loading-screen,
-        [data-theme="crisp-nordic"] #loading-screen,
-        [data-theme="energetic-sunrise"] #loading-screen {
-            background-color: #ffffff !important;
-            background: #ffffff !important;
-        }
     </style>
-    <link rel="stylesheet" href="css/themes.css?v=4">
-    <link rel="stylesheet" href="css/style.css?v=17">
+    <link rel="stylesheet" href="css/themes.css?v=5">
+    <link rel="stylesheet" href="css/style.css?v=18">
     <link rel="stylesheet" href="css/taskMatrix.css?v=10">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
@@ -681,7 +727,7 @@
 
                                 <h4 class="theme-category-title">🌙 Dark Themes</h4>
                                 <div class="theme-grid">
-                                    <button class="theme-card active" data-theme="dark" title="Midnight">
+                                    <button class="theme-card active" data-theme="midnight-minimal" title="Midnight">
                                         <div class="theme-preview theme-preview-midnight"></div>
                                         <span class="theme-name">Midnight</span>
                                     </button>
@@ -1039,7 +1085,7 @@
 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancel-task">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Task</button>
+                    <button type="submit" class="btn btn-primary" id="save-task-btn">Save Task</button>
                 </div>
             </form>
         </div>
