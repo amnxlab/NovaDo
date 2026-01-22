@@ -192,9 +192,6 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 
 ## Screenshots
 
-<details>
-<summary>Click to view screenshots</summary>
-
 ### Sign up / Sign in
 ![Sign up / Sign in](screenshots/signup-signin.png)
 *Create or sign in quickly with a simple, secure flow.*
@@ -222,8 +219,6 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 ### Google Calendar Settings
 ![Google Calendar Settings](screenshots/settings-googlecalendar.png)
 *Configure calendar sync and select which calendars to sync.*
-
-</details>
 
 ---
 
