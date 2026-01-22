@@ -394,7 +394,7 @@ class ReminderScheduler:
                 safe_print(f"  {i}. {task.get('title')} - Due: {task.get('dueDate')}")
             if len(tasks_to_push) > 5:
                 safe_print(f"  ... and {len(tasks_to_push) - 5} more")
-        safe_print()
+        print()  # Empty line - no Unicode issue
         
         pushed_count = 0
         
