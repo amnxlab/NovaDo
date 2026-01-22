@@ -1,0 +1,993 @@
+/* ============================================
+   NovaDo 2026 Theme System
+   12 Professionally Curated Color Themes
+   ============================================ */
+
+/* ============================================
+   DESIGN SYSTEM TOKENS
+   ============================================ */
+
+:root {
+    /* 8px Grid Spacing Scale */
+    --space-1: 0.5rem;
+    /* 8px */
+    --space-2: 1rem;
+    /* 16px */
+    --space-3: 1.5rem;
+    /* 24px */
+    --space-4: 2rem;
+    /* 32px */
+    --space-5: 2.5rem;
+    /* 40px */
+    --space-6: 3rem;
+    /* 48px */
+    --space-8: 4rem;
+    /* 64px */
+    --space-10: 5rem;
+    /* 80px */
+    --space-12: 6rem;
+    /* 96px */
+
+    /* Typography */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+
+    /* Font Sizes */
+    --text-xs: 0.75rem;
+    /* 12px */
+    --text-sm: 0.875rem;
+    /* 14px */
+    --text-base: 1rem;
+    /* 16px */
+    --text-lg: 1.125rem;
+    /* 18px */
+    --text-xl: 1.25rem;
+    /* 20px */
+    --text-2xl: 1.5rem;
+    /* 24px */
+    --text-3xl: 1.875rem;
+    /* 30px */
+    --text-4xl: 2.25rem;
+    /* 36px */
+
+    /* Font Weights */
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+
+    /* Border Radius - 8px based */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-full: 9999px;
+
+    /* Animation Durations */
+    --duration-instant: 100ms;
+    --duration-fast: 200ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
+    --duration-emphasis: 800ms;
+
+    /* Animation Easings */
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+    /* Layout */
+    --sidebar-width: 280px;
+    --header-height: 56px;
+
+    /* Modern Event Palette (Vibrant & Pastel) */
+    --evt-0: #FF9B9B;
+    /* Soft Red */
+    --evt-1: #FFC971;
+    /* Warm Orange */
+    --evt-2: #FFD93D;
+    /* Sunny Yellow */
+    --evt-3: #6BCB77;
+    /* Fresh Green */
+    --evt-4: #4D96FF;
+    /* Sky Blue */
+    --evt-5: #6F69AC;
+    /* Deep Purple */
+    --evt-6: #FF6B6B;
+    /* Coral */
+    --evt-7: #A1E3D8;
+    /* Teal */
+    --evt-8: #F0A500;
+    /* Amber */
+    --evt-9: #E05D5D;
+    /* Brick */
+}
+
+
+/* ============================================
+   LIGHT MODE TEMPLATES (5 Themes)
+   ============================================ */
+
+/* -------------------------------------------
+   🌤️ Classic Productivity (Default Light)
+   "Professional clarity with energizing accents"
+   ------------------------------------------- */
+:root,
+[data-theme="light"],
+[data-theme="classic-productivity"] {
+    --bg-primary: #FAFBFC;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F3F4F6;
+    --bg-hover: #E5E7EB;
+    --bg-active: #D1D5DB;
+    --bg-sidebar: #FFFFFF;
+    --bg-elevated: #FFFFFF;
+
+    --text-primary: #1F2937;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+    --text-light: #D1D5DB;
+
+    --accent-primary: #3B82F6;
+    --accent-secondary: #2563EB;
+    --accent-light: rgba(59, 130, 246, 0.1);
+    --accent-gradient: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+
+    --success: #10B981;
+    --success-light: rgba(16, 185, 129, 0.1);
+    --warning: #F59E0B;
+    --warning-light: rgba(245, 158, 11, 0.1);
+    --error: #EF4444;
+    --error-light: rgba(239, 68, 68, 0.1);
+
+    --priority-high: #EF4444;
+    --priority-medium: #F59E0B;
+    --priority-low: #10B981;
+
+    --border-color: #E5E7EB;
+    --border-light: #F3F4F6;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.15);
+
+    --color-scheme: light;
+}
+
+/* -------------------------------------------
+   🌸 Pastel Calm
+   "Muted tones for extended focus sessions"
+   ------------------------------------------- */
+[data-theme="pastel-calm"] {
+    --bg-primary: #FAF9F7;
+    --bg-secondary: #FFFFFE;
+    --bg-tertiary: #F5F3EF;
+    --bg-hover: #EDEAE4;
+    --bg-active: #E5E1D9;
+    --bg-sidebar: #FFFFFE;
+    --bg-elevated: #FFFFFF;
+
+    --text-primary: #2D3748;
+    --text-secondary: #718096;
+    --text-muted: #A0AEC0;
+    --text-light: #CBD5E0;
+
+    --accent-primary: #9F7AEA;
+    --accent-secondary: #805AD5;
+    --accent-light: rgba(159, 122, 234, 0.1);
+    --accent-gradient: linear-gradient(135deg, #9F7AEA 0%, #B794F4 100%);
+
+    --success: #68D391;
+    --success-light: rgba(104, 211, 145, 0.1);
+    --warning: #ECC94B;
+    --warning-light: rgba(236, 201, 75, 0.1);
+    --error: #FC8181;
+    --error-light: rgba(252, 129, 129, 0.1);
+
+    --priority-high: #FC8181;
+    --priority-medium: #ECC94B;
+    --priority-low: #68D391;
+
+    --border-color: #E2DDD5;
+    --border-light: #F0EDE8;
+
+    --shadow-xs: 0 1px 2px rgba(45, 55, 72, 0.03);
+    --shadow-sm: 0 1px 3px rgba(45, 55, 72, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(45, 55, 72, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(45, 55, 72, 0.08);
+    --shadow-xl: 0 20px 25px -5px rgba(45, 55, 72, 0.08);
+    --shadow-glow: 0 0 20px rgba(159, 122, 234, 0.15);
+
+    --color-scheme: light;
+}
+
+/* -------------------------------------------
+   🌿 Warm Earth
+   "Grounded naturals with organic warmth"
+   ------------------------------------------- */
+[data-theme="warm-earth"] {
+    --bg-primary: #FFFBF5;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #FEF3E2;
+    --bg-hover: #FDE8CC;
+    --bg-active: #FCDDB7;
+    --bg-sidebar: #FFFDFB;
+    --bg-elevated: #FFFFFF;
+
+    --text-primary: #44403C;
+    --text-secondary: #78716C;
+    --text-muted: #A8A29E;
+    --text-light: #D6D3D1;
+
+    --accent-primary: #D97706;
+    --accent-secondary: #B45309;
+    --accent-light: rgba(217, 119, 6, 0.1);
+    --accent-gradient: linear-gradient(135deg, #D97706 0%, #EA580C 100%);
+
+    --success: #22C55E;
+    --success-light: rgba(34, 197, 94, 0.1);
+    --warning: #EAB308;
+    --warning-light: rgba(234, 179, 8, 0.1);
+    --error: #DC2626;
+    --error-light: rgba(220, 38, 38, 0.1);
+
+    --priority-high: #DC2626;
+    --priority-medium: #EAB308;
+    --priority-low: #22C55E;
+
+    --border-color: #E7E5E4;
+    --border-light: #F5F5F4;
+
+    --shadow-xs: 0 1px 2px rgba(68, 64, 60, 0.03);
+    --shadow-sm: 0 1px 3px rgba(68, 64, 60, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(68, 64, 60, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(68, 64, 60, 0.08);
+    --shadow-xl: 0 20px 25px -5px rgba(68, 64, 60, 0.08);
+    --shadow-glow: 0 0 20px rgba(217, 119, 6, 0.15);
+
+    --color-scheme: light;
+}
+
+/* -------------------------------------------
+   ❄️ Crisp Nordic
+   "Scandinavian minimalism with icy precision"
+   ------------------------------------------- */
+[data-theme="crisp-nordic"] {
+    --bg-primary: #F7FAFC;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #EDF2F7;
+    --bg-hover: #E2E8F0;
+    --bg-active: #CBD5E1;
+    --bg-sidebar: #FFFFFF;
+    --bg-elevated: #FFFFFF;
+
+    --text-primary: #2D3748;
+    --text-secondary: #718096;
+    --text-muted: #A0AEC0;
+    --text-light: #CBD5E0;
+
+    --accent-primary: #0EA5E9;
+    --accent-secondary: #0284C7;
+    --accent-light: rgba(14, 165, 233, 0.1);
+    --accent-gradient: linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%);
+
+    --success: #14B8A6;
+    --success-light: rgba(20, 184, 166, 0.1);
+    --warning: #F97316;
+    --warning-light: rgba(249, 115, 22, 0.1);
+    --error: #E11D48;
+    --error-light: rgba(225, 29, 72, 0.1);
+
+    --priority-high: #E11D48;
+    --priority-medium: #F97316;
+    --priority-low: #14B8A6;
+
+    --border-color: #E2E8F0;
+    --border-light: #F1F5F9;
+
+    --shadow-xs: 0 1px 2px rgba(45, 55, 72, 0.03);
+    --shadow-sm: 0 1px 3px rgba(45, 55, 72, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(45, 55, 72, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(45, 55, 72, 0.08);
+    --shadow-xl: 0 20px 25px -5px rgba(45, 55, 72, 0.08);
+    --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.15);
+
+    --color-scheme: light;
+}
+
+/* -------------------------------------------
+   🌅 Energetic Sunrise
+   "Motivating gradients for morning productivity"
+   ------------------------------------------- */
+[data-theme="energetic-sunrise"] {
+    --bg-primary: #FFFDF9;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #FEF3C7;
+    --bg-hover: #FDE68A;
+    --bg-active: #FCD34D;
+    --bg-sidebar: #FFFEFB;
+    --bg-elevated: #FFFFFF;
+
+    --text-primary: #292524;
+    --text-secondary: #78716C;
+    --text-muted: #A8A29E;
+    --text-light: #D6D3D1;
+
+    --accent-primary: #F97316;
+    --accent-secondary: #EA580C;
+    --accent-light: rgba(249, 115, 22, 0.1);
+    --accent-gradient: linear-gradient(135deg, #F97316 0%, #EC4899 100%);
+
+    --success: #22C55E;
+    --success-light: rgba(34, 197, 94, 0.1);
+    --warning: #FBBF24;
+    --warning-light: rgba(251, 191, 36, 0.1);
+    --error: #EF4444;
+    --error-light: rgba(239, 68, 68, 0.1);
+
+    --priority-high: #EF4444;
+    --priority-medium: #FBBF24;
+    --priority-low: #22C55E;
+
+    --border-color: #FDE68A;
+    --border-light: #FEF3C7;
+
+    --shadow-xs: 0 1px 2px rgba(41, 37, 36, 0.03);
+    --shadow-sm: 0 1px 3px rgba(41, 37, 36, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(41, 37, 36, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(41, 37, 36, 0.08);
+    --shadow-xl: 0 20px 25px -5px rgba(41, 37, 36, 0.08);
+    --shadow-glow: 0 0 20px rgba(249, 115, 22, 0.2);
+
+    --color-scheme: light;
+}
+
+
+/* ============================================
+   DARK MODE TEMPLATES (8 Themes)
+   ============================================ */
+
+/* -------------------------------------------
+   🌑 Midnight Minimal (Default Dark)
+   "Ultra-clean charcoal for distraction-free work"
+   ------------------------------------------- */
+[data-theme="dark"],
+[data-theme="midnight-minimal"] {
+    --bg-primary: #0F0F0F;
+    --bg-secondary: #1A1A1A;
+    --bg-tertiary: #262626;
+    --bg-hover: #333333;
+    --bg-active: #404040;
+    --bg-sidebar: #141414;
+    --bg-elevated: #1F1F1F;
+
+    --text-primary: #FAFAFA;
+    --text-secondary: #A3A3A3;
+    --text-muted: #737373;
+    --text-light: #525252;
+
+    --accent-primary: #3B82F6;
+    --accent-secondary: #60A5FA;
+    --accent-light: rgba(59, 130, 246, 0.15);
+    --accent-gradient: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+
+    --success: #22C55E;
+    --success-light: rgba(34, 197, 94, 0.15);
+    --warning: #FBBF24;
+    --warning-light: rgba(251, 191, 36, 0.15);
+    --error: #EF4444;
+    --error-light: rgba(239, 68, 68, 0.15);
+
+    --priority-high: #EF4444;
+    --priority-medium: #FBBF24;
+    --priority-low: #22C55E;
+
+    --border-color: #333333;
+    --border-light: #262626;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.2);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   🌊 Deep Ocean
+   "Navy depths with electric accents"
+   ------------------------------------------- */
+[data-theme="deep-ocean"] {
+    --bg-primary: #0A1628;
+    --bg-secondary: #0F1D32;
+    --bg-tertiary: #162844;
+    --bg-hover: #1E3A5F;
+    --bg-active: #264C7A;
+    --bg-sidebar: #0C1A2E;
+    --bg-elevated: #132238;
+
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --text-light: #475569;
+
+    --accent-primary: #06B6D4;
+    --accent-secondary: #22D3EE;
+    --accent-light: rgba(6, 182, 212, 0.15);
+    --accent-gradient: linear-gradient(135deg, #06B6D4 0%, #0EA5E9 100%);
+
+    --success: #14B8A6;
+    --success-light: rgba(20, 184, 166, 0.15);
+    --warning: #F59E0B;
+    --warning-light: rgba(245, 158, 11, 0.15);
+    --error: #F43F5E;
+    --error-light: rgba(244, 63, 94, 0.15);
+
+    --priority-high: #F43F5E;
+    --priority-medium: #F59E0B;
+    --priority-low: #14B8A6;
+
+    --border-color: #1E3A5F;
+    --border-light: #162844;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 25px rgba(6, 182, 212, 0.25);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   🖤 Charcoal Elegance
+   "Sophisticated grays with jewel tone accents"
+   ------------------------------------------- */
+[data-theme="charcoal-elegance"] {
+    --bg-primary: #121217;
+    --bg-secondary: #1C1C24;
+    --bg-tertiary: #2A2A36;
+    --bg-hover: #38384A;
+    --bg-active: #46465E;
+    --bg-sidebar: #18181F;
+    --bg-elevated: #22222A;
+
+    --text-primary: #EEEEF0;
+    --text-secondary: #9898A0;
+    --text-muted: #6B6B75;
+    --text-light: #4A4A55;
+
+    --accent-primary: #A855F7;
+    --accent-secondary: #C084FC;
+    --accent-light: rgba(168, 85, 247, 0.15);
+    --accent-gradient: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+
+    --success: #4ADE80;
+    --success-light: rgba(74, 222, 128, 0.15);
+    --warning: #FCD34D;
+    --warning-light: rgba(252, 211, 77, 0.15);
+    --error: #FB7185;
+    --error-light: rgba(251, 113, 133, 0.15);
+
+    --priority-high: #FB7185;
+    --priority-medium: #FCD34D;
+    --priority-low: #4ADE80;
+
+    --border-color: #38384A;
+    --border-light: #2A2A36;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 25px rgba(168, 85, 247, 0.25);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   💜 Neon Pulse
+   "Subtle neon accents for creative energy"
+   ------------------------------------------- */
+[data-theme="neon-pulse"] {
+    --bg-primary: #09090B;
+    --bg-secondary: #18181B;
+    --bg-tertiary: #27272A;
+    --bg-hover: #3F3F46;
+    --bg-active: #52525B;
+    --bg-sidebar: #0F0F11;
+    --bg-elevated: #1F1F22;
+
+    --text-primary: #FAFAFA;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --text-light: #52525B;
+
+    --accent-primary: #22D3EE;
+    --accent-secondary: #67E8F9;
+    --accent-light: rgba(34, 211, 238, 0.15);
+    --accent-gradient: linear-gradient(135deg, #22D3EE 0%, #A78BFA 100%);
+
+    --success: #4ADE80;
+    --success-light: rgba(74, 222, 128, 0.15);
+    --warning: #FACC15;
+    --warning-light: rgba(250, 204, 21, 0.15);
+    --error: #F87171;
+    --error-light: rgba(248, 113, 113, 0.15);
+
+    --priority-high: #F87171;
+    --priority-medium: #FACC15;
+    --priority-low: #4ADE80;
+
+    --border-color: #3F3F46;
+    --border-light: #27272A;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.7);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.9);
+    --shadow-glow: 0 0 30px rgba(34, 211, 238, 0.3);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   🌲 Forest Dusk
+   "Muted greens with warm ember highlights"
+   ------------------------------------------- */
+[data-theme="forest-dusk"] {
+    --bg-primary: #0C1410;
+    --bg-secondary: #141F18;
+    --bg-tertiary: #1E2E24;
+    --bg-hover: #2A4032;
+    --bg-active: #365240;
+    --bg-sidebar: #101912;
+    --bg-elevated: #1A281E;
+
+    --text-primary: #E7EDE9;
+    --text-secondary: #8BA897;
+    --text-muted: #5E7A68;
+    --text-light: #3D5245;
+
+    --accent-primary: #F97316;
+    --accent-secondary: #FB923C;
+    --accent-light: rgba(249, 115, 22, 0.15);
+    --accent-gradient: linear-gradient(135deg, #F97316 0%, #84CC16 100%);
+
+    --success: #22C55E;
+    --success-light: rgba(34, 197, 94, 0.15);
+    --warning: #FCD34D;
+    --warning-light: rgba(252, 211, 77, 0.15);
+    --error: #FB7185;
+    --error-light: rgba(251, 113, 133, 0.15);
+
+    --priority-high: #FB7185;
+    --priority-medium: #FCD34D;
+    --priority-low: #22C55E;
+
+    --border-color: #2A4032;
+    --border-light: #1E2E24;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 25px rgba(249, 115, 22, 0.25);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   🌧️ Stormy Void
+   "Dark grays with vibrant accent pops"
+   ------------------------------------------- */
+[data-theme="stormy-void"] {
+    --bg-primary: #111114;
+    --bg-secondary: #1A1A1E;
+    --bg-tertiary: #25252B;
+    --bg-hover: #32323A;
+    --bg-active: #3F3F49;
+    --bg-sidebar: #141417;
+    --bg-elevated: #1F1F24;
+
+    --text-primary: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --text-light: #52525B;
+
+    --accent-primary: #14B8A6;
+    --accent-secondary: #2DD4BF;
+    --accent-light: rgba(20, 184, 166, 0.15);
+    --accent-gradient: linear-gradient(135deg, #14B8A6 0%, #F97316 100%);
+
+    --success: #4ADE80;
+    --success-light: rgba(74, 222, 128, 0.15);
+    --warning: #FBBF24;
+    --warning-light: rgba(251, 191, 36, 0.15);
+    --error: #F43F5E;
+    --error-light: rgba(244, 63, 94, 0.15);
+
+    --priority-high: #F43F5E;
+    --priority-medium: #FBBF24;
+    --priority-low: #4ADE80;
+
+    --border-color: #32323A;
+    --border-light: #25252B;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 25px rgba(20, 184, 166, 0.25);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   🔥 Warm Ember
+   "Cozy browns and oranges for late-night work"
+   ------------------------------------------- */
+[data-theme="warm-ember"] {
+    --bg-primary: #151210;
+    --bg-secondary: #1F1A15;
+    --bg-tertiary: #2A241D;
+    --bg-hover: #382F25;
+    --bg-active: #463A2D;
+    --bg-sidebar: #1A1612;
+    --bg-elevated: #25201A;
+
+    --text-primary: #FAF5F0;
+    --text-secondary: #B8A898;
+    --text-muted: #8A7B6A;
+    --text-light: #5C5045;
+
+    --accent-primary: #EA580C;
+    --accent-secondary: #F97316;
+    --accent-light: rgba(234, 88, 12, 0.15);
+    --accent-gradient: linear-gradient(135deg, #EA580C 0%, #DC2626 100%);
+
+    --success: #65A30D;
+    --success-light: rgba(101, 163, 13, 0.15);
+    --warning: #EAB308;
+    --warning-light: rgba(234, 179, 8, 0.15);
+    --error: #E11D48;
+    --error-light: rgba(225, 29, 72, 0.15);
+
+    --priority-high: #E11D48;
+    --priority-medium: #EAB308;
+    --priority-low: #65A30D;
+
+    --border-color: #382F25;
+    --border-light: #2A241D;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 25px rgba(234, 88, 12, 0.25);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   🌌 Cyber Twilight
+   "Futuristic purples with glowing blues"
+   ------------------------------------------- */
+[data-theme="cyber-twilight"] {
+    --bg-primary: #0D0D1A;
+    --bg-secondary: #151527;
+    --bg-tertiary: #1E1E38;
+    --bg-hover: #2A2A50;
+    --bg-active: #363668;
+    --bg-sidebar: #101020;
+    --bg-elevated: #1A1A30;
+
+    --text-primary: #E8E8FF;
+    --text-secondary: #9898BB;
+    --text-muted: #6B6B8E;
+    --text-light: #4A4A68;
+
+    --accent-primary: #8B5CF6;
+    --accent-secondary: #A78BFA;
+    --accent-light: rgba(139, 92, 246, 0.2);
+    --accent-gradient: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);
+
+    --success: #34D399;
+    --success-light: rgba(52, 211, 153, 0.15);
+    --warning: #FBBF24;
+    --warning-light: rgba(251, 191, 36, 0.15);
+    --error: #F472B6;
+    --error-light: rgba(244, 114, 182, 0.15);
+
+    --priority-high: #F472B6;
+    --priority-medium: #FBBF24;
+    --priority-low: #34D399;
+
+    --border-color: #2A2A50;
+    --border-light: #1E1E38;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.7);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.9);
+    --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.35);
+
+    --color-scheme: dark;
+}
+
+/* -------------------------------------------
+   💻 Hacker (Legacy - Matrix style)
+   "Classic terminal aesthetic"
+   ------------------------------------------- */
+[data-theme="hacker"] {
+    --bg-primary: #000000;
+    --bg-secondary: #050505;
+    --bg-tertiary: #0A0A0A;
+    --bg-hover: #111111;
+    --bg-active: #1A1A1A;
+    --bg-sidebar: #000000;
+    --bg-elevated: #080808;
+
+    --text-primary: #00FF00;
+    --text-secondary: #33FF33;
+    --text-muted: #00AA00;
+    --text-light: #008800;
+
+    --accent-primary: #00FF00;
+    --accent-secondary: #39FF14;
+    --accent-light: rgba(0, 255, 0, 0.15);
+    --accent-gradient: linear-gradient(135deg, #00FF00 0%, #CCFF00 100%);
+
+    --success: #00FF00;
+    --success-light: rgba(0, 255, 0, 0.15);
+    --warning: #FFFF00;
+    --warning-light: rgba(255, 255, 0, 0.15);
+    --error: #FF3333;
+    --error-light: rgba(255, 51, 51, 0.15);
+
+    --priority-high: #FF3333;
+    --priority-medium: #FFFF00;
+    --priority-low: #00FF00;
+
+    --border-color: #004400;
+    --border-light: #002200;
+
+    --shadow-xs: 0 0 5px rgba(0, 255, 0, 0.2);
+    --shadow-sm: 0 0 10px rgba(0, 255, 0, 0.3);
+    --shadow-md: 0 0 15px rgba(0, 255, 0, 0.4);
+    --shadow-lg: 0 0 25px rgba(0, 255, 0, 0.5);
+    --shadow-xl: 0 0 35px rgba(0, 255, 0, 0.6);
+    --shadow-glow: 0 0 20px rgba(57, 255, 20, 0.6);
+
+    --font-mono: 'Courier New', Courier, monospace;
+    --color-scheme: dark;
+}
+
+
+/* ============================================
+   THEME TRANSITIONS
+   ============================================ */
+
+/* Smooth theme switching */
+[data-theme-transitioning] *,
+[data-theme-transitioning] *::before,
+[data-theme-transitioning] *::after {
+    transition:
+        background-color 400ms ease,
+        color 400ms ease,
+        border-color 400ms ease,
+        box-shadow 400ms ease !important;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+
+/* High contrast focus rings */
+:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--accent-primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    z-index: 1000;
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+
+/* ============================================
+   MICRO-ANIMATIONS
+   ============================================ */
+
+/* Button hover scale */
+.btn {
+    transition: transform var(--duration-fast) var(--ease-out),
+        background-color var(--duration-fast) var(--ease-out),
+        box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Card hover lift */
+.task-item,
+.habit-card,
+.stat-card {
+    transition: transform var(--duration-fast) var(--ease-out),
+        box-shadow var(--duration-fast) var(--ease-out),
+        background-color var(--duration-fast) var(--ease-out);
+}
+
+.task-item:hover,
+.habit-card:hover,
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Checkbox completion animation */
+@keyframes checkmark-draw {
+    from {
+        stroke-dashoffset: 24;
+    }
+
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.task-checkbox.checked svg {
+    animation: checkmark-draw 0.3s var(--ease-out) forwards;
+}
+
+/* Modal entrance */
+@keyframes modal-enter {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-content {
+    animation: modal-enter 0.2s var(--ease-spring);
+}
+
+/* Toast slide-in */
+@keyframes toast-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toast {
+    animation: toast-slide-in 0.3s var(--ease-spring);
+}
+
+/* Loading pulse */
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.loading-indicator {
+    animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Progress ring animation */
+@keyframes ring-fill {
+    from {
+        stroke-dashoffset: 283;
+    }
+}
+
+.ring-progress {
+    animation: ring-fill 1s var(--ease-out) forwards;
+}
+
+/* Floating button pulse */
+@keyframes fab-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 14px rgba(var(--accent-primary), 0.3);
+    }
+
+    50% {
+        box-shadow: 0 4px 20px rgba(var(--accent-primary), 0.5);
+    }
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--bg-secondary) 0%,
+            var(--bg-tertiary) 50%,
+            var(--bg-secondary) 100%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+}
