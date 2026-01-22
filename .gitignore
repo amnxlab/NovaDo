@@ -11,6 +11,7 @@ client/node_modules/
 client/build/
 dist/
 releases/
+!releases/*.zip
 
 # Logs
 logs/
