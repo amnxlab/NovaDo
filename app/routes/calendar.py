@@ -19,6 +19,19 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
+def safe_print(text):
+    """
+    Safely print text with Unicode characters on Windows.
+    Falls back to encoding-safe version if console doesn't support UTF-8.
+    """
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Fallback: encode as UTF-8 then decode with 'replace' error handling
+        safe_text = text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
+        print(safe_text)
+
 # Ensure .env is loaded from the correct location (especially for PyInstaller builds)
 if getattr(sys, 'frozen', False):
     _work_dir = Path(os.path.dirname(sys.executable))
@@ -453,7 +466,7 @@ async def list_calendars(current_user: dict = Depends(get_current_user)):
             ]
         }
     except Exception as e:
-        print(f"List calendars error: {e}")
+        safe_print(f"List calendars error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to list calendars: {str(e)}")
 
 
@@ -590,7 +603,7 @@ async def get_events(
         }
         
     except Exception as e:
-        print(f"Get events error: {e}")
+        safe_print(f"Get events error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get events: {str(e)}")
 
 
@@ -710,7 +723,7 @@ async def import_calendar(
         }
         
     except Exception as e:
-        print(f"Import error: {e}")
+        safe_print(f"Import error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to import: {str(e)}")
 
 
@@ -1315,10 +1328,10 @@ async def trigger_bidirectional_sync(current_user: dict = Depends(get_current_us
         tasks_with_sync = [t for t in user_tasks if t.get("syncToCalendar") and t.get("dueDate")]
         tasks_synced = [t for t in tasks_with_sync if t.get("googleEventId")]
         
-        print(f"\n[SYNC DEBUG]")
-        print(f"  Total tasks with sync enabled: {len(tasks_with_sync)}")
-        print(f"  Already have Google Event ID: {len(tasks_synced)}")
-        print(f"  Need to be created: {len(tasks_with_sync) - len(tasks_synced)}")
+        safe_print(f"\n[SYNC DEBUG]")
+        safe_print(f"  Total tasks with sync enabled: {len(tasks_with_sync)}")
+        safe_print(f"  Already have Google Event ID: {len(tasks_synced)}")
+        safe_print(f"  Need to be created: {len(tasks_with_sync) - len(tasks_synced)}")
         
         # Sync only this user
         result = await trigger_sync_now(user=current_user)

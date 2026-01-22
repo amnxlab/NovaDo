@@ -6,11 +6,25 @@ Background Scheduler for NovaDo
 """
 import logging
 import asyncio
+import sys
 from datetime import datetime, timedelta
 from typing import Optional
 from bson import ObjectId
 
 logger = logging.getLogger(__name__)
+
+
+def safe_print(text):
+    """
+    Safely print text with Unicode characters on Windows.
+    Falls back to encoding-safe version if console doesn't support UTF-8.
+    """
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Fallback: encode as UTF-8 then decode with 'replace' error handling
+        safe_text = text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
+        print(safe_text)
 
 # Global scheduler instance
 _scheduler = None
@@ -307,10 +321,10 @@ class ReminderScheduler:
         """Push new/updated NovaDo tasks to Google Calendar"""
         from app.routes.calendar import build_google_calendar_event
         
-        print(f"\n{'='*80}")
-        print(f"[PUSH TO GOOGLE] Starting push for user: {user.get('email')}")
-        print(f"[PUSH TO GOOGLE] Calendar ID: {calendar_id}")
-        print(f"{'='*80}\n")
+        safe_print(f"\n{'='*80}")
+        safe_print(f"[PUSH TO GOOGLE] Starting push for user: {user.get('email')}")
+        safe_print(f"[PUSH TO GOOGLE] Calendar ID: {calendar_id}")
+        safe_print(f"{'='*80}\n")
         
         user_oid = ObjectId(user["_id"])
         
@@ -366,21 +380,21 @@ class ReminderScheduler:
         )
         
         # ALSO print to console for visibility
-        print(f"\n[PUSH STATS] User: {user.get('email')}")
-        print(f"  Total tasks: {stats['total']}")
-        print(f"  To push: {len(tasks_to_push)}")
-        print(f"  Sync disabled: {stats['sync_disabled']}")
-        print(f"  No due date: {stats['no_due_date']}")
-        print(f"  Completed/deleted: {stats['completed_deleted']}")
-        print(f"  Already synced: {stats['already_synced']}")
+        safe_print(f"\n[PUSH STATS] User: {user.get('email')}")
+        safe_print(f"  Total tasks: {stats['total']}")
+        safe_print(f"  To push: {len(tasks_to_push)}")
+        safe_print(f"  Sync disabled: {stats['sync_disabled']}")
+        safe_print(f"  No due date: {stats['no_due_date']}")
+        safe_print(f"  Completed/deleted: {stats['completed_deleted']}")
+        safe_print(f"  Already synced: {stats['already_synced']}")
         
         if len(tasks_to_push) > 0:
-            print(f"\n[TASKS TO PUSH]:")
+            safe_print(f"\n[TASKS TO PUSH]:")
             for i, task in enumerate(tasks_to_push[:5], 1):  # Show first 5
-                print(f"  {i}. {task.get('title')} - Due: {task.get('dueDate')}")
+                safe_print(f"  {i}. {task.get('title')} - Due: {task.get('dueDate')}")
             if len(tasks_to_push) > 5:
-                print(f"  ... and {len(tasks_to_push) - 5} more")
-        print()
+                safe_print(f"  ... and {len(tasks_to_push) - 5} more")
+        safe_print()
         
         pushed_count = 0
         
@@ -391,10 +405,10 @@ class ReminderScheduler:
         
         for task in tasks_to_push:
             try:
-                print(f"\n[PUSHING TASK] Title: '{task.get('title')}'")
-                print(f"  Due Date: {task.get('dueDate')}")
-                print(f"  Due Time: {task.get('dueTime')}")
-                print(f"  Calendar ID: {calendar_id}")
+                safe_print(f"\n[PUSHING TASK] Title: '{task.get('title')}'")
+                safe_print(f"  Due Date: {task.get('dueDate')}")
+                safe_print(f"  Due Time: {task.get('dueTime')}")
+                safe_print(f"  Calendar ID: {calendar_id}")
                 
                 logger.info(f"[SCHEDULER] Pushing task '{task.get('title')}' to calendar {calendar_id}")
                 event_body = build_google_calendar_event(task, user_preferences)
@@ -412,14 +426,14 @@ class ReminderScheduler:
                 else:
                     # Create new event
                     logger.info(f"[SCHEDULER] Creating new event on calendar {calendar_id}")
-                    print(f"  [API CALL] Inserting event into Google Calendar...")
+                    safe_print(f"  [API CALL] Inserting event into Google Calendar...")
                     event = service.events().insert(
                         calendarId=calendar_id,
                         body=event_body
                     ).execute()
                     logger.info(f"[SCHEDULER] Created event: {event.get('htmlLink')}")
-                    print(f"  [SUCCESS] Event created: {event.get('htmlLink')}")
-                    print(f"  Event ID: {event.get('id')}\n")
+                    safe_print(f"  [SUCCESS] Event created: {event.get('htmlLink')}")
+                    safe_print(f"  Event ID: {event.get('id')}\n")
                 
                 # Update task with sync info
                 update_result = await db.tasks.update_one(

@@ -2,6 +2,7 @@
 Task routes
 """
 import logging
+import sys
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from pydantic import BaseModel
 from typing import Optional, List
@@ -14,6 +15,19 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 logger = logging.getLogger(__name__)
+
+
+def safe_print(text):
+    """
+    Safely print text with Unicode characters on Windows.
+    Falls back to encoding-safe version if console doesn't support UTF-8.
+    """
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Fallback: encode as UTF-8 then decode with 'replace' error handling
+        safe_text = text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
+        print(safe_text)
 
 
 async def sync_task_to_calendar(task_id: str, task: dict, current_user: dict, action: str = "update"):
@@ -112,7 +126,7 @@ async def get_tasks(
     user_id_str = str(current_user["_id"])
     user_oid = ObjectId(user_id_str)
     
-    print(f"[TASKS API] User: {current_user.get('email')}, ID: {user_id_str}, ObjectId: {user_oid}")
+    safe_print(f"[TASKS API] User: {current_user.get('email')}, ID: {user_id_str}, ObjectId: {user_oid}")
     
     query = {"user": user_oid}
     
@@ -198,14 +212,14 @@ async def get_task(task_id: str, current_user: dict = Depends(get_current_user))
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_current_user)):
     """Create a new task"""
-    print(f"[CREATE TASK] Received task_data: {task_data}")
-    print(f"[CREATE TASK] User: {current_user.get('email')}")
+    safe_print(f"[CREATE TASK] Received task_data: {task_data}")
+    safe_print(f"[CREATE TASK] User: {current_user.get('email')}")
     
     db = get_database()
     
     # Handle empty or missing list - find user's Inbox list
     list_id = task_data.list
-    print(f"[CREATE TASK] Initial list_id: {list_id}")
+    safe_print(f"[CREATE TASK] Initial list_id: {list_id}")
     
     if not list_id or (isinstance(list_id, str) and list_id.strip() == ""):
         # Find the user's Inbox list - first try with isDefault, then just by name

@@ -12,12 +12,26 @@ import base64
 import hashlib
 import httpx
 import json
+import sys
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def safe_print(text):
+    """
+    Safely print text with Unicode characters on Windows.
+    Falls back to encoding-safe version if console doesn't support UTF-8.
+    """
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Fallback: encode as UTF-8 then decode with 'replace' error handling
+        safe_text = text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
+        print(safe_text)
 
 # System prompt for task parsing
 SYSTEM_PROMPT = """You are a helpful task management assistant. Your job is to help users create and manage tasks.
@@ -484,7 +498,7 @@ Remember: You have FULL ACCESS. Execute actions immediately when requested."""
         except json.JSONDecodeError:
             pass
         except Exception as e:
-            print(f"Action execution error: {e}")
+            safe_print(f"Action execution error: {e}")
             action_result = f"❌ Error: {str(e)}"
         
         # Clean up response text if it contains JSON
