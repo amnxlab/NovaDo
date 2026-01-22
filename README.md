@@ -24,7 +24,7 @@ NovaDo is a powerful, privacy-focused task management application that combines 
 **Why NovaDo?**
 - **Privacy First** – Your data stays on your machine
 - **AI-powered** – Natural language task creation
-- **Seamless Sync** – Two-way Google Calendar integration
+- **Bidirectional Sync** – Full two-way sync with Google Calendar (create/update/delete syncs both directions)
 - **Visual Organization** – Eisenhower Matrix & Kanban boards
 - **Habit Building** – Track streaks and build consistency
 - **Beautiful UI** – 12 professionally designed themes
@@ -42,7 +42,7 @@ NovaDo is a powerful, privacy-focused task management application that combines 
 - **Drag & Drop** – Intuitive task organization
 
 ### Calendar Integration
-- **Google Calendar Sync** – Two-way synchronization
+- **Google Calendar Sync** – **Bidirectional (two-way) synchronization** (create/update/delete syncs both directions)
 - **Multi-Calendar Support** – Sync multiple calendars simultaneously
 - **4 View Modes** – Month, Week, Day, Agenda
 - **Timezone Aware** – Accurate handling across timezones
@@ -195,23 +195,37 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 <details>
 <summary>Click to view screenshots</summary>
 
+### Sign up / Sign in
+![Sign up / Sign in](screenshots/signup-signin.png)
+*Create or sign in quickly with a simple, secure flow.*
+
+### Main App Window
+![Desktop Window](screenshots/desktop-window.png)
+*Overview of the main workspace and navigation.*
+
 ### Task Matrix View
-![Task Matrix](docs/screenshots/matrix-view.png)
+![Task Matrix](screenshots/task-matrix.png)
+*Eisenhower-style matrix for prioritizing tasks.*
 
-### Calendar Integration
-![Calendar](docs/screenshots/calendar-view.png)
+### Calendar View (Month/Week/Day)
+![Calendar View](screenshots/calendar-view.png)
+*Integrated calendar with drag & drop scheduling.*
 
-### Habit Tracking
-![Habits](docs/screenshots/habits.png)
+### Week View
+![Week View](screenshots/week-view.png)
+*Compact week-focused scheduling and task planning.*
 
-### Statistics Dashboard
-![Statistics](docs/screenshots/statistics.png)
+### Agenda View
+![Agenda View](screenshots/agenda-view.png)
+*Daily agenda for quick overviews and planning.*
 
-### AI Assistant
-![AI Assistant](docs/screenshots/ai-assistant.png)
+### Pomodoro / Focus Session
+![Pomodoro](screenshots/pomodoro.png)
+*Built-in Pomodoro timer for focused work sessions.*
 
-### Theme Gallery
-![Themes](docs/screenshots/themes.png)
+### Google Calendar Settings
+![Google Calendar Settings](screenshots/settings-googlecalendar.png)
+*Configure calendar sync and select which calendars to sync.*
 
 </details>
 
