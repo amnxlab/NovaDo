@@ -199,10 +199,6 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 ![Sign up / Sign in](screenshots/signup-signin.png)
 *Create or sign in quickly with a simple, secure flow.*
 
-### Main App Window
-![Desktop Window](screenshots/desktop-window.png)
-*Overview of the main workspace and navigation.*
-
 ### Task Matrix View
 ![Task Matrix](screenshots/task-matrix.png)
 *Eisenhower-style matrix for prioritizing tasks.*
