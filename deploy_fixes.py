@@ -15,6 +15,14 @@ def deploy_to_production():
     # Production folder (from logs)
     prod_root = Path(r"C:\Users\ahmedamin\Desktop\NovaDo")
     
+    # Check if it's a PyInstaller build
+    internal_folder = prod_root / "_internal"
+    if internal_folder.exists():
+        prod_app_root = internal_folder
+        print(f"Detected PyInstaller build, using _internal folder")
+    else:
+        prod_app_root = prod_root
+    
     if not prod_root.exists():
         print(f"❌ Production folder not found: {prod_root}")
         return False
@@ -33,7 +41,7 @@ def deploy_to_production():
     # Backup and copy each file
     for file_path in files_to_deploy:
         src = dev_root / file_path
-        dst = prod_root / file_path
+        dst = prod_app_root / file_path
         
         if not src.exists():
             print(f"⚠️  Source file not found: {src}")

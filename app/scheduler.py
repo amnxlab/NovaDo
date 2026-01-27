@@ -196,10 +196,13 @@ class ReminderScheduler:
         
         pulled_count = 0
         
-        for calendar_id in selected_calendars:            # Skip read-only imported calendars to avoid sync conflicts
-            if \"@import.calendar.google.com\" in calendar_id:
-                logger.info(f\"[SCHEDULER] Skipping pull from read-only calendar: {calendar_id}\")\n                continue
-                        try:
+        for calendar_id in selected_calendars:
+            # Skip read-only imported calendars to avoid sync conflicts
+            if "@import.calendar.google.com" in calendar_id:
+                logger.info(f"[SCHEDULER] Skipping pull from read-only calendar: {calendar_id}")
+                continue
+            
+            try:
                 events_result = service.events().list(
                     calendarId=calendar_id,
                     timeMin=time_min,
