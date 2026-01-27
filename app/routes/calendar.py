@@ -460,7 +460,9 @@ async def list_calendars(current_user: dict = Depends(get_current_user)):
                     "name": cal["summary"],
                     "primary": cal.get("primary", False),
                     "color": cal.get("backgroundColor", "#4772fa"),
-                    "selected": cal["id"] in selected_ids
+                    "selected": cal["id"] in selected_ids,
+                    "readOnly": cal.get("accessRole") in ["reader", "freeBusyReader"] or "@import.calendar.google.com" in cal["id"],
+                    "imported": "@import.calendar.google.com" in cal["id"]
                 }
                 for cal in calendars
             ]
@@ -479,9 +481,19 @@ async def select_calendars(
     db = get_database()
     user_oid = ObjectId(current_user["_id"])
     
+    # Filter out read-only imported calendars
+    newly_selected = [
+        cal_id for cal_id in selection.calendar_ids
+        if "@import.calendar.google.com" not in cal_id
+    ]
+    
+    # Log if any calendars were filtered out
+    filtered_out = set(selection.calendar_ids) - set(newly_selected)
+    if filtered_out:
+        logger.warning(f"[SELECT] Filtered out read-only calendars: {filtered_out}")
+    
     # Get previously selected calendars (handle None case explicitly)
     previously_selected = current_user.get("googleSelectedCalendars") or ["primary"]
-    newly_selected = selection.calendar_ids
     
     # Find calendars that were deselected
     deselected_calendars = set(previously_selected) - set(newly_selected)

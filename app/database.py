@@ -143,7 +143,12 @@ class MongitaCursorWrapper:
     """Async wrapper for Mongita cursor"""
     
     def __init__(self, cursor):
-        self._cursor = cursor
+        # Convert cursor to list immediately to avoid exhaustion issues
+        try:
+            self._results = list(cursor)
+        except Exception as e:
+            logger.error(f"cursor initialization error: {e}")
+            self._results = []
         self._sort_key = None
         self._sort_direction = 1
     
@@ -154,22 +159,29 @@ class MongitaCursorWrapper:
     
     async def to_list(self, length=None):
         try:
-            results = list(self._cursor)
+            results = self._results.copy()
             if self._sort_key:
                 reverse = (self._sort_direction == -1)
                 results.sort(key=lambda x: x.get(self._sort_key, 0) or 0, reverse=reverse)
+            if length:
+                return results[:length]
             return results
         except Exception as e:
             logger.error(f"to_list error: {e}")
             return []
 
     def __aiter__(self):
+        self._iter_index = 0
         return self
 
     async def __anext__(self):
         try:
-            return next(self._cursor)
-        except StopIteration:
+            if self._iter_index >= len(self._results):
+                raise StopAsyncIteration
+            result = self._results[self._iter_index]
+            self._iter_index += 1
+            return result
+        except (IndexError, StopIteration):
             raise StopAsyncIteration
 
 

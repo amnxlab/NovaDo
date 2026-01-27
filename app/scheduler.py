@@ -196,8 +196,10 @@ class ReminderScheduler:
         
         pulled_count = 0
         
-        for calendar_id in selected_calendars:
-            try:
+        for calendar_id in selected_calendars:            # Skip read-only imported calendars to avoid sync conflicts
+            if \"@import.calendar.google.com\" in calendar_id:
+                logger.info(f\"[SCHEDULER] Skipping pull from read-only calendar: {calendar_id}\")\n                continue
+                        try:
                 events_result = service.events().list(
                     calendarId=calendar_id,
                     timeMin=time_min,
@@ -417,8 +419,20 @@ class ReminderScheduler:
                 if task.get("googleEventId"):
                     # Update existing event
                     logger.info(f"[SCHEDULER] Updating existing event {task['googleEventId']}")
+                    target_calendar = task.get("googleCalendarId", calendar_id)
+                    
+                    # Check if calendar is read-only (imported calendars)
+                    if "@import.calendar.google.com" in target_calendar:
+                        logger.warning(f"[SCHEDULER] Skipping update - calendar {target_calendar} is read-only (imported)")
+                        # Clear sync info since we can't update this calendar
+                        await db.tasks.update_one(
+                            {"_id": task["_id"]},
+                            {"$unset": {"googleEventId": "", "googleCalendarId": "", "syncedWithGoogle": ""}}
+                        )
+                        continue
+                    
                     event = service.events().update(
-                        calendarId=task.get("googleCalendarId", calendar_id),
+                        calendarId=target_calendar,
                         eventId=task["googleEventId"],
                         body=event_body
                     ).execute()
@@ -426,6 +440,12 @@ class ReminderScheduler:
                 else:
                     # Create new event
                     logger.info(f"[SCHEDULER] Creating new event on calendar {calendar_id}")
+                    
+                    # Check if calendar is read-only (imported calendars)
+                    if "@import.calendar.google.com" in calendar_id:
+                        logger.warning(f"[SCHEDULER] Skipping creation - calendar {calendar_id} is read-only (imported)")
+                        continue
+                    
                     safe_print(f"  [API CALL] Inserting event into Google Calendar...")
                     event = service.events().insert(
                         calendarId=calendar_id,
